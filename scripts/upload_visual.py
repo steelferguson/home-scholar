@@ -1,13 +1,18 @@
 """
-Upload visual/quiz-game lesson content JSONs to Supabase Storage
-and populate the lessons table.
+OPTIONAL: upload visual/quiz-game lesson content JSONs to Supabase Storage
+and point the lessons table at the storage URLs.
+
+By default the app serves content directly from public/content/ (see
+scripts/seed_visual_lessons.sql) — no upload needed. Use this script only if
+you want content hosted in Supabase Storage instead (e.g. to update lessons
+without redeploying the app).
 
 Prereqs:
   1. Run migrate_visual_lessons.sql in the Supabase SQL Editor.
   2. Create a public storage bucket named `visual`.
 
 Content layout (this repo):
-  content/<course-slug>/lesson_01.json, lesson_02.json, ...
+  public/content/<course-slug>/lesson_01.json, lesson_02.json, ...
 
 Each JSON declares its own "type" ("visual" or "quiz_game") and "title".
 
@@ -28,7 +33,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_KEY"]
-CONTENT_DIR = os.path.join(os.path.dirname(__file__), "..", "content")
+CONTENT_DIR = os.path.join(os.path.dirname(__file__), "..", "public", "content")
 BUCKET = "visual"
 
 sb = create_client(SUPABASE_URL, SUPABASE_KEY)
