@@ -3,14 +3,18 @@ import MathBlock from './MathBlock'
 import QuizStep from './QuizStep'
 import { WIDGETS } from './widgets'
 
+function Markdown({ md, className = '' }) {
+  return (
+    <div className={`prose prose-sm sm:prose max-w-none text-gray-700 ${className}`}>
+      <ReactMarkdown>{md}</ReactMarkdown>
+    </div>
+  )
+}
+
 export default function StepRenderer({ step }) {
   switch (step.type) {
     case 'text':
-      return (
-        <div className="prose prose-sm sm:prose max-w-none text-gray-700">
-          <ReactMarkdown>{step.md}</ReactMarkdown>
-        </div>
-      )
+      return <Markdown md={step.md} />
 
     case 'image':
       return (
@@ -23,11 +27,7 @@ export default function StepRenderer({ step }) {
     case 'math':
       return (
         <div>
-          {step.md && (
-            <div className="prose prose-sm sm:prose max-w-none text-gray-700 mb-2">
-              <ReactMarkdown>{step.md}</ReactMarkdown>
-            </div>
-          )}
+          {step.md && <Markdown md={step.md} className="mb-2" />}
           <MathBlock tex={step.tex} caption={step.caption} />
         </div>
       )
@@ -54,11 +54,7 @@ export default function StepRenderer({ step }) {
       }
       return (
         <div>
-          {step.md && (
-            <div className="prose prose-sm sm:prose max-w-none text-gray-700 mb-3">
-              <ReactMarkdown>{step.md}</ReactMarkdown>
-            </div>
-          )}
+          {step.md && <Markdown md={step.md} className="mb-3" />}
           <Widget {...(step.props || {})} />
         </div>
       )

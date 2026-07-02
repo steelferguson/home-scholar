@@ -1,38 +1,36 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import confetti from 'canvas-confetti'
 import { usePlayerState } from '../../hooks/usePlayerState'
+import { useLessonContent } from '../../hooks/useLessonContent'
 import RewardBar from './RewardBar'
 import QuestionRound from './QuestionRound'
+import { DEFAULT_COIN_PER_CORRECT, DEFAULT_ARCADE_COST, DEFAULT_ARCADE_SECONDS } from './constants'
 
 // The arcade pulls in the kaplay game engine — only load it when a round is won
 const ArcadeGame = lazy(() => import('./ArcadeGame'))
 
 // Full-screen kids experience: intro → question round → results → arcade reward
 export default function QuizGame({ user, lesson, onExit, onComplete }) {
-  const [content, setContent] = useState(null)
-  const [fetchFailed, setFetchFailed] = useState(false)
+  const { content, error } = useLessonContent(lesson.content_url)
   const [screen, setScreen] = useState('intro') // intro | round | results | arcade
   const [roundResult, setRoundResult] = useState(null)
+  const [coinsBanked, setCoinsBanked] = useState(false)
   const { playerState, recordQuizResult, spendCoins } = usePlayerState(user.id)
-  const error = fetchFailed || !lesson.content_url
 
-  useEffect(() => {
-    if (!lesson.content_url) return
-    fetch(lesson.content_url)
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(setContent)
-      .catch(() => setFetchFailed(true))
-  }, [lesson.content_url])
-
-  const arcadeCost = content?.arcade_cost ?? 10
-  const arcadeSeconds = content?.arcade_seconds ?? 180
+  const arcadeCost = content?.arcade_cost ?? DEFAULT_ARCADE_COST
+  const arcadeSeconds = content?.arcade_seconds ?? DEFAULT_ARCADE_SECONDS
 
   const handleRoundEnd = async (correct, total, coinsEarned) => {
-    setRoundResult({ correct, total, coinsEarned })
+    // Replays are practice: results still celebrate, but coins bank only once
+    const banked = !coinsBanked
+    setRoundResult({ correct, total, coinsEarned, banked })
     setScreen('results')
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
-    await recordQuizResult(lesson.id, correct, total, coinsEarned)
-    onComplete()
+    if (banked) {
+      setCoinsBanked(true)
+      await recordQuizResult(lesson.id, correct, total, coinsEarned)
+      onComplete()
+    }
   }
 
   const startArcade = async () => {
@@ -96,7 +94,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
       {screen === 'round' && (
         <QuestionRound
           questions={content.questions}
-          coinPerCorrect={content.coin_per_correct ?? 2}
+          coinPerCorrect={content.coin_per_correct ?? DEFAULT_COIN_PER_CORRECT}
           onRoundEnd={handleRoundEnd}
         />
       )}
@@ -112,7 +110,11 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
           <p className="text-white text-2xl font-bold mb-1">
             {roundResult.correct} / {roundResult.total} first try
           </p>
-          <p className="text-yellow-300 text-3xl font-black mb-10 animate-pop">+{roundResult.coinsEarned} 🪙</p>
+          {roundResult.banked ? (
+            <p className="text-yellow-300 text-3xl font-black mb-10 animate-pop">+{roundResult.coinsEarned} 🪙</p>
+          ) : (
+            <p className="text-indigo-100 text-xl font-bold mb-10">Great practice! 💪</p>
+          )}
 
           <div className="flex flex-col gap-4 w-full max-w-xs">
             <button
@@ -129,7 +131,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
               onClick={() => { setScreen('round'); setRoundResult(null) }}
               className="bg-white/20 hover:bg-white/30 text-white text-lg font-bold rounded-full px-8 py-3 transition"
             >
-              Play questions again
+              Practice again
             </button>
             <button
               onClick={onExit}

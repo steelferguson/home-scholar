@@ -14,6 +14,15 @@ const py = (y) => (H - PAD) - ((Math.min(y, Y_MAX) - Y_MIN) / (Y_MAX - Y_MIN)) *
 
 const START_X = -3.4
 
+// The loss surface never changes — build the polyline once
+const CURVE = (() => {
+  const points = []
+  for (let cx = X_MIN; cx <= X_MAX + 0.001; cx += 0.05) {
+    points.push(`${px(cx).toFixed(1)},${py(f(cx)).toFixed(1)}`)
+  }
+  return points.join(' ')
+})()
+
 export default function GradientDescentBall() {
   const [x, setX] = useState(START_X)
   const [lr, setLr] = useState(0.1)
@@ -50,15 +59,10 @@ export default function GradientDescentBall() {
   const diverged = Math.abs(x) >= 4.35
   const converged = Math.abs(grad(x)) < 0.02
 
-  const curve = []
-  for (let cx = X_MIN; cx <= X_MAX + 0.001; cx += 0.05) {
-    curve.push(`${px(cx).toFixed(1)},${py(f(cx)).toFixed(1)}`)
-  }
-
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-        <polyline points={curve.join(' ')} fill="none" stroke="#94a3b8" strokeWidth="2.5" />
+        <polyline points={CURVE} fill="none" stroke="#94a3b8" strokeWidth="2.5" />
         <text x={px(2.15)} y={py(f(2.15)) + 18} textAnchor="middle" fontSize="10" fill="#16a34a">global min</text>
         <text x={px(-2.35)} y={py(f(-2.35)) + 18} textAnchor="middle" fontSize="10" fill="#d97706">local min</text>
 

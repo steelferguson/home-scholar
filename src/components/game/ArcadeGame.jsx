@@ -192,7 +192,7 @@ export default function ArcadeGame({ words, seconds, onEnd }) {
 
     player.onCollide('flag', () => {
       setScore(s => s + 5)
-      setLastWord('¡META! +5')
+      setLastWord('¡META! ⭐+5')
       player.pos = spawn()
     })
 
@@ -228,14 +228,14 @@ export default function ArcadeGame({ words, seconds, onEnd }) {
       <div className="w-full max-w-4xl flex items-center justify-between text-white font-black text-xl px-2 mb-2">
         <span>{'❤️'.repeat(Math.max(hearts, 0))}{'🖤'.repeat(Math.max(3 - hearts, 0))}</span>
         <span className={`${timeLeft <= 20 ? 'text-red-400 animate-pulse' : ''}`}>⏱ {mm}:{ss}</span>
-        <span className="text-yellow-300">🪙 {score}</span>
+        <span className="text-yellow-300">⭐ {score}</span>
       </div>
 
       {over ? (
         <div className="flex flex-col items-center justify-center text-center text-white py-24">
           <div className="text-7xl mb-4 animate-bounce-in">{hearts > 0 ? '🎉' : '💥'}</div>
           <h2 className="text-4xl font-black mb-2">{hearts > 0 ? "Time's up!" : 'Ouch!'}</h2>
-          <p className="text-2xl text-yellow-300 font-bold mb-8">You collected {score} word coins</p>
+          <p className="text-2xl text-yellow-300 font-bold mb-8">You collected {score} word stars ⭐</p>
           <button
             onClick={() => onEnd(score)}
             className="bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-xl font-black rounded-full px-10 py-4 shadow-xl transition hover:scale-105"
@@ -264,7 +264,7 @@ export default function ArcadeGame({ words, seconds, onEnd }) {
               JUMP
             </button>
           </div>
-          <p className="text-indigo-300 text-sm mt-2 hidden sm:block">← → to run, space to jump. Collect the word coins!</p>
+          <p className="text-indigo-300 text-sm mt-2 hidden sm:block">← → to run, space to jump. Collect the word stars!</p>
         </>
       )}
     </div>

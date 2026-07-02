@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import confetti from 'canvas-confetti'
-import { speakSpanish } from '../../lib/speech'
+import { speakSpanish, canSpeak } from '../../lib/speech'
+
+const SUPPORTED_TYPES = new Set(['tap-picture', 'listen-choose', 'match-pairs', 'word-order'])
 
 function shuffle(arr) {
   const a = [...arr]
@@ -21,6 +23,11 @@ function TapPicture({ question, hidePromptText, onDone }) {
   const play = useCallback(() => speakSpanish(question.prompt_es, question.audio_url), [question])
   useEffect(() => { play() }, [play])
 
+  // Audio-only questions need audio; without a Spanish voice or an MP3,
+  // fall back to showing the prompt text so the question stays answerable
+  const audioAvailable = !!question.audio_url || canSpeak()
+  const maskPrompt = hidePromptText && audioAvailable
+
   const pick = (i) => {
     if (answered) return
     if (i === question.answer) {
@@ -40,7 +47,7 @@ function TapPicture({ question, hidePromptText, onDone }) {
         className="mx-auto flex items-center gap-3 bg-white rounded-full px-6 py-3 shadow-lg text-2xl font-bold text-indigo-700 hover:scale-105 transition mb-6 animate-bounce-in"
       >
         <span className="text-3xl">🔊</span>
-        {hidePromptText && !answered ? '¿ ... ?' : question.prompt_es}
+        {maskPrompt && !answered ? '¿ ... ?' : question.prompt_es}
       </button>
       <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
         {question.choices.map((choice, i) => {
@@ -215,11 +222,25 @@ function WordOrder({ question, onDone }) {
 }
 
 /* ---------- Round driver ---------- */
-export default function QuestionRound({ questions, coinPerCorrect, onRoundEnd }) {
+export default function QuestionRound({ questions: allQuestions, coinPerCorrect, onRoundEnd }) {
+  // Skip question types this app version doesn't know — newer content must
+  // never soft-lock the round
+  const questions = useMemo(
+    () => allQuestions.filter(q => SUPPORTED_TYPES.has(q.type)),
+    [allQuestions],
+  )
   const [index, setIndex] = useState(0)
   const [firstTryCorrect, setFirstTryCorrect] = useState(0)
   const [coins, setCoins] = useState(0)
   const [coinPop, setCoinPop] = useState(false)
+
+  const empty = questions.length === 0
+  useEffect(() => {
+    if (empty) onRoundEnd(0, 0, 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empty])
+
+  if (empty) return null
 
   const question = questions[index]
 

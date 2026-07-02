@@ -6,15 +6,18 @@ const MAX_LOSS = 5
 const px = (p) => PAD + p * (W - PAD - 16)
 const py = (loss) => (H - PAD) - (Math.min(loss, MAX_LOSS) / MAX_LOSS) * (H - PAD - 12)
 
-export default function LogExplorer() {
-  const [p, setP] = useState(0.3)
-  const loss = -Math.log(p)
-
-  // Curve: loss = -ln(p) for p in (0, 1]
+// Curve: loss = -ln(p) for p in (0, 1] — state-independent, built once
+const CURVE = (() => {
   const points = []
   for (let x = 0.007; x <= 1.0001; x += 0.005) {
     points.push(`${px(x).toFixed(1)},${py(-Math.log(x)).toFixed(1)}`)
   }
+  return points.join(' ')
+})()
+
+export default function LogExplorer() {
+  const [p, setP] = useState(0.3)
+  const loss = -Math.log(p)
 
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
@@ -46,7 +49,7 @@ export default function LogExplorer() {
         <text x={px(0.05)} y={22} textAnchor="middle" fontSize="9" fill="#dc2626">loss explodes</text>
 
         {/* Curve */}
-        <polyline points={points.join(' ')} fill="none" stroke="#2563eb" strokeWidth="2.5" />
+        <polyline points={CURVE} fill="none" stroke="#2563eb" strokeWidth="2.5" />
 
         {/* Marker */}
         <line x1={px(p)} y1={H - PAD} x2={px(p)} y2={py(loss)} stroke="#f59e0b" strokeWidth="1" strokeDasharray="4 3" />

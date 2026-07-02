@@ -1,10 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
 import ReactMarkdown from 'react-markdown'
-import VisualLessonPlayer from '../components/visual/VisualLessonPlayer'
-import QuizGame from '../components/game/QuizGame'
+
+// Both players pull heavy deps (KaTeX, confetti) — keep them out of the main chunk
+const VisualLessonPlayer = lazy(() => import('../components/visual/VisualLessonPlayer'))
+const QuizGame = lazy(() => import('../components/game/QuizGame'))
+
+const loadingCard = (
+  <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
+    Loading lesson...
+  </div>
+)
 
 export default function Lesson({ user, onSignOut }) {
   const { slug, number } = useParams()
@@ -33,13 +41,16 @@ export default function Lesson({ user, onSignOut }) {
     })
   }, [slug, lessonNum])
 
-  // Load vocab
+  // Load vocab; the stale flag stops a slow response for a previous lesson
+  // from clobbering the current one
   useEffect(() => {
     if (!lesson?.vocab_url) return
+    let stale = false
     fetch(lesson.vocab_url)
       .then(r => r.ok ? r.text() : '')
-      .then(text => setVocab({ url: lesson.vocab_url, text }))
-      .catch(() => setVocab(null))
+      .then(text => { if (!stale) setVocab({ url: lesson.vocab_url, text }) })
+      .catch(() => {})
+    return () => { stale = true }
   }, [lesson?.vocab_url])
 
   // Resume from saved position
@@ -69,10 +80,11 @@ export default function Lesson({ user, onSignOut }) {
     savePosition(lesson.id, audioRef.current.currentTime)
   }, [lesson, savePosition])
 
-  // Apply playback rate
+  // Apply playback rate — also re-applied when the audio element remounts
+  // after visiting a non-audio lesson (lesson changes → fresh element at 1x)
   useEffect(() => {
     if (audioRef.current) audioRef.current.playbackRate = playbackRate
-  }, [playbackRate])
+  }, [playbackRate, lesson])
 
   const handleMarkComplete = async () => {
     if (!lesson) return
@@ -92,15 +104,23 @@ export default function Lesson({ user, onSignOut }) {
     )
   }
 
-  // Kids quiz-game lessons take over the whole screen with their own theme
+  // Kids quiz-game lessons take over the whole screen with their own theme.
+  // Keyed by lesson id so game state never leaks between lessons.
   if (lesson.lesson_type === 'quiz_game') {
     return (
-      <QuizGame
-        user={user}
-        lesson={lesson}
-        onExit={() => navigate(`/course/${slug}`)}
-        onComplete={() => markComplete(lesson.id)}
-      />
+      <Suspense fallback={
+        <div className="min-h-screen bg-gradient-to-b from-sky-400 to-indigo-600 flex items-center justify-center">
+          <div className="text-white text-3xl animate-bounce">🎈 Loading...</div>
+        </div>
+      }>
+        <QuizGame
+          key={lesson.id}
+          user={user}
+          lesson={lesson}
+          onExit={() => navigate(`/course/${slug}`)}
+          onComplete={() => markComplete(lesson.id)}
+        />
+      </Suspense>
     )
   }
 
@@ -127,16 +147,19 @@ export default function Lesson({ user, onSignOut }) {
           {isCompleted && <span className="ml-2 text-green-600 font-medium">Completed</span>}
         </p>
 
-        {/* Visual lesson: step-through player */}
+        {/* Visual lesson: step-through player, keyed so step state resets per lesson */}
         {lesson.lesson_type === 'visual' && (
           <div className="mb-6">
-            <VisualLessonPlayer
-              lesson={lesson}
-              savedStep={progress[lesson.id]?.last_position_seconds || 0}
-              isCompleted={isCompleted}
-              onSaveStep={(i) => savePosition(lesson.id, i)}
-              onMarkComplete={handleMarkComplete}
-            />
+            <Suspense fallback={loadingCard}>
+              <VisualLessonPlayer
+                key={lesson.id}
+                lesson={lesson}
+                savedStep={progress[lesson.id]?.last_position_seconds || 0}
+                isCompleted={isCompleted}
+                onSaveStep={(i) => { if (!isCompleted) savePosition(lesson.id, i) }}
+                onMarkComplete={handleMarkComplete}
+              />
+            </Suspense>
           </div>
         )}
 

@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components -- dev-only entry point, HMR not needed */
-import { useState, lazy, Suspense } from 'react'
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import VisualLessonPlayer from './components/visual/VisualLessonPlayer'
 import QuestionRound from './components/game/QuestionRound'
+import { DEFAULT_COIN_PER_CORRECT, DEFAULT_ARCADE_SECONDS } from './components/game/constants'
 import './index.css'
 
 const ArcadeGame = lazy(() => import('./components/game/ArcadeGame'))
@@ -25,6 +26,13 @@ function Preview() {
   const [selected, setSelected] = useState(null)
   const [arcade, setArcade] = useState(false)
   const [roundResult, setRoundResult] = useState(null)
+
+  // One stable blob URL per selected lesson, revoked when it changes
+  const contentUrl = useMemo(
+    () => (selected ? contentUrlFor(selected.content) : null),
+    [selected],
+  )
+  useEffect(() => () => { if (contentUrl) URL.revokeObjectURL(contentUrl) }, [contentUrl])
 
   if (!selected) {
     return (
@@ -59,7 +67,7 @@ function Preview() {
     if (arcade) {
       return (
         <Suspense fallback={<div className="min-h-screen bg-indigo-950 flex items-center justify-center text-white text-2xl">Loading arcade...</div>}>
-          <ArcadeGame words={selected.content.words || []} seconds={selected.content.arcade_seconds ?? 180} onEnd={() => setArcade(false)} />
+          <ArcadeGame words={selected.content.words || []} seconds={selected.content.arcade_seconds ?? DEFAULT_ARCADE_SECONDS} onEnd={() => setArcade(false)} />
         </Suspense>
       )
     }
@@ -79,7 +87,7 @@ function Preview() {
         ) : (
           <QuestionRound
             questions={selected.content.questions}
-            coinPerCorrect={selected.content.coin_per_correct ?? 2}
+            coinPerCorrect={selected.content.coin_per_correct ?? DEFAULT_COIN_PER_CORRECT}
             onRoundEnd={(correct, total, coins) => setRoundResult({ correct, total, coins })}
           />
         )}
@@ -93,7 +101,8 @@ function Preview() {
         {back}
         <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-6">{selected.content.title}</h2>
         <VisualLessonPlayer
-          lesson={{ content_url: contentUrlFor(selected.content) }}
+          key={selected.key}
+          lesson={{ content_url: contentUrl }}
           savedStep={0}
           isCompleted={false}
           onSaveStep={() => {}}

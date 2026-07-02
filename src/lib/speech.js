@@ -3,14 +3,23 @@
 // falls back to the browser's built-in speech synthesis.
 let currentAudio = null
 
+export function canSpeak() {
+  return typeof window !== 'undefined' && !!window.speechSynthesis
+}
+
 export function speakSpanish(text, audioUrl) {
   if (currentAudio) {
     currentAudio.pause()
     currentAudio = null
   }
   if (audioUrl) {
-    currentAudio = new Audio(audioUrl)
-    currentAudio.play().catch(() => speakWithSynthesis(text))
+    const audio = new Audio(audioUrl)
+    currentAudio = audio
+    // Only fall back if this audio is still the active one — pausing it from
+    // a newer speak call rejects play(), and that must not resurrect old text
+    audio.play().catch(() => {
+      if (currentAudio === audio) speakWithSynthesis(text)
+    })
     return
   }
   speakWithSynthesis(text)
