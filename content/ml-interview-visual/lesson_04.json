@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Gradient Descent, Visually",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## One idea, all of deep learning\n\nTraining = adjusting millions (or trillions) of parameters to reduce a loss. Gradient descent is the entire mechanism:\n\n1. Compute the loss on a batch\n2. Compute the **gradient** — the direction of steepest increase\n3. Step the parameters the **opposite** way\n4. Repeat\n\nEverything else (Adam, momentum, schedules, warmup) is refinement of step 3."
+    },
+    {
+      "type": "math",
+      "md": "### The update rule\n\nθ are the parameters, η is the learning rate, ∇L is the gradient:",
+      "tex": "\\theta_{t+1} = \\theta_t - \\eta \\, \\nabla_\\theta \\mathcal{L}(\\theta_t)"
+    },
+    {
+      "type": "widget",
+      "widget": "gradient-descent-ball",
+      "md": "### Roll the ball\n\nThe curve is a loss surface with a **local** minimum and a deeper **global** one. Try three experiments:\n\n1. lr = 0.05 → converges... into the local minimum\n2. lr ≈ 0.25 → enough energy to hop the bump and find the global minimum\n3. lr = 1.0 → watch it oscillate and diverge"
+    },
+    {
+      "type": "text",
+      "md": "## What the ball just taught you\n\n- **Too small a learning rate**: slow, and you settle into the first valley you meet.\n- **Too large**: you overshoot the valley walls and diverge — loss goes *up*.\n- **The uncomfortable truth**: nothing about vanilla gradient descent guarantees the global minimum. In practice, high-dimensional loss surfaces are forgiving — most local minima are nearly as good, and saddle points are the bigger obstacle.\n- **Stochasticity helps**: mini-batch noise (SGD) jiggles the ball, helping it escape shallow traps — the same effect you created with a bigger learning rate."
+    },
+    {
+      "type": "quiz",
+      "question": "Loss was decreasing, then suddenly climbs and hits NaN. First thing to suspect?",
+      "choices": [
+        "The dataset is too small",
+        "Learning rate too high → divergence (or exploding gradients)",
+        "Too many local minima",
+        "The model is underfitting"
+      ],
+      "answer": 1,
+      "explain": "Rising-then-NaN loss is the classic divergence signature: steps overshoot, weights blow up, exp/log overflow. Standard fixes: lower the LR, add warmup, clip gradients."
+    },
+    {
+      "type": "text",
+      "md": "## The modern refinements (know these by name)\n\n- **Momentum**: keep a running velocity; damps oscillation, powers through flat regions.\n- **Adam / AdamW**: per-parameter learning rates from gradient statistics (first + second moments). AdamW = Adam with decoupled weight decay — the LLM default.\n- **LR schedules**: warmup (start tiny, ramp up — protects early training) then decay (cosine, linear) to settle into a minimum.\n- **Gradient clipping**: cap the gradient norm; insurance against rare exploding batches.\n- **Batch size ↔ LR**: bigger batches → less noise → typically scale LR up."
+    },
+    {
+      "type": "quiz",
+      "question": "Why does mini-batch SGD often generalize better than full-batch gradient descent?",
+      "choices": [
+        "It computes exact gradients faster",
+        "Gradient noise acts as implicit regularization and helps escape sharp minima",
+        "Smaller batches see more total data",
+        "It guarantees finding the global minimum"
+      ],
+      "answer": 1,
+      "explain": "Batch noise biases optimization toward flatter minima, which tend to generalize better — the same 'jiggle' that got the ball out of the local minimum in the widget."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. Gradient descent: step opposite the gradient, scaled by the learning rate.\n2. The learning rate is the single most important hyperparameter — too small crawls and gets stuck; too large diverges.\n3. Local minima exist but rarely hurt at scale; noise (SGD) and momentum are your escape hatches.\n4. AdamW + warmup + cosine decay + gradient clipping is the modern LLM training recipe."
+    }
+  ]
+}

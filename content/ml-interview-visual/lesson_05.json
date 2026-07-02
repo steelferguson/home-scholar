@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Embeddings & Similarity",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Meaning as geometry\n\nAn **embedding** maps a discrete thing — a token, a sentence, an image, a user — to a dense vector, typically hundreds or thousands of dimensions. The defining property:\n\n> **Similar things land near each other.**\n\nThat single property powers semantic search, RAG retrieval, recommendations, clustering, and the input layer of every transformer."
+    },
+    {
+      "type": "widget",
+      "widget": "embedding-space",
+      "md": "### Explore a (tiny) embedding space\n\nReal spaces have 768–4096 dimensions; here's a 2D cartoon with real structure. Tap two words to measure their **cosine similarity** — try `cat`/`kitten`, `cat`/`taco`, and the famous `king`/`queen` vs `man`/`woman` parallelogram:"
+    },
+    {
+      "type": "math",
+      "md": "### Cosine similarity\n\nThe go-to similarity measure — the cosine of the angle between vectors, ignoring their lengths:",
+      "tex": "\\cos(\\mathbf{a}, \\mathbf{b}) = \\frac{\\mathbf{a} \\cdot \\mathbf{b}}{\\lVert\\mathbf{a}\\rVert \\, \\lVert\\mathbf{b}\\rVert} \\in [-1, 1]"
+    },
+    {
+      "type": "text",
+      "md": "## Where embeddings come from\n\n- **Learned lookup table**: a transformer's token embeddings are just rows of a matrix, trained end-to-end by backprop like any other weight.\n- **Contextual vs static**: word2vec gives one vector per word forever; a transformer's hidden states give a *different* vector for \"bank\" in \"river bank\" vs \"bank account\".\n- **Sentence/document embeddings** (for search & RAG): pool a transformer's outputs, then fine-tune with **contrastive learning** — pull matching pairs together, push non-matching apart."
+    },
+    {
+      "type": "quiz",
+      "question": "Why cosine similarity rather than Euclidean distance for text embeddings?",
+      "choices": [
+        "Cosine is cheaper to compute than distance",
+        "Direction encodes semantics while magnitude often reflects frequency/length, so comparing angles is more robust",
+        "Euclidean distance doesn't work above 3 dimensions",
+        "Cosine guarantees results in [0, 1]"
+      ],
+      "answer": 1,
+      "explain": "Embedding norms vary with token frequency and text length; normalizing them away keeps the comparison about meaning. (With unit-normalized vectors, cosine and Euclidean actually rank identically.)"
+    },
+    {
+      "type": "text",
+      "md": "## The RAG pipeline in one breath\n\n1. **Index**: chunk documents → embed each chunk → store in a vector index (HNSW/IVF for approximate nearest-neighbor search).\n2. **Query**: embed the user question with the *same* model.\n3. **Retrieve**: top-k nearest chunks by cosine similarity.\n4. **Generate**: stuff retrieved chunks into the LLM prompt.\n\nClassic failure modes worth naming in an interview: chunking too coarse/fine, query-document vocabulary mismatch (fix: hybrid BM25 + vectors, or query rewriting), and stale indexes."
+    },
+    {
+      "type": "quiz",
+      "question": "Your RAG system retrieves irrelevant chunks even though the index is healthy. Which is the LEAST likely culprit?",
+      "choices": [
+        "Questions and documents phrase things very differently",
+        "Chunks are so long that each vector averages several topics",
+        "The query was embedded with a different model than the index",
+        "The vector index uses approximate rather than exact nearest-neighbor search"
+      ],
+      "answer": 3,
+      "explain": "ANN search trades a tiny bit of recall for enormous speed — it's almost never the source of grossly irrelevant results. Mismatched embedding models or mushy multi-topic chunks are the usual suspects."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. Embeddings turn discrete things into vectors where **distance ≈ semantic difference**.\n2. Cosine similarity compares direction, sidestepping magnitude artifacts.\n3. Token embeddings are learned weights; sentence embeddings for retrieval are trained contrastively.\n4. RAG = embed → nearest-neighbor retrieve → generate; know its failure modes, not just its diagram."
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "type": "quiz_game",
+  "title": "Los Colores",
+  "icon": "🌈",
+  "coin_per_correct": 2,
+  "arcade_cost": 10,
+  "arcade_seconds": 180,
+  "words": [
+    { "es": "rojo", "en": "red", "emoji": "🔴" },
+    { "es": "azul", "en": "blue", "emoji": "🔵" },
+    { "es": "verde", "en": "green", "emoji": "🟢" },
+    { "es": "amarillo", "en": "yellow", "emoji": "🟡" },
+    { "es": "morado", "en": "purple", "emoji": "🟣" },
+    { "es": "negro", "en": "black", "emoji": "⚫" }
+  ],
+  "questions": [
+    {
+      "type": "tap-picture",
+      "prompt_es": "rojo",
+      "prompt_en": "red",
+      "choices": [
+        { "emoji": "🔵", "label": "azul" },
+        { "emoji": "🔴", "label": "rojo" },
+        { "emoji": "🟢", "label": "verde" },
+        { "emoji": "🟡", "label": "amarillo" }
+      ],
+      "answer": 1
+    },
+    {
+      "type": "tap-picture",
+      "prompt_es": "azul",
+      "prompt_en": "blue",
+      "choices": [
+        { "emoji": "🔵", "label": "azul" },
+        { "emoji": "🟣", "label": "morado" },
+        { "emoji": "⚫", "label": "negro" },
+        { "emoji": "🔴", "label": "rojo" }
+      ],
+      "answer": 0
+    },
+    {
+      "type": "tap-picture",
+      "prompt_es": "verde",
+      "prompt_en": "green",
+      "choices": [
+        { "emoji": "🟡", "label": "amarillo" },
+        { "emoji": "🔴", "label": "rojo" },
+        { "emoji": "🟢", "label": "verde" },
+        { "emoji": "🔵", "label": "azul" }
+      ],
+      "answer": 2
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "amarillo",
+      "choices": [
+        { "emoji": "🟡", "label": "amarillo" },
+        { "emoji": "🟢", "label": "verde" },
+        { "emoji": "🟣", "label": "morado" },
+        { "emoji": "🔴", "label": "rojo" }
+      ],
+      "answer": 0
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "negro",
+      "choices": [
+        { "emoji": "🔵", "label": "azul" },
+        { "emoji": "⚫", "label": "negro" },
+        { "emoji": "🟡", "label": "amarillo" },
+        { "emoji": "🟢", "label": "verde" }
+      ],
+      "answer": 1
+    },
+    {
+      "type": "match-pairs",
+      "pairs": [
+        { "es": "rojo", "emoji": "🔴" },
+        { "es": "azul", "emoji": "🔵" },
+        { "es": "verde", "emoji": "🟢" },
+        { "es": "amarillo", "emoji": "🟡" }
+      ]
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "morado",
+      "choices": [
+        { "emoji": "🟣", "label": "morado" },
+        { "emoji": "⚫", "label": "negro" },
+        { "emoji": "🔴", "label": "rojo" },
+        { "emoji": "🔵", "label": "azul" }
+      ],
+      "answer": 0
+    },
+    {
+      "type": "word-order",
+      "prompt_en": "The fish is blue",
+      "words": ["El", "pez", "es", "azul"]
+    },
+    {
+      "type": "match-pairs",
+      "pairs": [
+        { "es": "morado", "emoji": "🟣" },
+        { "es": "negro", "emoji": "⚫" },
+        { "es": "rojo", "emoji": "🔴" },
+        { "es": "verde", "emoji": "🟢" }
+      ]
+    },
+    {
+      "type": "word-order",
+      "prompt_en": "I like the color red",
+      "words": ["Me", "gusta", "el", "color", "rojo"]
+    }
+  ]
+}

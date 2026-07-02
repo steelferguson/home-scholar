@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
 import ReactMarkdown from 'react-markdown'
+import VisualLessonPlayer from '../components/visual/VisualLessonPlayer'
+import QuizGame from '../components/game/QuizGame'
 
 export default function Lesson({ user, onSignOut }) {
   const { slug, number } = useParams()
@@ -11,7 +13,7 @@ export default function Lesson({ user, onSignOut }) {
   const [course, setCourse] = useState(null)
   const [lesson, setLesson] = useState(null)
   const [allLessons, setAllLessons] = useState([])
-  const [vocabContent, setVocabContent] = useState('')
+  const [vocab, setVocab] = useState(null) // { url, text } — keyed to detect stale content
   const [playbackRate, setPlaybackRate] = useState(1)
   const audioRef = useRef(null)
   const saveTimerRef = useRef(null)
@@ -33,11 +35,11 @@ export default function Lesson({ user, onSignOut }) {
 
   // Load vocab
   useEffect(() => {
-    if (!lesson?.vocab_url) { setVocabContent(''); return }
+    if (!lesson?.vocab_url) return
     fetch(lesson.vocab_url)
       .then(r => r.ok ? r.text() : '')
-      .then(setVocabContent)
-      .catch(() => setVocabContent(''))
+      .then(text => setVocab({ url: lesson.vocab_url, text }))
+      .catch(() => setVocab(null))
   }, [lesson?.vocab_url])
 
   // Resume from saved position
@@ -77,6 +79,7 @@ export default function Lesson({ user, onSignOut }) {
     await markComplete(lesson.id)
   }
 
+  const vocabContent = vocab && vocab.url === lesson?.vocab_url ? vocab.text : ''
   const prevLesson = allLessons.find(l => l.lesson_number === lessonNum - 1)
   const nextLesson = allLessons.find(l => l.lesson_number === lessonNum + 1)
   const isCompleted = lesson && progress[lesson.id]?.status === 'completed'
@@ -86,6 +89,18 @@ export default function Lesson({ user, onSignOut }) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-gray-400">Loading...</div>
       </div>
+    )
+  }
+
+  // Kids quiz-game lessons take over the whole screen with their own theme
+  if (lesson.lesson_type === 'quiz_game') {
+    return (
+      <QuizGame
+        user={user}
+        lesson={lesson}
+        onExit={() => navigate(`/course/${slug}`)}
+        onComplete={() => markComplete(lesson.id)}
+      />
     )
   }
 
@@ -112,7 +127,21 @@ export default function Lesson({ user, onSignOut }) {
           {isCompleted && <span className="ml-2 text-green-600 font-medium">Completed</span>}
         </p>
 
+        {/* Visual lesson: step-through player */}
+        {lesson.lesson_type === 'visual' && (
+          <div className="mb-6">
+            <VisualLessonPlayer
+              lesson={lesson}
+              savedStep={progress[lesson.id]?.last_position_seconds || 0}
+              isCompleted={isCompleted}
+              onSaveStep={(i) => savePosition(lesson.id, i)}
+              onMarkComplete={handleMarkComplete}
+            />
+          </div>
+        )}
+
         {/* Audio Player */}
+        {lesson.lesson_type !== 'visual' && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
           <audio
             ref={audioRef}
@@ -149,6 +178,7 @@ export default function Lesson({ user, onSignOut }) {
             )}
           </div>
         </div>
+        )}
 
         {/* Navigation */}
         <div className="flex justify-between mb-8">

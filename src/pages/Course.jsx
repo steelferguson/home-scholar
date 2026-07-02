@@ -34,6 +34,12 @@ export default function Course({ user, onSignOut }) {
     return <span className="text-green-500">&#9679;</span>
   }
 
+  const typeIcon = (lesson) => {
+    if (lesson.lesson_type === 'visual') return <span title="Interactive visual lesson">📊</span>
+    if (lesson.lesson_type === 'quiz_game') return <span title="Quiz game">🎮</span>
+    return <span title="Audio lesson">🎧</span>
+  }
+
   const nextLesson = lessonList.find(l => {
     const p = progress[l.id]
     return !p || p.status !== 'completed'
@@ -73,6 +79,7 @@ export default function Course({ user, onSignOut }) {
               className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition"
             >
               <span className="text-lg">{statusIcon(lesson.id)}</span>
+              <span className="text-sm">{typeIcon(lesson)}</span>
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-gray-900">
                   Lesson {lesson.lesson_number}

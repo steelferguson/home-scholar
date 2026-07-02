@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "type": "quiz_game",
+  "title": "Los Números",
+  "icon": "🔢",
+  "coin_per_correct": 2,
+  "arcade_cost": 10,
+  "arcade_seconds": 180,
+  "words": [
+    { "es": "uno", "en": "one", "emoji": "1️⃣" },
+    { "es": "dos", "en": "two", "emoji": "2️⃣" },
+    { "es": "tres", "en": "three", "emoji": "3️⃣" },
+    { "es": "cuatro", "en": "four", "emoji": "4️⃣" },
+    { "es": "cinco", "en": "five", "emoji": "5️⃣" },
+    { "es": "seis", "en": "six", "emoji": "6️⃣" }
+  ],
+  "questions": [
+    {
+      "type": "tap-picture",
+      "prompt_es": "uno",
+      "prompt_en": "one",
+      "choices": [
+        { "emoji": "3️⃣", "label": "tres" },
+        { "emoji": "1️⃣", "label": "uno" },
+        { "emoji": "2️⃣", "label": "dos" },
+        { "emoji": "5️⃣", "label": "cinco" }
+      ],
+      "answer": 1
+    },
+    {
+      "type": "tap-picture",
+      "prompt_es": "dos",
+      "prompt_en": "two",
+      "choices": [
+        { "emoji": "2️⃣", "label": "dos" },
+        { "emoji": "4️⃣", "label": "cuatro" },
+        { "emoji": "6️⃣", "label": "seis" },
+        { "emoji": "1️⃣", "label": "uno" }
+      ],
+      "answer": 0
+    },
+    {
+      "type": "tap-picture",
+      "prompt_es": "tres",
+      "prompt_en": "three",
+      "choices": [
+        { "emoji": "5️⃣", "label": "cinco" },
+        { "emoji": "2️⃣", "label": "dos" },
+        { "emoji": "3️⃣", "label": "tres" },
+        { "emoji": "4️⃣", "label": "cuatro" }
+      ],
+      "answer": 2
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "cuatro",
+      "choices": [
+        { "emoji": "4️⃣", "label": "cuatro" },
+        { "emoji": "6️⃣", "label": "seis" },
+        { "emoji": "1️⃣", "label": "uno" },
+        { "emoji": "3️⃣", "label": "tres" }
+      ],
+      "answer": 0
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "cinco",
+      "choices": [
+        { "emoji": "6️⃣", "label": "seis" },
+        { "emoji": "5️⃣", "label": "cinco" },
+        { "emoji": "4️⃣", "label": "cuatro" },
+        { "emoji": "2️⃣", "label": "dos" }
+      ],
+      "answer": 1
+    },
+    {
+      "type": "match-pairs",
+      "pairs": [
+        { "es": "uno", "emoji": "1️⃣" },
+        { "es": "dos", "emoji": "2️⃣" },
+        { "es": "tres", "emoji": "3️⃣" },
+        { "es": "cuatro", "emoji": "4️⃣" }
+      ]
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "seis",
+      "choices": [
+        { "emoji": "6️⃣", "label": "seis" },
+        { "emoji": "3️⃣", "label": "tres" },
+        { "emoji": "5️⃣", "label": "cinco" },
+        { "emoji": "1️⃣", "label": "uno" }
+      ],
+      "answer": 0
+    },
+    {
+      "type": "word-order",
+      "prompt_en": "I have two cats",
+      "words": ["Yo", "tengo", "dos", "gatos"]
+    },
+    {
+      "type": "match-pairs",
+      "pairs": [
+        { "es": "cinco", "emoji": "5️⃣" },
+        { "es": "seis", "emoji": "6️⃣" },
+        { "es": "uno", "emoji": "1️⃣" },
+        { "es": "tres", "emoji": "3️⃣" }
+      ]
+    },
+    {
+      "type": "word-order",
+      "prompt_en": "I want three fish",
+      "words": ["Yo", "quiero", "tres", "peces"]
+    }
+  ]
+}
