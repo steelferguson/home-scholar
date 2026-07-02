@@ -43,19 +43,23 @@ cp .env.example .env
 ```
 
 ### 4. Set up the database
-Run `scripts/setup_db.sql` in the Supabase SQL Editor to create tables and seed courses,
-then `scripts/migrate_visual_lessons.sql` for visual/quiz lesson support
-(also create a public `visual` storage bucket).
+Run these in the Supabase SQL Editor, in order:
+1. `scripts/setup_db.sql` — tables, RLS, seed courses
+2. `scripts/migrate_visual_lessons.sql` — visual/quiz lesson support
+3. `scripts/seed_visual_lessons.sql` — registers the visual/quiz lessons
 
-### 5. Upload content
+Visual and quiz lesson content ships with the app (`public/content/`) — no
+storage upload needed. (`scripts/upload_visual.py` exists for optionally
+hosting content in Supabase Storage instead.)
+
+### 5. Upload audio content
 ```bash
 pip install supabase python-dotenv
 python scripts/upload_audio.py    # audio lessons (MP3s + vocab)
-python scripts/upload_visual.py   # visual + quiz-game lessons (content/*.json)
 ```
 
-To preview visual/quiz lesson content locally without uploading, run
-`npm run dev` and open `http://localhost:5173/preview.html`.
+To preview visual/quiz lesson content locally, run `npm run dev` and open
+`http://localhost:5173/preview.html`.
 
 ### 6. Run the app
 ```bash

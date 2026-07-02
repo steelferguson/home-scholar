@@ -11,7 +11,7 @@ const ArcadeGame = lazy(() => import('./components/game/ArcadeGame'))
 // Dev-only harness: preview local content JSONs (content/**) through the real
 // lesson components without Supabase or uploads. Run `npm run dev` and open
 // http://localhost:5173/preview.html
-const modules = import.meta.glob('../content/*/*.json', { eager: true })
+const modules = import.meta.glob('../public/content/*/*.json', { eager: true })
 
 const LESSONS = Object.entries(modules).map(([path, mod]) => {
   const [, course, file] = path.match(/content\/([^/]+)\/([^/]+)\.json$/)
