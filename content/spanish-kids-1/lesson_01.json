@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "type": "quiz_game",
+  "title": "Los Animales",
+  "icon": "🐱",
+  "coin_per_correct": 2,
+  "arcade_cost": 10,
+  "arcade_seconds": 180,
+  "words": [
+    { "es": "el gato", "en": "cat", "emoji": "🐱" },
+    { "es": "el perro", "en": "dog", "emoji": "🐶" },
+    { "es": "el pájaro", "en": "bird", "emoji": "🐦" },
+    { "es": "el pez", "en": "fish", "emoji": "🐟" },
+    { "es": "el caballo", "en": "horse", "emoji": "🐴" },
+    { "es": "la vaca", "en": "cow", "emoji": "🐮" }
+  ],
+  "questions": [
+    {
+      "type": "tap-picture",
+      "prompt_es": "el gato",
+      "prompt_en": "the cat",
+      "choices": [
+        { "emoji": "🐱", "label": "el gato" },
+        { "emoji": "🐶", "label": "el perro" },
+        { "emoji": "🐟", "label": "el pez" },
+        { "emoji": "🐦", "label": "el pájaro" }
+      ],
+      "answer": 0
+    },
+    {
+      "type": "tap-picture",
+      "prompt_es": "el perro",
+      "prompt_en": "the dog",
+      "choices": [
+        { "emoji": "🐴", "label": "el caballo" },
+        { "emoji": "🐮", "label": "la vaca" },
+        { "emoji": "🐶", "label": "el perro" },
+        { "emoji": "🐱", "label": "el gato" }
+      ],
+      "answer": 2
+    },
+    {
+      "type": "tap-picture",
+      "prompt_es": "el pez",
+      "prompt_en": "the fish",
+      "choices": [
+        { "emoji": "🐦", "label": "el pájaro" },
+        { "emoji": "🐟", "label": "el pez" },
+        { "emoji": "🐮", "label": "la vaca" },
+        { "emoji": "🐶", "label": "el perro" }
+      ],
+      "answer": 1
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "el pájaro",
+      "choices": [
+        { "emoji": "🐦", "label": "el pájaro" },
+        { "emoji": "🐟", "label": "el pez" },
+        { "emoji": "🐱", "label": "el gato" },
+        { "emoji": "🐴", "label": "el caballo" }
+      ],
+      "answer": 0
+    },
+    {
+      "type": "tap-picture",
+      "prompt_es": "el caballo",
+      "prompt_en": "the horse",
+      "choices": [
+        { "emoji": "🐮", "label": "la vaca" },
+        { "emoji": "🐶", "label": "el perro" },
+        { "emoji": "🐴", "label": "el caballo" },
+        { "emoji": "🐦", "label": "el pájaro" }
+      ],
+      "answer": 2
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "la vaca",
+      "choices": [
+        { "emoji": "🐱", "label": "el gato" },
+        { "emoji": "🐴", "label": "el caballo" },
+        { "emoji": "🐟", "label": "el pez" },
+        { "emoji": "🐮", "label": "la vaca" }
+      ],
+      "answer": 3
+    },
+    {
+      "type": "match-pairs",
+      "pairs": [
+        { "es": "el gato", "emoji": "🐱" },
+        { "es": "el perro", "emoji": "🐶" },
+        { "es": "el pez", "emoji": "🐟" },
+        { "es": "la vaca", "emoji": "🐮" }
+      ]
+    },
+    {
+      "type": "listen-choose",
+      "prompt_es": "el gato",
+      "choices": [
+        { "emoji": "🐶", "label": "el perro" },
+        { "emoji": "🐱", "label": "el gato" },
+        { "emoji": "🐮", "label": "la vaca" },
+        { "emoji": "🐟", "label": "el pez" }
+      ],
+      "answer": 1
+    },
+    {
+      "type": "word-order",
+      "prompt_en": "The cat is big",
+      "words": ["El", "gato", "es", "grande"]
+    },
+    {
+      "type": "match-pairs",
+      "pairs": [
+        { "es": "el pájaro", "emoji": "🐦" },
+        { "es": "el caballo", "emoji": "🐴" },
+        { "es": "el perro", "emoji": "🐶" },
+        { "es": "el gato", "emoji": "🐱" }
+      ]
+    },
+    {
+      "type": "word-order",
+      "prompt_en": "I like the dog",
+      "words": ["Me", "gusta", "el", "perro"]
+    }
+  ]
+}

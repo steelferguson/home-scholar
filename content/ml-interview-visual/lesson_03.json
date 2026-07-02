@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Softmax & Temperature",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## From scores to probabilities\n\nA model's final layer produces **logits** — raw, unbounded scores, one per class (or per vocabulary token). To sample or compute a loss you need a **probability distribution**: non-negative, sums to 1.\n\nSoftmax is the standard conversion, and *temperature* is the knob that reshapes it."
+    },
+    {
+      "type": "math",
+      "md": "### The definition\n\nExponentiate each logit (making everything positive) and normalize. Temperature T divides the logits first:",
+      "tex": "p_i = \\frac{e^{z_i / T}}{\\sum_j e^{z_j / T}}"
+    },
+    {
+      "type": "widget",
+      "widget": "softmax-slider",
+      "md": "### Play with it\n\nMove the logits and watch probabilities renormalize. Then drag the temperature — this is exactly the `temperature` parameter in every LLM API:"
+    },
+    {
+      "type": "text",
+      "md": "## What you should have noticed\n\n- **Only differences matter.** Add +100 to every logit and the probabilities don't move (softmax is shift-invariant — implementations subtract the max for stability).\n- **T → 0**: sharpens toward argmax. Greedy, deterministic, repetitive.\n- **T = 1**: the model's learned distribution, unmodified.\n- **T > 1**: flattens toward uniform. Creative, diverse, increasingly incoherent.\n\nTemperature doesn't change the *ranking* of tokens — only how much probability mass the leaders keep."
+    },
+    {
+      "type": "quiz",
+      "question": "You add the constant 5 to every logit before softmax. What happens to the output distribution?",
+      "choices": [
+        "Every probability increases",
+        "Nothing — softmax is invariant to shifting all logits",
+        "It sharpens, like lowering temperature",
+        "It flattens, like raising temperature"
+      ],
+      "answer": 1,
+      "explain": "e^{(z+5)/T} = e^{5/T} · e^{z/T}; the constant factor cancels in the normalization. This is also why subtracting max(z) for numerical stability is free."
+    },
+    {
+      "type": "text",
+      "md": "## Interview corners\n\n- **Why exp, not just normalize positives?** exp makes softmax the smooth, differentiable version of argmax, and pairs with cross-entropy to give the clean gradient p − y. It's also the maximum-entropy distribution consistent with the scores.\n- **Numerical stability**: compute `softmax(z - max(z))`; use log-softmax + NLL rather than log(softmax) to avoid log(0).\n- **Softmax vs sigmoid**: softmax for *one label among K* (competition); independent sigmoids for *multi-label* (no competition).\n- **Top-k / top-p sampling** are applied *after* temperature: truncate the tail, renormalize, then sample."
+    },
+    {
+      "type": "quiz",
+      "question": "For a coding assistant that must produce reliable, reproducible output, which setting is the standard starting point?",
+      "choices": [
+        "Temperature near 0 (or greedy decoding)",
+        "Temperature 2.0 for exploration",
+        "Temperature 1.0 with no top-p",
+        "Random temperature per request"
+      ],
+      "answer": 0,
+      "explain": "Low temperature concentrates mass on the model's top choice — appropriate when correctness beats diversity. Creative writing tasks go the other way (T ≈ 0.8–1.2)."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. Softmax = exponentiate + normalize; differentiable argmax over logits.\n2. Only **logit differences** matter; shift-invariance gives you numerical stability for free.\n3. Temperature rescales differences: low = sharp/deterministic, high = flat/diverse — ranking never changes.\n4. Softmax for exclusive classes, sigmoids for multi-label; top-k/top-p truncate after temperature."
+    }
+  ]
+}

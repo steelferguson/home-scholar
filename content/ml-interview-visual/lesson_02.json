@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Why Log? Logarithms & Log Loss",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The log function shows up everywhere in ML\n\nCross-entropy loss, log-likelihood, perplexity, logits, log-probs in RLHF... Interviewers love asking *why*. The answer comes down to three properties:\n\n1. **log turns products into sums** — and probabilities multiply\n2. **log is monotonic** — maximizing log p is the same as maximizing p\n3. **log punishes confident mistakes brutally** — the gradient story"
+    },
+    {
+      "type": "math",
+      "md": "### Products → sums\n\nThe probability of a sequence is a product of per-token probabilities, which underflows to zero fast. In log space it becomes a stable sum:",
+      "tex": "\\log \\prod_{t=1}^{T} p(x_t \\mid x_{<t}) = \\sum_{t=1}^{T} \\log p(x_t \\mid x_{<t})"
+    },
+    {
+      "type": "widget",
+      "widget": "log-explorer",
+      "md": "### The shape that matters: loss = −log(p)\n\nDrag the slider — `p` is the probability the model assigned to the **correct** answer. Watch what happens as the model gets confidently wrong (p → 0):"
+    },
+    {
+      "type": "text",
+      "md": "## Read the curve like an interviewer\n\n- At **p = 1.0**: loss = 0. Perfect confidence in the right answer costs nothing.\n- At **p = 0.5**: loss ≈ 0.69 (that's ln 2 — the loss of a coin flip on a binary choice).\n- At **p = 0.1**: loss ≈ 2.3.\n- At **p = 0.01**: loss ≈ 4.6 — *each extra factor of 10 wrong adds the same penalty*.\n\nThe curve is **asymmetric on purpose**: being slightly under-confident is cheap; being confidently wrong is catastrophic. A model minimizing this loss learns calibrated humility."
+    },
+    {
+      "type": "math",
+      "md": "### Cross-entropy is just −log p at the right answer\n\nFor a one-hot label y, all terms vanish except the correct class c:",
+      "tex": "\\mathcal{L} = -\\sum_{i} y_i \\log \\hat{p}_i = -\\log \\hat{p}_c"
+    },
+    {
+      "type": "quiz",
+      "question": "Your classifier outputs p=0.001 for the true class on one example. Roughly what does that single example contribute to the average cross-entropy loss (natural log)?",
+      "choices": ["About 0.001", "About 0.69", "About 6.9", "It's capped at 1.0"],
+      "answer": 2,
+      "explain": "−ln(0.001) ≈ 6.9. One confidently-wrong example can dominate a batch — which is exactly the training signal you want, and why log loss beats accuracy as a training objective."
+    },
+    {
+      "type": "text",
+      "md": "## The gradient story (the deep reason)\n\nWith softmax + cross-entropy, the gradient at the logits is beautifully simple:\n\n**∂L/∂zᵢ = pᵢ − yᵢ**  (predicted minus true probability)\n\n- Wrong and confident → gradient near ±1 → big correction\n- Right and confident → gradient near 0 → leave it alone\n\nNo vanishing, no exploding, no hand-tuned scaling. This clean pairing is *the* reason softmax + cross-entropy is the default classification head."
+    },
+    {
+      "type": "math",
+      "md": "### Bonus: perplexity is exponentiated cross-entropy\n\n\"Perplexity 20\" ≈ the model is as uncertain as choosing uniformly among 20 options at each token:",
+      "tex": "\\mathrm{PPL} = e^{\\mathcal{L}} = e^{-\\frac{1}{T}\\sum_t \\log p(x_t \\mid x_{<t})}"
+    },
+    {
+      "type": "quiz",
+      "question": "Why train on log-likelihood instead of raw likelihood?",
+      "choices": [
+        "Log-likelihood has a different optimum that generalizes better",
+        "Same optimum (log is monotonic), but sums are numerically stable and gradients are well-behaved",
+        "Raw likelihood can be negative",
+        "GPUs only support logarithmic arithmetic"
+      ],
+      "answer": 1,
+      "explain": "Monotonicity means the argmax is identical. The win is practical: products of thousands of probabilities underflow; sums of logs don't, and the resulting gradients (p − y) are clean."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **log turns products into sums** → numerical stability over long sequences.\n2. **−log p** rewards calibrated confidence and punishes confident errors without bound.\n3. **softmax + cross-entropy → gradient = p − y**, the cleanest learning signal there is.\n4. Perplexity = e^loss — the same quantity wearing a friendlier unit."
+    }
+  ]
+}

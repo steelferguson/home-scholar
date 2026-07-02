@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "How Tokenization Works",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Models can't read\n\nA language model never sees letters or words. It sees **numbers** — specifically, a sequence of integer IDs. Tokenization is the bridge: it chops raw text into pieces (*tokens*) and looks each piece up in a fixed vocabulary.\n\n`\"unbelievable\"` → `[un] [believ] [able]` → `[8221, 30521, 712]`\n\nEverything downstream — embeddings, attention, the loss — operates on those IDs."
+    },
+    {
+      "type": "text",
+      "md": "## Why not just use words?\n\n- **Word-level**: vocabulary explodes (every typo, name, and conjugation is a new word), and anything unseen becomes `<UNK>`.\n- **Character-level**: tiny vocabulary, but sequences get very long and each token carries almost no meaning.\n- **Sub-word (BPE / WordPiece / SentencePiece)**: the compromise every modern LLM uses. Common strings stay whole; rare words shatter into reusable pieces. Nothing is ever out-of-vocabulary."
+    },
+    {
+      "type": "widget",
+      "widget": "tokenizer-playground",
+      "props": { "sampleText": "The unbelievable tokenization" },
+      "md": "### Try it\n\nThis is a toy BPE-style tokenizer. Notice how common words survive intact while rare or made-up words split into sub-word chunks:"
+    },
+    {
+      "type": "text",
+      "md": "## How BPE learns its vocabulary\n\nByte-Pair Encoding starts with single characters and repeatedly **merges the most frequent adjacent pair** in a training corpus:\n\n1. `l o w e r` — every character is a token\n2. Most frequent pair is `e r` → merge into `er`\n3. Then maybe `l o` → `lo`, then `lo w` → `low` ...\n4. Stop after N merges — N sets your vocabulary size (typically 32k–200k)\n\nThe merge rules **are** the tokenizer. At inference time you just replay them greedily."
+    },
+    {
+      "type": "quiz",
+      "question": "Why do modern LLMs use sub-word tokenization instead of whole words?",
+      "choices": [
+        "Sub-words are easier for humans to read",
+        "It bounds vocabulary size while guaranteeing any text can be encoded",
+        "It makes sequences shorter than character-level in every case",
+        "Whole words would leak training data"
+      ],
+      "answer": 1,
+      "explain": "A fixed sub-word vocabulary can encode anything (worst case: bytes/characters), avoiding <UNK>, while keeping the vocabulary — and the embedding matrix — a manageable size."
+    },
+    {
+      "type": "text",
+      "md": "## Interview-relevant consequences\n\n- **Context windows are measured in tokens**, not words (~0.75 words per token in English).\n- **Arithmetic and spelling are hard** for LLMs partly because digits and letters get merged into opaque chunks.\n- **Multilingual inequity**: languages underrepresented in training data fragment into more tokens — same sentence, 2–3× the cost and context usage.\n- **\"Tokenizer mismatch\"**: you can't reuse model A's weights with model B's tokenizer; IDs point into a specific embedding table."
+    },
+    {
+      "type": "quiz",
+      "question": "A prompt in Thai costs noticeably more tokens than its English translation. Most likely cause?",
+      "choices": [
+        "Thai characters are stored in more bytes, and the tokenizer saw little Thai during vocabulary training",
+        "The model is translating to English internally",
+        "Thai grammar requires more attention heads",
+        "The API bills non-Latin scripts at a higher rate"
+      ],
+      "answer": 0,
+      "explain": "BPE merges are learned from corpus frequency. Underrepresented scripts get few merges, so text fragments into many small (often byte-level) tokens."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. Tokenization maps text → integer IDs using a **learned, frequency-based** vocabulary.\n2. Sub-word (BPE-family) methods balance vocabulary size against sequence length and eliminate out-of-vocabulary failures.\n3. Many odd LLM behaviors (counting letters, arithmetic, multilingual cost) trace back to tokenization.\n\n**Interview one-liner:** \"Tokenization is a learned compression scheme: frequent strings get dedicated IDs, rare strings decompose into reusable pieces.\""
+    }
+  ]
+}

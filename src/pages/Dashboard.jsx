@@ -53,7 +53,14 @@ export default function Dashboard({ user, onSignOut }) {
                 to={`/course/${course.slug}`}
                 className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition block"
               >
-                <h3 className="font-semibold text-gray-900 mb-1">{course.title}</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  {course.title}
+                  {course.audience === 'kids' && (
+                    <span className="ml-2 text-xs font-bold bg-gradient-to-r from-pink-500 to-amber-500 text-white rounded-full px-2 py-0.5 align-middle">
+                      KIDS 🎈
+                    </span>
+                  )}
+                </h3>
                 <p className="text-sm text-gray-500 mb-3">{course.description}</p>
                 <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
                   <span>{completed}/{total} lessons</span>

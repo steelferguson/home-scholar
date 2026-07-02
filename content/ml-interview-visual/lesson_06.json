@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Attention, Visually",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The problem attention solves\n\nBefore transformers, RNNs squeezed an entire sentence through a single fixed-size vector, token by token — long-range information faded. **Attention** lets every token look directly at every other token and decide, with learned weights, *which ones matter for interpreting me*.\n\nNo recurrence, no distance penalty, fully parallel."
+    },
+    {
+      "type": "widget",
+      "widget": "attention-heatmap",
+      "md": "### The classic example\n\nWhat does **\"it\"** refer to? Depends entirely on the last word. Tap words to inspect their attention, then flip *tired* ↔ *wide*:"
+    },
+    {
+      "type": "text",
+      "md": "## What you just saw\n\n\"it\" is ambiguous: in \"...because it was too **tired**\", *it* = the animal; with **wide**, *it* = the street. The attention row for \"it\" shifts its mass accordingly — the model resolves coreference by *routing information* from the right token.\n\nThis is the core intuition: attention weights are a **soft, learned lookup** over the whole sequence, recomputed for every token at every layer."
+    },
+    {
+      "type": "math",
+      "md": "### The equation (memorize this one)\n\nQueries ask, keys advertise, values deliver. The √d_k keeps dot products from saturating softmax:",
+      "tex": "\\mathrm{Attention}(Q, K, V) = \\mathrm{softmax}\\!\\left(\\frac{QK^{\\top}}{\\sqrt{d_k}}\\right) V"
+    },
+    {
+      "type": "text",
+      "md": "## Q, K, V without the mystique\n\nEach token's vector is projected three ways (learned matrices W_Q, W_K, W_V):\n\n- **Query**: \"what am I looking for?\" — *'it' asks: who's a singular noun nearby?*\n- **Key**: \"what do I offer?\" — *'animal' advertises: singular noun here.*\n- **Value**: the actual information passed along if matched.\n\nDot products of queries with keys → softmax → weights → weighted sum of values. That sum becomes the token's new representation."
+    },
+    {
+      "type": "quiz",
+      "question": "Why divide QKᵀ by √d_k before the softmax?",
+      "choices": [
+        "To make attention weights sum to 1",
+        "Large-dimension dot products grow in magnitude, saturating softmax into near-one-hot outputs with vanishing gradients",
+        "To halve the computational cost",
+        "To prevent attending to padding tokens"
+      ],
+      "answer": 1,
+      "explain": "With random d_k-dimensional vectors, dot products have variance ∝ d_k. Unscaled, softmax becomes extremely peaky and gradients through it vanish. Scaling restores a healthy spread. (Summing to 1 is softmax's job; padding is handled by masks.)"
+    },
+    {
+      "type": "text",
+      "md": "## Multi-head, masking, and cost\n\n- **Multi-head**: run 8–128 attentions in parallel on down-projected slices; different heads learn different relations (syntax, coreference, position). Concatenate and re-project.\n- **Causal mask**: decoder LLMs set future positions to −∞ before softmax, so generation can't peek ahead.\n- **Quadratic cost**: n tokens → n² attention scores. This is *the* context-length bottleneck, and why KV-caching, FlashAttention (better memory access, exact result), grouped-query attention, and sliding windows exist."
+    },
+    {
+      "type": "quiz",
+      "question": "During autoregressive generation, what does the KV cache actually save?",
+      "choices": [
+        "The attention weights from previous layers",
+        "Recomputing keys and values for all previous tokens at every new generation step",
+        "The tokenizer's merge table",
+        "Gradients for backpropagation"
+      ],
+      "answer": 1,
+      "explain": "Past tokens' K and V never change, so caching them means each new token only computes its own Q/K/V and attends to the cache — turning O(n²) work per step into O(n). Its memory footprint is why long contexts are expensive to serve."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. Attention = every token doing a soft, learned lookup over the sequence (queries × keys → weights over values).\n2. √d_k scaling keeps softmax trainable; causal masks keep decoders honest; multi-head buys diverse relations.\n3. n² cost and KV-cache memory drive most modern efficiency work.\n\n**Interview one-liner:** \"Attention replaces recurrence with content-based routing: each token asks a question, every other token bids with a key, and the values of the winners flow through.\""
+    }
+  ]
+}
