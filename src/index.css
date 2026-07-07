@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Typography plugin wraps inline code in literal backticks by default */
+.prose code::before,
+.prose code::after {
+  content: none;
+}
+
 /* Kids quiz-game animations */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
