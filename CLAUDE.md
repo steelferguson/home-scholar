@@ -59,6 +59,9 @@ All three have been run on the production project (July 2026).
 
 ## Conventions & gotchas
 
+- README.md has a **Status** section (Live / In progress / Next up) — update
+  it, including its date, whenever you ship or learn something that changes it
+
 - Player components are keyed by lesson id in Lesson.jsx — state must not
   leak across lessons; StepRenderer is keyed by step index
 - Never let step navigation write progress on a completed lesson (it would
