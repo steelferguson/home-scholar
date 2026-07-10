@@ -4,7 +4,7 @@ A web app for self-paced audio learning — language courses, music theory, and 
 
 ## Status
 
-_Last updated: 2026-07-07_
+_Last updated: 2026-07-10_
 
 **Live** (database migrated + seeded on the production Supabase project):
 - 4 audio courses — Czech 2, Spanish 1, English Connect 1, Harmony
@@ -14,6 +14,11 @@ _Last updated: 2026-07-07_
   coins, streaks, and the arcade platformer reward
 
 **In progress:**
+- Business Communication course: 8 visual lessons (pyramid principle, MECE,
+  impromptu speaking, vocal delivery, SCQA presentations, business writing,
+  meetings/feedback, Q&A) + 3 new widgets (before-after, word-hunt,
+  practice-timer). Content is in the repo; run
+  `scripts/seed_communication_course.sql` on production to register it
 - No hosted deployment yet — the app runs locally via `npm run dev`; local
   copies must be updated to latest `main` to get the visual-lesson players
 
@@ -69,6 +74,7 @@ Run these in the Supabase SQL Editor, in order:
 1. `scripts/setup_db.sql` — tables, RLS, seed courses
 2. `scripts/migrate_visual_lessons.sql` — visual/quiz lesson support
 3. `scripts/seed_visual_lessons.sql` — registers the visual/quiz lessons
+4. `scripts/seed_communication_course.sql` — Business Communication course
 
 Visual and quiz lesson content ships with the app (`public/content/`) — no
 storage upload needed. (`scripts/upload_visual.py` exists for optionally

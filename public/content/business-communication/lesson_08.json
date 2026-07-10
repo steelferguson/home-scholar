@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Listening & Q&A Under Pressure",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The other half of communication\n\nSeven lessons on transmitting — one truth remains: **the strongest communicators are distinguished by how they receive.** Listening is what makes your answers land on the question actually asked, your disagreements land on the real argument, and your relationships survive hard conversations.\n\nThis final lesson covers active listening as a working skill, and its highest-pressure application: answering hard questions live — the skill that makes or breaks interviews, exec reviews, and client calls."
+    },
+    {
+      "type": "text",
+      "md": "## Three levels of listening\n\n- **Level 1 — waiting to talk.** You're rehearsing your reply while they speak. Everyone can tell, and you routinely answer a question they didn't ask.\n- **Level 2 — listening for content.** You track the words and can repeat them back accurately.\n- **Level 3 — listening for the question under the question.** \"How confident are we in the timeline?\" from a nervous sponsor usually means *\"do I need to warn my boss?\"* — the words are the surface; the concern is the message.\n\nThe workhorse move for levels 2→3 is the **paraphrase-check**: \"So the real worry is that a slip becomes visible at the board level — is that the heart of it?\" Cheap to say, and it does three jobs: verifies you understood, shows them they were heard, and buys you composing time."
+    },
+    {
+      "type": "quiz",
+      "question": "In a project review, a director asks: \"Remind me — why did we pick this vendor?\" What's the Level-3 read?",
+      "choices": [
+        "She forgot and wants the history recited",
+        "She's testing whether you memorized the eval criteria",
+        "Something has made her doubt the vendor now — the real question is whether the choice still holds up",
+        "It's small talk before the real agenda"
+      ],
+      "answer": 2,
+      "explain": "Directors rarely spend review airtime on trivia. A 'remind me why' about a past decision is almost always present-tense doubt. Answer both layers: the one-line original rationale, then 'Is something making us rethink it? Happy to pressure-test.'"
+    },
+    {
+      "type": "text",
+      "md": "## Answering hard questions: a five-beat pattern\n\nWhen a tough question lands — interview, exec review, client escalation — run this sequence:\n\n1. **Pause.** Two seconds. (Lesson 4: it reads as thought, not weakness.)\n2. **Clarify or paraphrase if there's any ambiguity.** \"When you say cost, do you mean this quarter or lifetime?\" Answering the wrong question fluently is worse than a slow right answer.\n3. **Answer first.** One sentence, direct. Yes / no / a number / a position. (Lesson 1, always.)\n4. **Support briefly.** Two or three reasons or facts — structured, not everything you know.\n5. **Check back.** \"Does that get at what you were asking?\" — closes the loop and surfaces the follow-up early.\n\nThe most common failure is skipping beat 3: burying a perfectly good answer under a runway of context. Under pressure, context-first sounds like evasion."
+    },
+    {
+      "type": "quiz",
+      "question": "An exec asks point-blank: \"Will you hit the March date — yes or no?\" You believe it's likely but not certain. Best response?",
+      "choices": [
+        "\"There are a lot of variables — let me walk you through the workstreams first.\"",
+        "\"Yes.\" (Keep doubts to yourself; confidence is what they want.)",
+        "\"Most likely yes — I'd say 80%. The one thing that could move it is the vendor API migration, and we'll know by Feb 15.\"",
+        "\"That depends on what you mean by 'hit'.\""
+      ],
+      "answer": 2,
+      "explain": "Direct answer, honest calibration, the single driving risk, and a date when uncertainty resolves — all in three sentences. Unhedged 'yes' borrows credibility you may not be able to repay; the workstream tour and the definition dodge both sound like evasion."
+    },
+    {
+      "type": "text",
+      "md": "## \"I don't know\" — the professional version\n\nBluffing is the highest-variance move in business communication: it works until it catastrophically doesn't. The strong version of not knowing has three parts:\n\n1. **Say it cleanly.** \"I don't know the churn number offhand.\" No filler-cloud of maybes.\n2. **Attach what you *do* know.** \"What I do know: it worsened after the price change, and enterprise was unaffected.\"\n3. **Commit to the follow-up.** \"I'll have the exact figure to you by end of day.\" — then actually do it; the follow-through is what builds the trust.\n\nRelated tool — **bridging** — for questions that are unanswerable *right now* (legal limbo, someone else's news to share): acknowledge honestly, state why you can't answer, offer what you can. Bridging is for genuine constraints; using it to dodge fair questions reads as slippery within one meeting."
+    },
+    {
+      "type": "text",
+      "md": "## Hostile and loaded questions\n\n\"Why did your team ship something this broken?\" — a fair concern wrapped in an unfair frame. The pattern:\n\n- **Don't repeat the loaded language.** Answering \"we didn't ship something *broken*...\" makes their word the headline. Reframe neutrally: \"Let me speak to the two incidents since launch.\"\n- **Separate the legitimate core from the heat.** There's almost always a real question inside; answer *that* one with facts and a fix.\n- **Slow down.** Matching a hostile questioner's tempo escalates; a calm, measured pace de-escalates and signals you're not rattled.\n- **If it's an attack with no question, name the topic and move on:** \"The concern I hear is reliability. Here's the current picture and the plan.\"\n\nYou win these exchanges by being the person in the room who stayed precise."
+    },
+    {
+      "type": "widget",
+      "widget": "practice-timer",
+      "md": "### Drill: the hard question, out loud\n\nRun the five-beat pattern on a question with real teeth. Speak your answer — including the two-second pause at the start:",
+      "props": {
+        "prompt": "\"Your project is two weeks late and over budget. Why should we keep funding it?\" — answer out loud, five beats.",
+        "seconds": 75,
+        "steps": [
+          "Pause — two full seconds before any sound",
+          "Reframe the loaded bits neutrally if needed",
+          "Answer first — your one-sentence case",
+          "Support — 2–3 structured reasons or facts",
+          "Check back — one closing question"
+        ],
+        "buttonLabel": "Take the question"
+      }
+    },
+    {
+      "type": "quiz",
+      "question": "A client asks: \"Is it true you're losing engineers off our account?\" One senior engineer is indeed leaving; a backfill is already signed. Worst response, per this lesson?",
+      "choices": [
+        "\"One senior engineer is moving on this month; their replacement is already signed and overlaps for two weeks. Continuity is covered.\"",
+        "\"No, the team is stable.\" — technically arguable, since headcount stays flat",
+        "\"Fair question. One departure, one signed backfill, two-week overlap — and I'll introduce you to them next week.\"",
+        "\"I want to be accurate on staffing — let me confirm details and get you a full answer today.\""
+      ],
+      "answer": 1,
+      "explain": "The bluff-adjacent 'no' is the one that can detonate: when the departure inevitably surfaces, you've converted a routine staffing change into 'they lied to us.' Direct answers (A, C) and even an honest deferral (D) all preserve trust; only the dodge spends it."
+    },
+    {
+      "type": "text",
+      "md": "## Course wrap: one operating system\n\nEight lessons, one repeated shape:\n\n- **Structure your thinking** (pyramid, MECE) → **say the answer first** → **support in threes** → **deliver with pace and pause** → **close the loop** (the ask, the owner, the check-back).\n\nIt's the same move whether the medium is a memo, a slide deck, a hallway answer, or a hard question from a client.\n\n**A practice cadence that works:**\n- **Daily:** one out-loud PREP rep (Lesson 3); one email edited answer-first before sending (Lessons 1, 6).\n- **Weekly:** record two minutes of yourself speaking, count fillers (Lesson 4); storyline-check any deck you touch (Lesson 5).\n- **Each meeting:** listen for the question under the question, and paraphrase before you argue (Lessons 7, 8).\n\nCommunication is a motor skill wearing an intellectual costume. You now know the mechanics — the reps are yours to do."
+    }
+  ]
+}
