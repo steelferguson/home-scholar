@@ -4,25 +4,24 @@ A web app for self-paced audio learning — language courses, music theory, and 
 
 ## Status
 
-_Last updated: 2026-07-07_
+_Last updated: 2026-07-13_
 
 **Live** (database migrated + seeded on the production Supabase project):
+- Hosted at https://home-scholar-app.vercel.app (Vercel; deploy via
+  `vercel --prod` from the repo root, SPA rewrite in vercel.json,
+  VITE_SUPABASE_* env vars set on the Vercel project)
 - 4 audio courses — Czech 2, Spanish 1, English Connect 1, Harmony
 - ML Interview — Visual Walkthroughs: 6 interactive lessons (tokenization,
   log loss, softmax, gradient descent, embeddings, attention)
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 
-**In progress:**
-- No hosted deployment yet — the app runs locally via `npm run dev`; local
-  copies must be updated to latest `main` to get the visual-lesson players
-
 **Next up** (see CLAUDE.md for details):
 - Pre-generated Spanish TTS audio for kids' questions (replacing browser TTS)
 - Atomic coin-increment RPC + per-day earning caps
 - Kid profiles under a parent account
 - More ML lessons/widgets (backprop, eval metrics, transformer end-to-end)
-- Host the app (e.g. Vercel auto-deploy from `main`)
+- Vercel auto-deploy on push to `main` (currently manual `vercel --prod`)
 
 ## Features
 
