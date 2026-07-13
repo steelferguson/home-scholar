@@ -14,11 +14,12 @@ _Last updated: 2026-07-10_
   coins, streaks, and the arcade platformer reward
 
 **In progress:**
-- Business Communication course: 8 visual lessons (pyramid principle, MECE,
+- Business Communication course: 11 visual lessons (pyramid principle, MECE,
   impromptu speaking, vocal delivery, SCQA presentations, business writing,
-  meetings/feedback, Q&A) + 3 new widgets (before-after, word-hunt,
-  practice-timer). Content is in the repo; run
-  `scripts/seed_communication_course.sql` on production to register it
+  meetings/feedback, Q&A, persuasion, data storytelling, remote presence)
+  + 3 new widgets (before-after, word-hunt, practice-timer). Content is in
+  the repo; run `scripts/seed_communication_course.sql` on production to
+  register it
 - No hosted deployment yet — the app runs locally via `npm run dev`; local
   copies must be updated to latest `main` to get the visual-lesson players
 
