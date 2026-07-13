@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Writing That Gets Read: Email, Memos & Chat",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Nobody reads — everybody skims\n\nAssume every business reader is triaging you between two meetings on a phone screen. They will give your message **five seconds** to prove it deserves more.\n\nThat's not an insult; it's a design constraint. Writing that works in business is engineered for skimming: the point is first, the structure is visible, and the ask is unmissable.\n\nGood news: you already have the core tool. **BLUF — Bottom Line Up Front — is the pyramid principle applied to writing.**"
+    },
+    {
+      "type": "text",
+      "md": "## Anatomy of an email that works\n\n- **Subject line = message + action.** Not \"Question\" but \"Need your sign-off on vendor contract by Thu\". Many emails could end there. Prefixes like **[Action]**, **[FYI]**, **[Decision needed]** let people triage from the inbox list.\n- **First line = the bottom line.** The ask or the news, before any context: \"Requesting two more weeks on the migration — details below.\"\n- **Body = support, formatted for skimming.** Short paragraphs (1–3 sentences), bullets for parallel items, **bold** for the few phrases a skimmer must catch.\n- **The ask is explicit and separated:** who, what, by when. \"**Ask:** approve option B by Friday, or flag concerns in this thread.\"\n- **One email, one topic.** Two topics = two emails; buried second topics are never answered."
+    },
+    {
+      "type": "widget",
+      "widget": "before-after",
+      "md": "### The same request, engineered\n\nBoth versions ask for the same thing. Count the seconds until you know what the sender wants:",
+      "props": {
+        "beforeLabel": "As typed (stream of thought)",
+        "afterLabel": "As engineered (BLUF)",
+        "before": "Subject: Quick question\n\nHi Sarah, hope your week is going well! I wanted to touch base about the analytics project. As you probably know, we've been working through the dashboard requirements, and it's been going pretty well overall, though we hit a few snags with the data pipeline that took some time to sort out. The team has been putting in a lot of effort. Anyway, one thing that came up is that the vendor quote for the visualization component came in higher than we originally budgeted, and I've been going back and forth on whether we should absorb it or look at alternatives, and I was thinking it might be good to get your take on it at some point if you have a chance, whenever works for you. Thanks!",
+        "after": "Subject: [Decision needed] Analytics vendor $8k over budget — pick a path by Fri\n\nHi Sarah — the visualization vendor quoted $23k vs. our $15k budget. I need your call on which way to go by Friday to hold the timeline.\n\nOptions:\n1. Absorb the $8k from contingency (my recommendation — swapping vendors costs ~3 weeks)\n2. Rebid with two cheaper vendors (saves money, slips launch to Q4)\n\nContext if useful: dashboard requirements are done; the pipeline snags from last month are resolved.\n\nAsk: reply 1 or 2 by Friday EOD.",
+        "notes": [
+          "Subject line carries the decision, the stakes, and the deadline",
+          "The recommendation is stated, not hidden — readers can still choose option 2",
+          "Context is demoted to an optional paragraph instead of a warm-up",
+          "The ask is one reply-able line: '1 or 2 by Friday'"
+        ]
+      }
+    },
+    {
+      "type": "quiz",
+      "question": "Which subject line follows this lesson?",
+      "choices": [
+        "\"Following up\"",
+        "\"Analytics project\"",
+        "\"[Action] Approve $8k contingency spend by Fri EOD\"",
+        "\"URGENT!!! Please read\""
+      ],
+      "answer": 2,
+      "explain": "It states the action, the substance, and the deadline — triage-able from the inbox without opening. 'Following up' and 'Analytics project' are topics, not messages; unexplained urgency trains people to ignore your urgency."
+    },
+    {
+      "type": "text",
+      "md": "## The editing pass: write drunk-on-detail, edit ruthless\n\nFirst drafts are for *you* (thinking). The edit is for *them* (reading). One deliberate pass before sending anything that matters:\n\n1. **Move the bottom line to the top** — it's usually hiding in your last paragraph, where your thinking finished.\n2. **Cut hedges and throat-clearing:** \"I just wanted to quickly touch base\" → delete. \"I think we should probably consider maybe\" → \"I recommend\".\n3. **Prefer active voice:** \"mistakes were made\" hides the actor; \"the deploy script skipped validation\" names the fix.\n4. **Cut 20% by length.** Almost any draft survives it. Shorter isn't just politer — it's *more likely to be read at all*."
+    },
+    {
+      "type": "widget",
+      "widget": "word-hunt",
+      "md": "### Hedge hunt\n\nSame game as the spoken version, written edition. Tap every hedge, softener, and piece of throat-clearing padding:",
+      "props": {
+        "prompt": "Find the hedges and padding words (just, quickly, probably, maybe, sort of, I think, possibly...)",
+        "text": "I just wanted to quickly flag that I think the timeline is probably too aggressive. We could maybe push the beta out by a week, which would sort of give QA room to breathe. I could possibly be wrong, but I think we should perhaps discuss it at standup.",
+        "targets": [
+          "just",
+          "quickly",
+          "I think",
+          "probably",
+          "maybe",
+          "sort of",
+          "possibly",
+          "I think",
+          "perhaps"
+        ]
+      }
+    },
+    {
+      "type": "text",
+      "md": "## Memos and docs: the same pyramid, more floors\n\nFor anything longer than an email:\n\n- **Lead with a TL;DR** — 3–5 sentences containing the conclusion and the ask. Write it *last*, put it *first*.\n- **Headings are claims** (same rule as slide titles): \"Costs\" → \"Costs double under the current contract by 2027\". A reader skimming headings should absorb the argument.\n- **Front-load every paragraph.** First sentence carries the point; the rest supports. Skimmers read first sentences only — design for them.\n- **Anticipate the three objections** your strongest skeptic will raise, and answer them in the doc. It reads as rigor, and it pre-empts the meeting derail."
+    },
+    {
+      "type": "quiz",
+      "question": "Where should the TL;DR of a six-page recommendation memo be written from, and placed?",
+      "choices": [
+        "Written first, placed first — it's your outline",
+        "Written last, placed first — conclusions are clearest after the thinking is done, but readers need them before the detail",
+        "Written last, placed last — a conclusion belongs at the end",
+        "Skipped — a well-written memo needs no summary"
+      ],
+      "answer": 1,
+      "explain": "Think bottom-up, tell top-down — the writing version. You can only summarize well once the thinking is finished, but the reader needs that summary as their reading frame, not as a reward for finishing."
+    },
+    {
+      "type": "text",
+      "md": "## Chat (Slack/Teams) has its own physics\n\n- **No naked \"hi\" messages.** Send the question *with* the greeting — a bare \"hi, quick question?\" costs the other person a round-trip before any information moves.\n- **Front-load the first line** — chat previews truncate; the first ~10 words decide whether you get opened now or at 6pm.\n- **Thread long thoughts**, and if a decision was made in chat, **restate it explicitly**: \"Decision: going with option B, Sam owns rollout, revisit if latency regresses.\" Chat scroll is where decisions go to be forgotten.\n- **Escalate media deliberately:** three back-and-forths without convergence → call. Nuance, emotion, or bad news → never chat."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **Design for the skimmer:** subject = message + action; first line = bottom line; explicit ask with a deadline.\n2. **Edit in a separate pass:** point to the top, hedges out, active voice, −20% length.\n3. **Docs:** TL;DR written last placed first; headings as claims; front-loaded paragraphs; objections pre-answered.\n4. **Chat:** question travels with the greeting; decisions get restated in writing.\n\n**Drill this week:** before sending each email that matters, delete your first sentence and see if the email got better. (It usually does — first sentences are where throat-clearing lives.)"
+    }
+  ]
+}
