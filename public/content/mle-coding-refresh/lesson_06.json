@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Decoding: Greedy vs Beam Search",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why this lesson matters most\n\nA reported Cresta MLE screen: *implement greedy and beam search for agent action sequences*. It fits their product (conversational AI choosing what to do next), and it's a beautiful interview question: graph search plus probability plus edge cases in 30 minutes.\n\nDecoding = walking a tree. Each node is a partial sequence; a scoring function gives log-probabilities for each possible next token. You can't explore the whole tree, so the question is: **what do you keep?**"
+    },
+    {
+      "type": "text",
+      "md": "## Greedy: keep 1\n\n```python\ndef greedy_decode(step_fn, max_len):\n    tokens, score = (), 0.0\n    while len(tokens) < max_len:\n        opts = step_fn(tokens)            # {token: logprob}\n        tok = max(opts, key=opts.get)\n        score += opts[tok]\n        if tok == \"eos\":\n            return tokens, score\n        tokens += (tok,)\n    return tokens, score\n```\n\nNote the score is a SUM of log-probs. Multiplying raw probabilities underflows to zero after a few dozen tokens; log-space turns the product into a stable sum. Say that sentence in the interview."
+    },
+    {
+      "type": "quiz",
+      "question": "Why sum log-probabilities instead of multiplying probabilities?",
+      "choices": [
+        "Sums are faster than products on modern CPUs",
+        "A product of many probabilities underflows to 0.0 in floating point; log turns it into a stable sum and preserves the ranking (log is monotonic)",
+        "Log-probs are always integers",
+        "You can't compare products"
+      ],
+      "answer": 1,
+      "explain": "0.1^300 is exactly 0.0 in float64. Log-space keeps it finite (-300·ln10), and because log is monotonic, the best sequence under summed logs is the best under multiplied probabilities. Two properties, one habit: always decode in log-space."
+    },
+    {
+      "type": "text",
+      "md": "## The greedy trap, worked\n\n```\nstart ─ a (0.6) ─ eos (0.6)        total: 0.36  <- greedy's pick\n      │          └ c (0.4) ─ eos   total: 0.24\n      └ b (0.4) ─ d (1.0) ─ eos    total: 0.40  <- actually best\n```\n\nGreedy grabs `a` because 0.6 > 0.4, and can never recover: the best sequence started with the SECOND-best first token. This is not exotic; in language, high-probability next words routinely lead into low-probability continuations."
+    },
+    {
+      "type": "quiz",
+      "question": "In the tree above, what does beam search with width 2 return?",
+      "choices": [
+        "(a,) with probability 0.36, same as greedy",
+        "(a, c) with probability 0.24",
+        "(b, d) with probability 0.40, because keeping 2 hypotheses preserved the b-branch long enough to see its strong continuation",
+        "It depends on random seeding"
+      ],
+      "answer": 2,
+      "explain": "Width 2 keeps both (a) 0.6 and (b) 0.4 after step 1. Step 2 produces (a,eos)=0.36, (a,c)=0.24, (b,d)=0.40; the top 2 are (b,d) and the completed (a,eos). Step 3 completes (b,d,eos)=0.40, which beats 0.36. Beam search is deterministic: no randomness."
+    },
+    {
+      "type": "text",
+      "md": "## Beam: keep B\n\n```python\ndef beam_search(step_fn, beam_width, max_len):\n    beams = [((), 0.0, False)]            # (tokens, score, done)\n    while any(not done and len(t) < max_len for t, s, done in beams):\n        candidates = []\n        for t, s, done in beams:\n            if done or len(t) >= max_len:\n                candidates.append((t, s, True))   # completed compete, aren't extended\n                continue\n            for tok, lp in step_fn(t).items():\n                if tok == \"eos\":\n                    candidates.append((t, s + lp, True))\n                else:\n                    candidates.append((t + (tok,), s + lp, False))\n        beams = sorted(candidates, key=lambda c: c[1], reverse=True)[:beam_width]\n    return max(beams, key=lambda c: c[1])[:2]\n```\n\nThe subtle points interviewers probe: completed sequences stay in the pool and compete on score, and the stop condition is \"nothing active is left that could still win.\""
+    },
+    {
+      "type": "quiz",
+      "question": "What is beam search with beam_width = 1?",
+      "choices": [
+        "Undefined behavior",
+        "Exhaustive search",
+        "Exactly greedy decoding: at each step only the single best hypothesis survives",
+        "Random sampling"
+      ],
+      "answer": 2,
+      "explain": "Width 1 keeps one hypothesis per step, which is greedy by definition. It's also a great unit test for your implementation: beam_search(fn, 1, L) must equal greedy_decode(fn, L) on any input. As width grows toward the full branching factor, beam approaches exhaustive search."
+    },
+    {
+      "type": "quiz",
+      "question": "Your beam search keeps returning suspiciously SHORT sequences. What's the classic cause and fix?",
+      "choices": [
+        "Beam width is too large; shrink it",
+        "Every added token adds a negative log-prob, so shorter sequences have mechanically higher scores; fix by length-normalizing (score / length) or a length penalty",
+        "The eos token probability is too low",
+        "Floating point error"
+      ],
+      "answer": 1,
+      "explain": "Each step ADDS a negative number, so a 3-token sequence almost always outscores a 10-token one. Production systems divide by length^α or add a length penalty. Mentioning this unprompted, plus sampling alternatives (temperature, top-k/top-p) when diversity matters, is strong-candidate territory."
+    },
+    {
+      "type": "text",
+      "md": "## Edge cases to name before coding\n\n- **No eos before max_len**: stop and return what you have (define whether the score includes an eos term; be consistent).\n- **Score ties**: pick a deterministic rule and say it.\n- **Beam width larger than the branching factor**: fine, you just keep everything.\n- **step_fn returns an empty dict**: treat the sequence as complete.\n\nThis is graph search wearing an ML costume: if you can write BFS with a priority queue, you can write beam search.\n\n**Next lesson:** debugging planted bugs under time pressure."
+    }
+  ]
+}

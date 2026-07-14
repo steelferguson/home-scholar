@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Metrics From Scratch",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why this is asked so often\n\n\"Implement precision and recall\" looks trivial, which is the point: it tests whether you actually understand what your evaluation numbers mean, and whether you handle the degenerate cases without being told. Ten minutes of an interview, maximum signal.\n\nEverything derives from four counts."
+    },
+    {
+      "type": "text",
+      "md": "## The confusion matrix (binary, 1 = positive)\n\n```python\ndef confusion(y_true, y_pred):\n    tp = fp = fn = tn = 0\n    for t, p in zip(y_true, y_pred):\n        if   t == 1 and p == 1: tp += 1\n        elif t == 0 and p == 1: fp += 1   # false alarm\n        elif t == 1 and p == 0: fn += 1   # miss\n        else:                   tn += 1\n    return tp, fp, fn, tn\n```\n\nThen:\n\n```python\nprecision = tp / (tp + fp)   # \"when I say positive, am I right?\"\nrecall    = tp / (tp + fn)   # \"how many real positives did I catch?\"\nf1        = 2*p*r / (p + r)  # harmonic mean, punishes imbalance\n```"
+    },
+    {
+      "type": "quiz",
+      "question": "y_true = [1,1,0,0,1], y_pred = [1,0,0,1,1]. What's the precision?",
+      "choices": [
+        "3/5",
+        "2/3",
+        "2/5",
+        "1/2"
+      ],
+      "answer": 1,
+      "explain": "Model predicted positive 3 times (indexes 0, 3, 4). Of those, 2 were truly positive (0 and 4); index 3 is a false positive. Precision = TP/(TP+FP) = 2/3. (Recall here is also 2/3: caught 2 of 3 real positives.)"
+    },
+    {
+      "type": "text",
+      "md": "## The edge case that always comes up\n\nEvery one of those denominators can be zero:\n\n- Model never predicts positive: precision = 0/0\n- No real positives in the data: recall = 0/0\n- Both precision and recall are 0: F1 = 0/0\n\nDon't let it crash and don't handle it silently. Say the convention: **\"zero denominator, I'll return 0.0\"**, and write it:\n\n```python\ndef precision(y_true, y_pred):\n    tp, fp, fn, tn = confusion(y_true, y_pred)\n    return tp / (tp + fp) if tp + fp else 0.0\n```\n\nNaming the 0/0 case before it bites is exactly the \"thinks about edge cases\" signal the round is scored on."
+    },
+    {
+      "type": "quiz",
+      "question": "Fraud detection: 1 fraud case per 1,000 transactions. A model predicts \"not fraud\" for everything. Which is true?",
+      "choices": [
+        "Accuracy 99.9%, recall 0: accuracy is the wrong lens here",
+        "Accuracy 99.9%, recall 1.0: the model is fine",
+        "Precision 99.9%, recall 99.9%",
+        "F1 is 99.9%"
+      ],
+      "answer": 0,
+      "explain": "It's right 999 times out of 1000, so accuracy looks great while the model catches zero fraud (recall 0, and precision is 0/0). This is THE canonical answer for why imbalanced problems need precision/recall, and you should be able to say it in two sentences."
+    },
+    {
+      "type": "text",
+      "md": "## AUC in one sentence (then in code)\n\n> ROC-AUC is the probability that a randomly chosen **positive** gets a higher score than a randomly chosen **negative**.\n\nThat sentence IS an implementation, O(n²) by counting pairs:\n\n```python\ndef roc_auc(y_true, scores):\n    pos = [s for t, s in zip(y_true, scores) if t == 1]\n    neg = [s for t, s in zip(y_true, scores) if t == 0]\n    if not pos or not neg:\n        raise ValueError(\"AUC undefined with one class\")\n    credit = 0.0\n    for sp in pos:\n        for sn in neg:\n            if   sp > sn:  credit += 1\n            elif sp == sn: credit += 0.5   # ties: half credit\n    return credit / (len(pos) * len(neg))\n```\n\nSay out loud: \"there's an O(n log n) version using sorted ranks; I'll write the pairwise one for clarity.\" Free points."
+    },
+    {
+      "type": "quiz",
+      "question": "A model outputs the SAME score 0.5 for every example. What's its AUC?",
+      "choices": [
+        "0.0",
+        "0.5",
+        "1.0",
+        "Undefined"
+      ],
+      "answer": 1,
+      "explain": "Every positive-negative pair is a tie, earning 0.5 credit, so AUC = 0.5: exactly a random ranker. That's the mental anchor: AUC 0.5 means no ranking ability, 1.0 means perfect separation, below 0.5 means your scores are inverted."
+    },
+    {
+      "type": "quiz",
+      "question": "When IS AUC genuinely undefined?",
+      "choices": [
+        "When scores contain ties",
+        "When the dataset has only one class (no positives or no negatives)",
+        "When scores aren't between 0 and 1",
+        "When n is odd"
+      ],
+      "answer": 1,
+      "explain": "AUC compares positives against negatives; with only one class there are no pairs to compare. Raise or return None, and SAY it. Ties are fine (0.5 credit), and AUC only cares about score ORDER, not their range."
+    },
+    {
+      "type": "text",
+      "md": "## Interview close-out lines\n\nHave these ready as one-liners:\n\n- \"Precision when false alarms are costly, recall when misses are costly.\"\n- \"F1 when I need one number and classes are imbalanced.\"\n- \"AUC is threshold-free: it evaluates the ranking, not a decision point.\"\n- \"Zero denominators: return 0; single-class AUC: undefined, I'd raise.\"\n\n**Next lesson:** splits, folds, and the leakage question they love to hide in pipelines."
+    }
+  ]
+}

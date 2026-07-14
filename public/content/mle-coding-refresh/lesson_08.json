@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Coding With AI, Effectively",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## What an AI-assisted round actually measures\n\nThe AI writes the boilerplate, so typing speed is off the table. What's left to grade is **judgment**:\n\n- Do you decompose the problem before prompting, or paste the whole thing and pray?\n- Do you READ generated code critically, or accept whatever appears?\n- Do you catch the AI's bugs before running, or discover them in production... err, in the test suite?\n- Do you know when the AI is the wrong tool?\n\nYou do this every day. The delta for interview day isn't skill, it's making the invisible visible: narrating decisions you normally make silently."
+    },
+    {
+      "type": "text",
+      "md": "## The loop to run (and narrate)\n\n1. **Spec first, out loud.** \"I need a function that takes X and returns Y; edge cases are A and B; I'll have the AI draft it while I think about the test cases.\" You've just demonstrated decomposition AND edge-case thinking before any code exists.\n2. **Prompt with constraints, not vibes.** Include the signature, the input types, the edge-case behavior you decided, and an example. Tight prompts show you know exactly what you want; vague prompts produce code you then have to reverse-engineer.\n3. **Review line by line, annotating aloud.** \"Loop looks right... it's using a max-heap here, fine... wait, this doesn't handle the empty case I specified.\" This is the single most-graded moment of the round.\n4. **Test before trusting.** Tiny hand-checkable input first, then your edge cases.\n5. **Iterate surgically.** Ask for the specific fix, not a full regeneration: regeneration can silently change parts you already verified."
+    },
+    {
+      "type": "quiz",
+      "question": "The AI hands you 40 plausible-looking lines. Your very next move?",
+      "choices": [
+        "Run it immediately; tests exist to catch problems",
+        "Read it line by line against your spec, out loud, before running anything",
+        "Ask the AI to double-check its own work",
+        "Regenerate a second version to compare"
+      ],
+      "answer": 1,
+      "explain": "Running first means the failure arrives as a confusing stack trace and the interviewer watches you debug code you never read. Reading first catches most issues cheaply and DEMONSTRATES review skill, which is the point of the round. Asking the AI to self-check has value but doesn't replace your own read: you own correctness."
+    },
+    {
+      "type": "text",
+      "md": "## Where AI code fails (know the pattern, find it fast)\n\n- **Happy-path-only**: handles the example, ignores empty/ties/zero cases. (This is why YOU specify the edge cases in the prompt.)\n- **Hallucinated or wrong-version APIs**: a method that doesn't exist, or a signature from an older library.\n- **Subtly wrong boundaries**: off-by-one in slices, `<` vs `<=`, inclusive vs exclusive ranges.\n- **Quietly changed spec**: you asked for ties-by-first-appearance, it silently did ties-by-value.\n- **Over-engineering**: 60 lines with three helper classes where 12 lines do.\n\nNotice these are exactly the bugs from lesson 7. The debugging skills transfer whole: shrink the input, check the boundaries, verify against a hand-computed case."
+    },
+    {
+      "type": "quiz",
+      "question": "Fastest reliable way to verify an AI-generated top_k_frequent function?",
+      "choices": [
+        "Read it twice, carefully",
+        "Ask the AI \"are you sure this is correct?\"",
+        "Run it on a 4-element input where you know the exact answer by hand, including one tie",
+        "Check it against a second AI's opinion"
+      ],
+      "answer": 2,
+      "explain": "A tiny input with a hand-computed expected output, INCLUDING the tricky case (a tie), gives ground truth in seconds. Reading matters but confirms intent, not arithmetic. Asking an AI if it's sure mostly produces confident agreement: models are much better at generating than at self-verifying."
+    },
+    {
+      "type": "quiz",
+      "question": "Which task should you NOT delegate to the AI in an interview?",
+      "choices": [
+        "Boilerplate: argument parsing, test scaffolding, a standard data structure",
+        "A well-specified helper function you've precisely described",
+        "The core algorithmic decision the interviewer is evaluating, e.g. HOW to approach the problem",
+        "Renaming variables for clarity"
+      ],
+      "answer": 2,
+      "explain": "The approach IS the assessment. Prompting \"how should I solve this?\" outsources the exact thing being graded, and interviewers notice immediately. Decide the approach yourself, say it, then delegate the mechanical parts. Strong pattern: \"I'll structure this as beam search; AI, write the priority-queue boilerplate with this interface.\""
+    },
+    {
+      "type": "quiz",
+      "question": "The AI's code fails one of your edge-case tests. The strongest-signal response?",
+      "choices": [
+        "Regenerate until it passes",
+        "Diagnose WHY it fails yourself, name the bug out loud, then either fix the line or request that specific fix",
+        "Delete it and write everything by hand to show you can",
+        "Skip that edge case and note it as a limitation"
+      ],
+      "answer": 1,
+      "explain": "Regenerate-until-green is slot-machine engineering and reads as exactly that. Diagnosing first shows the failure told you something. Then fixing one line yourself, or asking for that one surgical change, keeps your verified code verified. Full rewrites by hand waste the tool; full regeneration un-verifies everything."
+    },
+    {
+      "type": "text",
+      "md": "## Time management and the close\n\nBudget roughly: a quarter of the time on spec and decomposition, half on generate-review-test loops, a quarter held back for the ending: walking through your edge cases and saying what you'd test next with more time.\n\nThe meta-signal to leave them with: **the AI made you faster, not braver.** Same rigor you'd apply to your own code, applied at higher speed.\n\nThat's the course. Now go do the hand-coding drills in projects/mle_interview/handcoding/ (this course is the theory; the drills are the muscle), and run the Tuesday mock. Suerte."
+    }
+  ]
+}

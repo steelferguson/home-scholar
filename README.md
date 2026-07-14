@@ -13,6 +13,9 @@ _Last updated: 2026-07-13_
 - 4 audio courses — Czech 2, Spanish 1, English Connect 1, Harmony
 - ML Interview — Visual Walkthroughs: 6 interactive lessons (tokenization,
   log loss, softmax, gradient descent, embeddings, attention)
+- MLE Coding Refresh: 8 visual lessons (~3h) rebuilding hands-on interview
+  coding: Python fluency, metrics/models from scratch, beam search,
+  debugging, AI-assisted coding
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 

@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Debugging Under Pressure",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Debugging is a procedure, not a vibe\n\nCresta said debugging is part of the round. Most candidates debug by staring and hoping; under time pressure that collapses. You want a procedure you can NARRATE, because in a debugging round, how you search is being scored as much as whether you find it.\n\nThe procedure:\n\n1. **Read** the whole thing top to bottom before touching anything. Say what each block is supposed to do. Half the planted bugs fall out here.\n2. **Run** it and read the ACTUAL failure, not the one you expected.\n3. **Shrink** the input until you can trace it by hand: two points, one feature.\n4. **Print** the intermediates: shapes, dtypes, first few values.\n5. Fix **one thing at a time** and re-run. Simultaneous fixes mask each other."
+    },
+    {
+      "type": "text",
+      "md": "## The greatest hits: check these first in ML code\n\n- **Update sign**: `w += lr * grad` maximizes the loss.\n- **Wrong term in the loss**: `y*log(p) + (1-y)*log(p)`, the second log should be log(1-p).\n- **argmin vs argmax**, `>` vs `>=`, min vs max.\n- **Missing axis=** in a numpy reduction (sums the whole matrix to a scalar).\n- **View vs copy**: a slice written through mutates the source array.\n- **`//` where `/` belongs**: accuracy silently becomes 0.\n- **Computed but never used**: db calculated, b never updated.\n- **Fold boundaries** dropping the remainder samples.\n- **Preprocessing fit before the split**: leakage; found by reading, not running.\n\nSymptom-to-suspect shortcuts: loss RISING smoothly = sign. Loss weird from epoch 0 = loss formula. Metric exactly 0 or 1 = integer division or comparison direction. NaN = divide-by-zero, log(0), or exp overflow."
+    },
+    {
+      "type": "quiz",
+      "question": "loss = -np.mean(y * np.log(p) + (1 - y) * np.log(p))\n\nTraining runs without errors but the model barely learns. What's wrong?",
+      "choices": [
+        "Nothing; this is correct BCE",
+        "The second term should be np.log(1 - p): as written, negatives are rewarded for predicting p HIGH",
+        "The mean should be a sum",
+        "The minus sign shouldn't be there"
+      ],
+      "answer": 1,
+      "explain": "Both terms use log(p), so the loss pushes p toward 1 for EVERY example regardless of label. It still runs, gradients still flow, loss even decreases: it's just optimizing the wrong objective. Formula bugs hide behind healthy-looking training curves, which is why you check the loss FORMULA when learning looks broken but mechanics look fine."
+    },
+    {
+      "type": "quiz",
+      "question": "Training loss increases smoothly every single epoch, from the very start. Your FIRST check?",
+      "choices": [
+        "Lower the learning rate",
+        "Add regularization",
+        "The sign of the parameter update: + instead of - means you're ascending the loss",
+        "Shuffle the data"
+      ],
+      "answer": 2,
+      "explain": "A monotone RISING loss is the signature of gradient ascent: the update is perfectly wrong, not noisy-wrong. A too-high learning rate looks different (oscillation or explosion, not a smooth climb). One character to check, ten seconds, most likely culprit first: that's the procedure."
+    },
+    {
+      "type": "quiz",
+      "question": "def accuracy(y_true, y_pred):\n    correct = sum(1 for t, p in zip(y_true, y_pred) if t == p)\n    return correct // len(y_true)\n\nWhat does this return for 2 correct out of 3?",
+      "choices": [
+        "0.667",
+        "0",
+        "1",
+        "It raises ZeroDivisionError"
+      ],
+      "answer": 1,
+      "explain": "2 // 3 floors to 0. This accuracy function returns 0 for everything except a perfect score (which returns 1). If a metric comes back as exactly 0 or exactly 1, suspect integer division or a flipped comparison before anything else."
+    },
+    {
+      "type": "quiz",
+      "question": "A k-means run finishes, but afterwards the caller's original dataset X has different values than before the call. What happened?",
+      "choices": [
+        "numpy garbage collection",
+        "The centroids were initialized as a slice of X without .copy(), and in-place centroid updates wrote through the view into X",
+        "k was larger than n",
+        "The data was standardized in place on purpose"
+      ],
+      "answer": 1,
+      "explain": "The view/copy trap. Nothing crashes, results look plausible, but the input data is corrupted, and any later code using X inherits the damage. A great habit for your own code AND a great planted bug to find fast: assert np.array_equal(X, X_before) in your sanity checks."
+    },
+    {
+      "type": "text",
+      "md": "## Talking about testing (they will ask)\n\nWhen they say \"how would you test this?\", structure beats volume:\n\n1. **Happy path**: one small case with a hand-computed expected answer.\n2. **Edge cases**: empty, single element, ties, k=0, k>n, single class, zero denominator.\n3. **Property checks**: things that must ALWAYS hold. Softmax rows sum to 1. Folds are disjoint and cover everything. AUC of inverted scores = 1 - AUC. Beam width 1 equals greedy.\n4. **Adversarial values**: huge magnitudes (overflow), exact 0/1 probabilities (log), constant columns (zero std).\n\nProperty checks are the differentiator: most candidates stop at examples; naming invariants reads as senior.\n\n**Next lesson:** the AI-assisted section: coding with a copilot while someone grades your judgment."
+    }
+  ]
+}
