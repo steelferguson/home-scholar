@@ -5,11 +5,35 @@
   "steps": [
     {
       "type": "text",
-      "md": "## The goal: zero hesitation\n\nA CodeSignal practical screen is a typing-speed test in disguise: the problems are straightforward, and the score is how far you get in 90 minutes. Every pause to remember \"how do I...\" costs points. This course rebuilds raw syntax recall; every quiz asks you to PREDICT what code does, so commit before you tap.\n\nThis lesson: the core language, the stuff below the libraries."
+      "md": "## How this course works\n\nYou know Python; the recall is what's rusty. So we rebuild it the way it left: one piece at a time.\n\nEvery step covers ONE idea. First the plain-English what-and-why, then the simplest possible example with its output shown, then the variations. Quizzes ask you to predict outputs; commit to an answer before tapping, because the act of predicting is what rebuilds recall.\n\nLet's start at the bottom: functions."
     },
     {
       "type": "text",
-      "md": "## Functions and unpacking\n\n```python\ndef f(a, b=2, *args, **kwargs):\n    return a, b, args, kwargs      # returns a TUPLE\n\nx, y = 1, 2                        # tuple unpacking\nx, y = y, x                        # swap, no temp\nfirst, *rest = [1, 2, 3, 4]        # rest = [2, 3, 4]\na, (b, c) = 1, (2, 3)              # nested\n\ndef g(*, name):                    # keyword-only after *\n    ...\n```\n\nAnd the one that bites returning hand-coders: default values are evaluated once, at definition time. `def f(acc=[])` shares one list across every call."
+      "md": "## Functions: defaults\n\nA parameter can have a default value, which makes it optional when calling:\n\n```python\ndef greet(name, punctuation=\"!\"):\n    return \"Hi \" + name + punctuation\n\ngreet(\"Sam\")            # 'Hi Sam!'      (default used)\ngreet(\"Sam\", \"?\")       # 'Hi Sam?'      (positional)\ngreet(\"Sam\", punctuation=\"...\")   # 'Hi Sam...'  (by name)\n```\n\nRule: parameters with defaults must come AFTER ones without. `def f(a=1, b)` is a syntax error.\n\nCalling with names (`punctuation=\"...\"`) is worth the extra keystrokes when a function takes several arguments; it also lets you skip earlier optional ones."
+    },
+    {
+      "type": "text",
+      "md": "## Functions: the mutable default trap\n\nHere's the catch with defaults, and it's the most famous bug in Python. The default value is created ONCE, when the function is defined, not fresh on every call:\n\n```python\ndef add_item(item, bag=[]):\n    bag.append(item)\n    return bag\n\nadd_item(\"a\")    # ['a']\nadd_item(\"b\")    # ['a', 'b']   <- surprise! same bag as last time\n```\n\nBoth calls used the SAME list, because that one list was created at `def` time. With immutable defaults (numbers, strings, None) this can't hurt you; with lists/dicts it will.\n\nThe standard fix:\n\n```python\ndef add_item(item, bag=None):\n    if bag is None:\n        bag = []           # fresh list per call\n    bag.append(item)\n    return bag\n```"
+    },
+    {
+      "type": "quiz",
+      "question": "def log(msg, history=[]):\n    history.append(msg)\n    return len(history)\n\nprint(log(\"x\")); print(log(\"y\"))\n\nWhat prints?",
+      "choices": [
+        "1 then 1",
+        "1 then 2",
+        "2 then 2",
+        "TypeError"
+      ],
+      "answer": 1,
+      "explain": "One shared list, created at definition time. First call appends 'x' (length 1), second call appends 'y' to the SAME list (length 2). If you wanted 1 then 1, you needed history=None with a fresh list inside."
+    },
+    {
+      "type": "text",
+      "md": "## Unpacking: the basics\n\nPython lets you assign several names at once from anything sequence-like. This is the workhorse of clean parsing code:\n\n```python\nx, y = 3, 7          # x=3, y=7\nx, y = y, x          # swap! x=7, y=3 (no temp variable)\n\npoint = (2, 5)\na, b = point         # a=2, b=5\n\nkey, value = \"user:alice\".split(\":\")   # key='user', value='alice'\n```\n\nThe counts must match: `a, b = [1, 2, 3]` raises `ValueError: too many values to unpack`. Which leads to the fix..."
+    },
+    {
+      "type": "text",
+      "md": "## Unpacking: the star\n\nPut `*` on one name and it soaks up everything the others don't take, always as a list:\n\n```python\nfirst, *rest = [1, 2, 3, 4]\n# first = 1, rest = [2, 3, 4]\n\n*init, last = [1, 2, 3, 4]\n# init = [1, 2, 3], last = 4\n\nfirst, *mid, last = [1, 2, 3, 4]\n# first = 1, mid = [2, 3], last = 4\n```\n\nWhere this shines: lines where you know the front but not the length:\n\n```python\nline = \"ERROR 2026-07-14 disk full on /dev/sda1\"\nlevel, date, *message_words = line.split()\n# level = 'ERROR', date = '2026-07-14'\n# message_words = ['disk', 'full', 'on', '/dev/sda1']\nmessage = \" \".join(message_words)   # 'disk full on /dev/sda1'\n```"
     },
     {
       "type": "quiz",
@@ -21,11 +45,11 @@
         "ValueError: too many values"
       ],
       "answer": 1,
-      "explain": "split() gives ['hello','world','foo','bar']; first takes 'hello', last takes 'bar', and the starred target always collects a LIST of whatever remains: ['world','foo']. Star-unpacking is the fast way to peel headers/footers off parsed lines."
+      "explain": "split() gives ['hello','world','foo','bar']. first takes 'hello', last takes 'bar', and the starred name collects what's left as a LIST: ['world','foo']. Star-unpacking always produces a list, even when it catches one item or zero."
     },
     {
       "type": "text",
-      "md": "## Truthiness and the operators people half-remember\n\n```python\n# falsy: None, False, 0, 0.0, \"\", [], {}, set(), ()\nif not items: ...            # idiomatic empty check\n\nname = value or \"default\"     # first truthy (careful: 0 counts as falsy!)\nx = a if cond else b          # ternary\n\n3 < x <= 10                   # chained comparison, real Python\n\na is None                     # identity: the right way to test None\na == b                        # equality\n\n5 / 2    # 2.5   float division, always\n5 // 2   # 2     floor division\n-5 // 2  # -3    floors toward NEGATIVE infinity, not zero\n5 % 2    # 1     and -5 % 2 == 1 (sign follows the divisor)\n2 ** 10  # 1024\n```"
+      "md": "## Truthiness\n\nIn an `if`, Python treats some values as false without you comparing anything. The full falsy list:\n\n`None`, `False`, `0`, `0.0`, `\"\"`, `[]`, `{}`, `set()`, `()`\n\nEverything else is truthy. So the idiomatic empty-check is:\n\n```python\nif not items:            # instead of len(items) == 0\n    return []\n\nif name:                 # instead of name != \"\"\n    ...\n```\n\nTwo related idioms:\n\n```python\nx = value or \"default\"   # 'default' if value is falsy\nx = a if cond else b     # inline if/else (ternary)\n```\n\nAnd one precision tool: to test for None specifically, use `is None`, because `== None` can be fooled and reads worse."
     },
     {
       "type": "quiz",
@@ -37,11 +61,19 @@
         "KeyError"
       ],
       "answer": 1,
-      "explain": "0 is falsy, so `or` skips it and returns 10: a real bug if 0 was a legitimate value. When 0/\"\"/[] are valid, use an explicit check: data.get(\"count\") if \"count\" in data else 10, or data.get(\"count\", 10) which only defaults on a MISSING key."
+      "explain": "The key EXISTS and its value is 0, but 0 is falsy, so `or` discards it and returns 10. That's a genuine bug when 0 is a legitimate value. The safe version is data.get(\"count\", 10), which only falls back when the key is MISSING, not when the value is falsy."
     },
     {
       "type": "text",
-      "md": "## Slicing: the whole grammar\n\n```python\ns = \"abcdefg\"\ns[0], s[-1]        # 'a', 'g'\ns[1:4]             # 'bcd'   (end exclusive)\ns[:3], s[3:]       # 'abc', 'defg'\ns[::2]             # 'aceg'  (step)\ns[::-1]            # 'gfedcba'  (reverse anything sliceable)\ns[-3:]             # 'efg'   (last three)\n\nnums = [1, 2, 3, 4, 5]\nnums[1:3] = [9, 9, 9]     # lists: slice ASSIGNMENT splices in place\n```\n\nSlices never raise on out-of-range: `\"ab\"[5:10]` is just `\"\"`. Indexing does raise: `\"ab\"[5]` is an IndexError. That asymmetry is useful: slice when the input might be short."
+      "md": "## Numbers: the two divisions\n\n```python\n5 / 2     # 2.5    -> / ALWAYS returns a float, even 4 / 2 == 2.0\n5 // 2    # 2      -> // floors (integer when both sides are ints)\n5 % 2     # 1      -> remainder\n2 ** 10   # 1024   -> power\n\n-5 // 2   # -3, not -2!  floor goes DOWN, toward negative infinity\n```\n\nAlso in this family:\n\n```python\n3 < x <= 10          # chained comparison, real Python, reads like math\ndivmod(17, 5)        # (3, 2): quotient and remainder in one call\nabs(-4)              # 4\n```\n\nThe `/` vs `//` mixup is silent and classic: an accuracy of `2 // 3` is 0, not 0.667, and nothing crashes to tell you."
+    },
+    {
+      "type": "text",
+      "md": "## Slicing: from the beginning\n\nIndexing grabs one element; negative numbers count from the end:\n\n```python\ns = \"abcdefg\"\ns[0]     # 'a'\ns[-1]    # 'g'   (last)\ns[-2]    # 'f'\n```\n\nSlicing grabs a range: `s[start:stop]`, where **stop is excluded**:\n\n```python\ns[1:4]    # 'bcd'   (indexes 1, 2, 3)\ns[:3]     # 'abc'   (from the start)\ns[3:]     # 'defg'  (to the end)\ns[-3:]    # 'efg'   (the last three)\n```\n\nBecause stop is excluded, `s[:n] + s[n:]` always reassembles the original: that's the mental check for off-by-ones."
+    },
+    {
+      "type": "text",
+      "md": "## Slicing: step, reverse, and forgiveness\n\nA third number is the step:\n\n```python\ns = \"abcdefg\"\ns[::2]     # 'aceg'     (every 2nd)\ns[1::2]    # 'bdf'      (every 2nd, starting at 1)\ns[::-1]    # 'gfedcba'  (step -1 = the reverse idiom)\n```\n\nAnd a kindness worth knowing: slices never raise on out-of-range, they just give you what exists:\n\n```python\n\"ab\"[5:10]   # ''        (no error)\n\"ab\"[5]      # IndexError!\n```\n\nSo when input might be short, slicing (`s[:100]`) is safer than indexing. All of this works identically on lists."
     },
     {
       "type": "quiz",
@@ -53,27 +85,27 @@
         "\"aa\""
       ],
       "answer": 3,
-      "explain": "Start at index 1 ('a'), stop before -1 (index 5, the last 'a', excluded), step 2: indexes 1 and 3, both 'a', giving \"aa\". Reading three-part slices without running them is exactly the fluency a timed screen needs."
+      "explain": "Work it: start at index 1 ('a'), stop before index -1 (the final 'a', excluded), step 2. So indexes 1 and 3: 'a' and 'a', giving \"aa\". Three-part slices yield to a 5-second walkthrough: start, stop-excluded, step."
     },
     {
       "type": "text",
-      "md": "## Loops, with their accessories\n\n```python\nfor i, x in enumerate(items):            # index + value\nfor i, x in enumerate(items, start=1):   # 1-based\nfor a, b in zip(xs, ys):                 # stops at the SHORTER one\nfor x in reversed(items): ...\nfor x in sorted(items): ...\n\nwhile queue:\n    item = queue.pop(0)                  # (deque.popleft() is O(1); lesson 2)\n\nfor x in items:\n    if match(x):\n        break\nelse:                                    # runs only if NO break happened\n    print(\"not found\")\n\nrange(5)        # 0..4\nrange(2, 10, 3) # 2, 5, 8\n```\n\n`for...else` is obscure but real; recognizing it in provided code matters more than writing it."
+      "md": "## Loops: enumerate and zip\n\nWhen you need the index AND the value, `enumerate` hands you both, so you never write `range(len(items))`:\n\n```python\nfor i, name in enumerate([\"ann\", \"bo\"]):\n    print(i, name)\n# 0 ann\n# 1 bo\n\nenumerate(items, start=1)    # 1-based counting when humans will read it\n```\n\nWhen you need to walk two lists together, `zip` pairs them up:\n\n```python\nfor name, score in zip([\"ann\", \"bo\"], [90, 85]):\n    print(name, score)\n# ann 90\n# bo 85\n```\n\nzip stops at the SHORTER input, silently. Usually that's what you want; when it isn't, it's a quiet bug to know about."
     },
     {
       "type": "quiz",
-      "question": "Which loop prints pairs of NEIGHBORING items: (a,b), (b,c), (c,d)?",
+      "question": "Which loop visits NEIGHBORING pairs of items: (a,b), (b,c), (c,d)?",
       "choices": [
         "for x, y in zip(items, items): ...",
         "for x, y in zip(items, items[1:]): ...",
         "for x, y in enumerate(items): ...",
-        "for x, y in zip(items[1:], items[:1]): ..."
+        "for i in range(len(items)): x, y = items[i], items[i+1]"
       ],
       "answer": 1,
-      "explain": "zip the list against itself shifted by one: zip stops at the shorter sequence, so you get exactly the n-1 neighbor pairs. This little idiom solves a whole family of \"compare consecutive entries\" tasks (price changes, gap detection, pairwise diffs) in one line."
+      "explain": "Zip the list against itself shifted one: pairs (items[0],items[1]), (items[1],items[2])... and because zip stops at the shorter one, it ends cleanly with no index errors. Option D crashes on the last i (items[i+1] out of range) unless you fix the range by hand: exactly the fiddliness this idiom removes."
     },
     {
       "type": "text",
-      "md": "## Scope, mutation, and copies\n\n```python\nb = a              # NEW NAME for the same object (lists, dicts...)\nb = a[:]           # shallow copy of a list\nb = dict(a)        # shallow copy of a dict\nimport copy\nb = copy.deepcopy(a)   # nested structures\n\ndef f(items):\n    items.append(1)    # mutates the CALLER's list\n    items = [9]        # rebinds only the local name\n```\n\nMutable default args, aliasing, and mutate-vs-rebind are the three faces of the same fact: variables are names pointing at objects. Say \"I'll copy this so I don't mutate the input\" out loud when it matters; in a practical screen with shared state across levels, it will."
+      "md": "## Names point at objects (aliasing and copies)\n\nAssignment never copies; it gives an object another name:\n\n```python\na = [1, 2]\nb = a            # b is the SAME list\nb.append(3)\nprint(a)         # [1, 2, 3]  <- a sees it too\n```\n\nWhen you want an actual copy:\n\n```python\nb = a[:]         # or list(a): copy of a list\nd2 = dict(d)     # copy of a dict\nimport copy\nb = copy.deepcopy(a)   # nested structures (copies get shallow otherwise)\n```\n\nThe same fact explains function arguments: a function that appends to a list argument changes the CALLER's list. Reassigning inside (`items = [9]`) only rebinds the local name.\n\nThat's the core. Next lesson: the containers where practical problems are actually won: lists, dicts, sets."
     }
   ]
 }

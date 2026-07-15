@@ -5,7 +5,11 @@
   "steps": [
     {
       "type": "text",
-      "md": "## Half of every practical screen is parsing\n\n\"Given these log lines / commands / records, process them.\" The winners split, strip, and join without thinking. Strings are immutable: every method returns a NEW string.\n\n```python\ns.split()             # any whitespace, collapses runs\ns.split(\",\")          # exact separator (\"a,,b\" -> ['a', '', 'b'])\ns.split(\":\", 1)       # at most 1 split: key, rest\ns.rsplit(\".\", 1)      # from the right: name, extension\ns.splitlines()\n\"-\".join(parts)       # parts must ALL be str: join(map(str, nums))\ns.strip() / .lstrip() / .rstrip()\ns.replace(\"old\", \"new\")\n```"
+      "md": "## Why strings get their own lesson\n\nHalf of every practical screen is \"given these lines, process them\": logs, commands, records. Parsing is string surgery, and the surgeons who move fast know about six methods deeply rather than sixty vaguely.\n\nOne fact colors everything: **strings are immutable**. No method changes a string; every method returns a new one. `s.upper()` does nothing unless you keep the result."
+    },
+    {
+      "type": "text",
+      "md": "## split: one method, three modes\n\nMode 1, no argument: split on ANY whitespace, collapsing runs. This is the one for words:\n\n```python\n\"  hello   world \".split()      # ['hello', 'world']  (clean!)\n```\n\nMode 2, explicit separator: exact splitting, empty strings preserved. This is the one for data:\n\n```python\n\"a,b,c\".split(\",\")              # ['a', 'b', 'c']\n\"a,,c\".split(\",\")               # ['a', '', 'c']   <- empties kept\n```\n\nMode 3, limited: split at most n times:\n\n```python\n\"user:alice:admin\".split(\":\", 1)    # ['user', 'alice:admin']\n\"report.final.pdf\".rsplit(\".\", 1)   # ['report.final', 'pdf']\n```\n\nThat maxsplit variant is the professional move for key:value lines where the value itself may contain the separator. rsplit does the same from the right: perfect for peeling a file extension."
     },
     {
       "type": "quiz",
@@ -17,31 +21,43 @@
         "(\"user\", \"alice:admin\")"
       ],
       "answer": 1,
-      "explain": "maxsplit=1 means one cut, from the left, keeping the remainder intact: ['user', 'alice:admin']. This is THE idiom for key:value lines where the value may itself contain the separator. rsplit(\":\", 1) is the mirror image for peeling a suffix."
+      "explain": "maxsplit=1 makes ONE cut from the left: ['user', 'alice:admin']. The rest stays intact, colons and all. If you wanted the cut from the right (say, splitting name from extension), that's rsplit(\":\", 1) giving ['user:alice', 'admin']."
     },
     {
       "type": "text",
-      "md": "## Tests, case, and building strings\n\n```python\ns.startswith(\"GET \"); s.endswith((\".jpg\", \".png\"))   # tuple = any-of\n\"error\" in s\ns.lower(); s.upper(); s.title(); s.casefold()\ns.isdigit(); s.isalpha(); s.isalnum()\ns.find(\"x\")      # index or -1\ns.index(\"x\")     # index or ValueError\ns.count(\"ab\")\n\nf\"{name}: {score:.2f}\"        # 2 decimals\nf\"{count:>5}\"                 # right-align width 5\nf\"{ratio:.1%}\"                # 42.0%\nf\"{n:,}\"                      # 1,234,567\nstr(x), int(s), float(s)\nint(\"1e3\")                    # ValueError! float(\"1e3\") works\nchr(97), ord('a')             # 'a', 97\n```"
+      "md": "## join, strip, replace\n\n`join` is split's inverse, and it lives on the SEPARATOR (the string between the pieces):\n\n```python\n\"-\".join([\"a\", \"b\", \"c\"])       # 'a-b-c'\n\" \".join(words)                  # sentence from words\n\"\".join(chars)                   # letters glued: ''\n\n\"-\".join([1, 2])                 # TypeError! pieces must be strings\n\"-\".join(str(x) for x in [1,2])  # '1-2'   <- the fix\n```\n\n`strip` trims whitespace off the ends (not the middle), `replace` substitutes everywhere:\n\n```python\n\"  hi there \".strip()            # 'hi there'\n\"a-b-c\".replace(\"-\", \"_\")        # 'a_b_c'\nline.strip().lower()              # the standard input-cleaning combo\n```"
+    },
+    {
+      "type": "text",
+      "md": "## Tests and conversions\n\nQuestions you can ask a string:\n\n```python\ns.startswith(\"GET \")             # True/False\ns.endswith((\".jpg\", \".png\"))     # a TUPLE means any-of\n\"error\" in s                      # substring test\ns.isdigit()                       # '123' -> True, '1.5' -> False\ns.find(\"x\")                      # index, or -1 if absent\ns.index(\"x\")                     # index, or ValueError\ns.count(\"ab\")                    # non-overlapping occurrences\n```\n\nAnd converting between types, because **everything split() gives you is a string**:\n\n```python\nint(\"42\")        # 42\nfloat(\"3.5\")     # 3.5\nint(\"3.5\")       # ValueError!  int() won't parse decimals\nstr(42)          # '42'\nint(\"7 \")        # 7   (int/float forgive surrounding whitespace)\n```\n\nSumming a \"numeric\" column that's still strings is the classic silent-wrong-answer: convert at the parse boundary, once."
+    },
+    {
+      "type": "text",
+      "md": "## f-strings: formatting answers\n\nAn f-string interpolates expressions; after a colon comes the format spec:\n\n```python\nname, score, ratio = \"ann\", 91.5678, 0.42\n\nf\"{name}: {score}\"          # 'ann: 91.5678'\nf\"{score:.2f}\"              # '91.57'      2 decimals\nf\"{ratio:.1%}\"              # '42.0%'      as a percentage\nf\"{1234567:,}\"              # '1,234,567'  thousands separators\nf\"{name:>8}\"                # '     ann'   right-aligned, width 8\nf\"{name:<8}|\"               # 'ann     |'  left-aligned\n```\n\nSpecs read as: alignment, width, comma, then .precision and type. You mostly need `:.2f`, `:,` and `:.0%`; recognize the rest."
     },
     {
       "type": "quiz",
-      "question": "You're building a report line by line in a loop. Which is the right pattern?",
+      "question": "You're building a report line by line in a loop. Which pattern is right?",
       "choices": [
-        "report = \"\"; report += line + \"\\n\" each iteration",
+        "report = \"\"; then report += line + \"\\n\" each iteration",
         "lines = []; lines.append(line) each iteration; \"\\n\".join(lines) at the end",
         "report = sum(lines)",
-        "Use string.concat(lines)"
+        "report.append(line) on the string"
       ],
       "answer": 1,
-      "explain": "Strings are immutable, so += copies the whole accumulated string every iteration: O(n²) and a known interview tell. Collect in a list, join once. (In CPython += on str is sometimes optimized, but nobody grades you on relying on that.)"
+      "explain": "Strings are immutable, so += builds a fresh copy of everything so far on EVERY iteration: O(n²) on big inputs. Lists append in O(1); join once at the end. (sum() refuses strings outright, and strings have no .append: they can't change.)"
     },
     {
       "type": "text",
-      "md": "## Parsing structured lines: the template\n\n```python\nlog = \"2026-07-14 12:03:11 ERROR auth Login failed for user=alice\"\n\ndate, time, level, module, *msg_parts = log.split()\nmessage = \" \".join(msg_parts)\n\n# key=value fields\nfields = {}\nfor part in msg_parts:\n    if \"=\" in part:\n        k, v = part.split(\"=\", 1)\n        fields[k] = v\n\n# CSV-ish records -> dicts\nheader, *rows = text.splitlines()\ncols = header.split(\",\")\nrecords = [dict(zip(cols, row.split(\",\"))) for row in rows]\n```\n\nsplit + star-unpack + zip covers 90% of parsing tasks with zero imports. Reach for the csv module only when fields can contain quoted commas."
+      "md": "## Putting it together: parsing a log line\n\nEverything so far, on one realistic line:\n\n```python\nlog = \"2026-07-14 12:03:11 ERROR auth user=alice attempts=3\"\n\ndate, time, level, module, *fields = log.split()\n# date='2026-07-14', time='12:03:11', level='ERROR',\n# module='auth', fields=['user=alice', 'attempts=3']\n\ninfo = {}\nfor field in fields:\n    key, value = field.split(\"=\", 1)\n    info[key] = value\n# info = {'user': 'alice', 'attempts': '3'}   <- still strings!\n\nattempts = int(info.get(\"attempts\", 0))\n```\n\nsplit + star-unpack for the fixed front, split(\"=\", 1) for key=value pairs, convert once at the end. This template, adapted, handles most \"process these lines\" tasks with zero imports."
+    },
+    {
+      "type": "text",
+      "md": "## Putting it together: CSV-ish records\n\nWhen the first line is a header, `zip` turns rows into dicts:\n\n```python\ntext = \"\"\"id,name,age\n7,alice,34\n8,bo,29\"\"\"\n\nheader, *rows = text.splitlines()\ncols = header.split(\",\")                 # ['id', 'name', 'age']\n\nrecords = [dict(zip(cols, row.split(\",\"))) for row in rows]\n# [{'id': '7', 'name': 'alice', 'age': '34'},\n#  {'id': '8', 'name': 'bo',    'age': '29'}]\n```\n\nzip pairs column names with values; dict() consumes the pairs. One comprehension, a full parser.\n\n(When fields can contain quoted commas, that's the moment for `import csv`. On a screen, plain split usually suffices.)"
     },
     {
       "type": "quiz",
-      "question": "header = \"id,name,age\" and row = \"7,alice,34\". What does dict(zip(header.split(\",\"), row.split(\",\"))) give you?",
+      "question": "header = \"id,name,age\", row = \"7,alice,34\". What is dict(zip(header.split(\",\"), row.split(\",\")))?",
       "choices": [
         "{\"id\": 7, \"name\": \"alice\", \"age\": 34}",
         "{\"id\": \"7\", \"name\": \"alice\", \"age\": \"34\"}",
@@ -49,11 +65,11 @@
         "TypeError"
       ],
       "answer": 1,
-      "explain": "zip pairs the columns with the values and dict() consumes the pairs: a one-line record parser. The values stay STRINGS (\"7\", not 7): everything from split() is a string until you convert it, the source of many wrong answers on summing \"numeric\" columns."
+      "explain": "zip pairs them positionally and dict() collects the pairs: a one-line record parser. But every value is still a STRING: '7', not 7. Convert numeric fields explicitly (int(rec['age'])) or arithmetic on them will concatenate or crash later."
     },
     {
       "type": "text",
-      "md": "## Regex: the 20% you need\n\n```python\nimport re\nre.findall(r\"\\d+\", \"a12b304\")          # ['12', '304']\nre.findall(r\"user=(\\w+)\", log)           # capture group only\nm = re.search(r\"(\\d{4})-(\\d{2})\", s)    # first match anywhere, or None\nif m: year = m.group(1)\nre.sub(r\"\\s+\", \" \", s)                  # normalize whitespace\nre.split(r\"[,;|]\", s)                    # multi-delimiter split\n```\n\nCheat sheet: `\\d` digit, `\\w` word char, `\\s` whitespace, `+` one-or-more, `*` zero-or-more, `?` optional, `[abc]` char class, `()` capture, `^ $` anchors.\n\nHonest guidance: on a practical screen, if string methods can do it, they're faster to write AND debug. Regex earns its keep for \"all numbers in this text\" and multi-delimiter messes."
+      "md": "## Regex: just the working subset\n\nHonesty first: on a practical screen, if string methods can do it, they're faster to write and debug. Regex earns its keep for \"find all numbers in this text\" and multi-delimiter messes.\n\n```python\nimport re\n\nre.findall(r\"\\d+\", \"order 12, total 450\")   # ['12', '450']\nre.findall(r\"user=(\\w+)\", log)                # captures only: ['alice']\n\nm = re.search(r\"(\\d{4})-(\\d{2})\", s)         # first match, or None\nif m:\n    year = m.group(1)                          # '2026'\n\nre.sub(r\"\\s+\", \" \", s)                       # collapse whitespace runs\nre.split(r\"[,;|]\", \"a,b;c|d\")                # ['a','b','c','d']\n```\n\nMini cheat sheet: `\\d` digit, `\\w` word char, `\\s` whitespace; `+` one-or-more, `*` zero-or-more, `?` optional; `[abc]` any of these; `()` capture; `^` start, `$` end.\n\nAlways check `if m:` before `.group()`: search returns None on no match, and None.group() is the crash."
     },
     {
       "type": "quiz",
@@ -65,11 +81,11 @@
         "['1','2','3','4','5','0']"
       ],
       "answer": 0,
-      "explain": "findall returns every non-overlapping match as a list of STRINGS: \\d+ grabs maximal digit runs. Ints need a map: [int(x) for x in re.findall(r\"\\d+\", s)]. If you chose D, that's \\d without the +, matching single digits."
+      "explain": "findall returns every match as a list of STRINGS; \\d+ grabs whole digit runs (the + is what makes '450' one match instead of three). For ints, wrap it: [int(x) for x in re.findall(r\"\\d+\", s)]. Answer D is what plain \\d (no +) would give."
     },
     {
       "type": "text",
-      "md": "## Speed heuristics for parsing tasks\n\n1. Read the input format FIRST, write a one-line comment describing it, then parse in one place into dicts/lists. Never re-parse mid-logic.\n2. `split(sep, 1)` and star-unpacking beat index arithmetic.\n3. Convert types at the parse boundary (int(...) once), not at every use.\n4. Print one parsed record and eyeball it before writing the logic. Ten seconds spent here saves a debugging spiral later.\n\n**Next:** classes at speed, the shape every multi-level practical assessment takes."
+      "md": "## The parsing playbook\n\nWhen a task hands you raw text:\n\n1. **Look at one line carefully** and write its shape as a comment: `# LEVEL DATE k=v k=v`.\n2. **Parse everything into dicts/lists in one place**, converting types (int, float) right there. Never re-parse mid-logic.\n3. **Print one parsed record and eyeball it** before writing any logic. Ten seconds here saves a debugging spiral.\n4. Prefer split + unpacking; bring in regex only when delimiters get messy.\n\nNext lesson: classes, the skeleton of every multi-level practical assessment."
     }
   ]
 }

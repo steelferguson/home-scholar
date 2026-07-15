@@ -5,11 +5,19 @@
   "steps": [
     {
       "type": "text",
-      "md": "## Where practical problems are won\n\nAlmost every practical task is \"keep track of things and answer questions about them,\" which means dicts, lists, and sets doing the heavy lifting. Method recall here directly converts to speed.\n\n```python\n# LIST\nxs.append(x); xs.extend(ys); xs.insert(0, x)\nxs.pop()          # last (fast)\nxs.pop(0)         # first (O(n): use deque if hot)\nxs.remove(v)      # first occurrence BY VALUE, ValueError if absent\nxs.index(v)       # position, ValueError if absent\nv in xs           # O(n) scan\nxs.count(v); xs.sort(); xs.reverse()\n```"
+      "md": "## The shape of practical problems\n\nAlmost every practical task reduces to \"keep track of things, then answer questions about them.\" The keeping-track is lists, dicts, and sets. This lesson walks each one, then the three power tools from `collections`.\n\nWe go slower on dicts than anything else in this course, because dicts are where the points are."
     },
     {
       "type": "text",
-      "md": "## Dicts: the workhorse\n\n```python\nd[k] = v\nd.get(k)                 # None if missing (no raise)\nd.get(k, default)\nd.setdefault(k, []).append(v)   # init-if-missing, then use\nd.pop(k, None)           # delete without raising\nk in d                   # O(1) membership\n\nfor k in d: ...                    # keys\nfor k, v in d.items(): ...\nlist(d.values())\n\nmerged = {**a, **b}      # b wins on conflicts (a | b works too)\n```\n\nSince Python 3.7, dicts remember INSERTION order: iteration is deterministic, first-inserted first. Practical screens quietly rely on this."
+      "md": "## Lists: the methods you'll actually use\n\n```python\nxs = [3, 1]\nxs.append(4)        # [3, 1, 4]        add one to the end\nxs.extend([1, 5])   # [3, 1, 4, 1, 5]  add many\nxs.insert(0, 9)     # [9, 3, 1, 4, 1, 5]  at a position (slow at front)\n\nxs.pop()            # returns 5, removes it  ->  [9, 3, 1, 4, 1]\nxs.pop(0)           # returns 9 (from the front; O(n), fine for small)\nxs.remove(1)        # removes the FIRST 1 by value -> [3, 4, 1]\n\n4 in xs             # True   (scans the whole list)\nxs.index(4)         # 1      (position; ValueError if absent)\nxs.count(1)         # 1\n```\n\nappend vs extend is the one to keep straight: `xs.append([1,5])` puts a LIST inside your list."
+    },
+    {
+      "type": "text",
+      "md": "## Dicts: reading without fear\n\n`d[k]` raises KeyError when the key is missing. That's often not what you want mid-task, so Python gives you graceful reads:\n\n```python\nd = {\"a\": 1}\n\nd[\"b\"]              # KeyError!\nd.get(\"b\")          # None       (no error)\nd.get(\"b\", 0)       # 0          (your default)\n\"b\" in d            # False      (the O(1) existence check)\nd.pop(\"b\", None)    # None       (delete-if-present, no error)\nd.pop(\"a\")          # 1          (delete and return the value)\n```\n\nMemorize `d.get(k, default)` and `d.pop(k, None)` as single units; they replace four-line if-blocks each."
+    },
+    {
+      "type": "text",
+      "md": "## Dicts: the accumulate patterns\n\nThe two loops you'll write over and over. Counting:\n\n```python\ncounts = {}\nfor word in words:\n    counts[word] = counts.get(word, 0) + 1\n# {'a': 2, 'b': 1} for words = ['a', 'b', 'a']\n```\n\nGrouping:\n\n```python\nby_team = {}\nfor player, team in roster:\n    by_team.setdefault(team, []).append(player)\n# {'red': ['ann', 'cy'], 'blue': ['bo']}\n```\n\n`setdefault(team, [])` means: \"if team isn't a key yet, put [] there; either way hand me the list.\" So the append always has a list to land in, no existence check needed."
     },
     {
       "type": "quiz",
@@ -21,31 +29,35 @@
         "KeyError"
       ],
       "answer": 1,
-      "explain": "setdefault returns the EXISTING list on the second call (the [] default is ignored once the key exists), so both appends hit the same list: {\"a\": [1, 2]}. It's defaultdict behavior for a single site. If you'd use it everywhere, reach for defaultdict(list) instead."
+      "explain": "First call: 'a' is missing, so [] goes in and .append(1) fills it. Second call: 'a' EXISTS now, so the [] argument is ignored and setdefault returns the existing [1], which gets 2 appended. Both appends hit the same list: {'a': [1, 2]}."
     },
     {
       "type": "text",
-      "md": "## Sets and tuples\n\n```python\nseen = set()\nseen.add(x)\nseen.discard(x)        # no raise; .remove(x) raises\nx in seen              # O(1): THE reason sets exist\n\na | b, a & b, a - b    # union, intersection, difference\nset(xs)                # dedupe (order lost)\nlist(dict.fromkeys(xs))  # dedupe KEEPING first-seen order\n\nt = (1, 2)             # immutable, hashable -> valid dict key\npoint = x, y           # parens optional\n(x,)                   # single-element tuple NEEDS the comma\n```"
+      "md": "## Dicts: iterating and merging\n\n```python\nd = {\"a\": 1, \"b\": 2}\n\nfor k in d:                  # keys: 'a', 'b'\nfor k, v in d.items():       # pairs: ('a', 1), ('b', 2)\nlist(d.values())             # [1, 2]\n\nmerged = {**d, **other}      # other wins where keys collide\n```\n\nOne modern guarantee that practical problems quietly rely on: since Python 3.7, **dicts keep insertion order**. Iterating a dict visits keys in the order they were first added, every time.\n\nAlso: keys must be hashable. Strings, numbers, tuples work; lists don't. To key by a collection, convert: `tuple(sorted(items))`."
+    },
+    {
+      "type": "text",
+      "md": "## Sets: membership at speed\n\nA set is a bag of unique values with instant membership checks:\n\n```python\nseen = set()\nseen.add(\"x\")\n\"x\" in seen          # True, O(1): THE reason sets exist\nseen.discard(\"y\")    # no error if absent (.remove raises)\n\nset([1, 2, 2, 3])    # {1, 2, 3}: dedupe in one call (order lost!)\n\na = {1, 2, 3}; b = {2, 3, 4}\na | b    # {1, 2, 3, 4}   union\na & b    # {2, 3}         intersection\na - b    # {1}            in a but not b\n```\n\nThe practical trigger: any time you're about to write `x in some_list` inside a loop, make it a set first. Same code, thousand-fold faster on big inputs."
     },
     {
       "type": "quiz",
-      "question": "You need to dedupe a list of ids while preserving first-seen order. Which is correct AND idiomatic?",
+      "question": "You need to dedupe a list of ids while KEEPING first-seen order. Which does it?",
       "choices": [
         "list(set(ids))",
         "sorted(set(ids))",
         "list(dict.fromkeys(ids))",
-        "ids.dedupe()"
+        "ids.unique()"
       ],
       "answer": 2,
-      "explain": "dict.fromkeys builds a dict whose keys are the ids in first-seen order (dicts preserve insertion order), and list() takes the keys back out. list(set(...)) loses order; sorted(set(...)) imposes a DIFFERENT order; .dedupe() doesn't exist. This one-liner comes up constantly in log/event processing."
+      "explain": "dict.fromkeys(ids) builds a dict keyed by the ids, and dicts preserve insertion order, so the keys sit in first-seen order with duplicates collapsed; list() takes them back out. Plain set() loses order, sorted() imposes a different one, and lists have no .unique()."
     },
     {
       "type": "text",
-      "md": "## Comprehensions, the full grammar\n\n```python\n[x * 2 for x in xs]                        # map\n[x for x in xs if x > 0]                   # filter\n[x if x > 0 else 0 for x in xs]            # map with ternary (note position!)\n{x % 3 for x in xs}                        # set comp\n{u[\"id\"]: u[\"name\"] for u in users}        # dict comp\n[(i, j) for i in range(3) for j in range(3) if i != j]   # nested\n\ntotal = sum(len(w) for w in words)         # generator into a function\nany(x < 0 for x in xs); all(x < 0 for x in xs)\nmax(users, key=lambda u: u[\"age\"])         # max BY something\n```\n\nThe filter clause goes at the end; a ternary goes at the front. Mixing those up is a syntax error you don't have time for."
+      "md": "## Comprehensions: map and filter in one line\n\nA comprehension is a loop that builds a list. The two basic forms:\n\n```python\nnums = [1, -2, 3]\n\n[x * 2 for x in nums]           # [2, -4, 6]        transform each\n[x for x in nums if x > 0]      # [1, 3]            keep some\n[x * 2 for x in nums if x > 0]  # [2, 6]            both\n```\n\nThe grammar rule that trips people: the `if` FILTER goes at the end. A ternary (choosing between two values) goes at the FRONT:\n\n```python\n[x if x > 0 else 0 for x in nums]   # [1, 0, 3]   replace negatives\n```\n\nFilter at the end drops items; ternary at the front transforms every item. Mixing up the positions is a syntax error."
     },
     {
       "type": "quiz",
-      "question": "words = [\"hi\", \"there\", \"yo\"]. You want lengths of words longer than 2 characters. Which works?",
+      "question": "words = [\"hi\", \"there\", \"yo\"]. You want the LENGTHS of words longer than 2 chars. Which works?",
       "choices": [
         "[len(w) if len(w) > 2 for w in words]",
         "[len(w) for w in words if len(w) > 2]",
@@ -53,27 +65,31 @@
         "[len(w) for w in words where len(w) > 2]"
       ],
       "answer": 1,
-      "explain": "Filter goes at the END: [expr for item in seq if cond]. Option A is the classic broken hybrid (a ternary missing its else, in the wrong position); it's a SyntaxError. Result: [5] (only \"there\")."
+      "explain": "Transform first, filter last: [len(w) for w in words if len(w) > 2] gives [5]. Option A is a ternary missing its else in the filter position: SyntaxError. There's no 'where' in Python, and option C is loop syntax jammed into brackets."
     },
     {
       "type": "text",
-      "md": "## Sorting: one function, three tricks\n\n```python\nsorted(xs)                          # new list; xs.sort() is in place\nsorted(xs, reverse=True)\nsorted(words, key=len)\nsorted(users, key=lambda u: u[\"age\"])\nsorted(items, key=lambda p: (-p[1], p[0]))   # multi-field via tuple\n\nmin(users, key=lambda u: u[\"age\"])  # same key= everywhere\n```\n\nTrick 1: tuple keys for multi-field. Trick 2: negate numbers to flip one field's direction. Trick 3: the sort is STABLE, so equal keys keep input order: sort by a secondary key first, then the primary, and you've layered orderings."
+      "md": "## Comprehension variants + the lazy cousins\n\nSame idea, different containers:\n\n```python\n{x % 3 for x in nums}                    # set comprehension\n{u[\"id\"]: u[\"name\"] for u in users}      # dict comprehension\nfirst_seen = {x: i for i, x in enumerate(items)}   # value -> index\n```\n\nAnd feeding functions directly (no brackets needed):\n\n```python\nsum(len(w) for w in words)      # total characters\nany(x < 0 for x in nums)        # True if ANY negative\nall(x < 0 for x in nums)        # True if ALL negative\nmax(users, key=lambda u: u[\"age\"])   # the oldest USER (not the age)\n```\n\nThat last one: max/min with key= returns the ITEM that maximizes the key, which is usually what you actually wanted."
     },
     {
       "type": "text",
-      "md": "## The collections module (three imports worth memorizing)\n\n```python\nfrom collections import Counter, defaultdict, deque\n\nCounter(\"mississippi\").most_common(2)   # [('i',4),('s',4)]\nCounter(a) + Counter(b); c[x] += 1      # counters do arithmetic; missing = 0\n\ngroups = defaultdict(list)              # also: defaultdict(int) for counting\ngroups[key].append(v)                   # no key check ever\n\nq = deque([1, 2, 3])\nq.popleft(); q.append(4)                # O(1) both ends: BFS, sliding windows\n```\n\nIf a problem says \"most frequent,\" \"group by,\" or \"process in arrival order,\" these three are the answer before you've finished reading it."
+      "md": "## Sorting: one function, three tricks\n\n```python\nsorted([3, 1, 2])                  # [1, 2, 3]  (new list)\nxs.sort()                          # same, in place\nsorted(xs, reverse=True)\n\nsorted(words, key=len)             # shortest first\nsorted(users, key=lambda u: u[\"age\"])\n```\n\n**Trick 1, multi-field:** the key returns a tuple; Python compares tuples element by element:\n\n```python\n# count DESCENDING, then name ASCENDING\nsorted(pairs, key=lambda p: (-p[1], p[0]))\n```\n\n**Trick 2, flip one number:** negate it (as above). Only works for numbers.\n\n**Trick 3, stability:** equal keys keep their original order. Sorting is stable, so \"ties broken by first appearance\" costs you nothing: it's the default."
+    },
+    {
+      "type": "text",
+      "md": "## The collections module: three imports\n\n**Counter**: counting, finished.\n\n```python\nfrom collections import Counter\nc = Counter([\"a\", \"b\", \"a\"])    # Counter({'a': 2, 'b': 1})\nc.most_common(1)                 # [('a', 2)]\nc[\"z\"]                          # 0  <- missing keys read as 0, no error\nc[\"z\"] += 1                     # and you can increment cold\n```\n\n**defaultdict**: the setdefault pattern, everywhere, automatically.\n\n```python\nfrom collections import defaultdict\ngroups = defaultdict(list)      # or defaultdict(int) for counters\ngroups[\"red\"].append(\"ann\")     # no existence check, ever\n```\n\n**deque**: a list that's fast at BOTH ends.\n\n```python\nfrom collections import deque\nq = deque([1, 2, 3])\nq.popleft()                     # 1, O(1): queues/BFS (list.pop(0) is O(n))\nq.append(4)\n```\n\nTrigger words: \"most frequent\" = Counter. \"group by\" = defaultdict(list). \"process in arrival order\" = deque."
     },
     {
       "type": "quiz",
       "question": "c = Counter([\"a\", \"b\", \"a\"]); print(c[\"z\"])\n\nWhat happens?",
       "choices": [
         "KeyError",
-        "Prints 0: Counter returns 0 for missing keys instead of raising",
+        "Prints 0",
         "Prints None",
         "Prints -1"
       ],
       "answer": 1,
-      "explain": "Counters treat missing keys as count 0, so you can increment or compare without existence checks: c[x] += 1 just works on a fresh key. (Note: reading c[\"z\"] doesn't insert it.) This no-boilerplate behavior is why Counter beats a plain dict for tallying."
+      "explain": "Counter treats missing keys as 0 instead of raising: that's its superpower. You can read, compare, or += a brand-new key with no setup. It's why tallying with Counter never needs the get(k, 0) dance a plain dict does."
     }
   ]
 }

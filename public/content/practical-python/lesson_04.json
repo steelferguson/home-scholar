@@ -5,47 +5,51 @@
   "steps": [
     {
       "type": "text",
-      "md": "## Why classes are THE practical-screen skill\n\nMulti-level assessments (CodeSignal's industry format included) are almost always \"build a system\": a storage service, a banking ledger, an inventory. One class, state in dicts, methods added level by level. You need to write this shape without thinking:\n\n```python\nclass CloudStorage:\n    def __init__(self):\n        self.files = {}            # name -> size\n        self.users = {}            # user -> capacity info\n\n    def add_file(self, name, size):\n        if name in self.files:\n            return False\n        self.files[name] = size\n        return True\n\n    def get_file_size(self, name):\n        return self.files.get(name)   # None if missing\n```"
+      "md": "## Why classes are THE practical-screen skill\n\nMulti-level assessments (CodeSignal's industry format included) are almost always \"build a system\": a storage service, a bank, an inventory. That means one class, growing level by level. This lesson rebuilds the class-writing reflex from the ground up, then covers the traps.\n\nStart with the anatomy:\n\n```python\nclass BankAccount:\n    def __init__(self, owner):          # runs at creation\n        self.owner = owner              # instance state\n        self.balance = 0\n\n    def deposit(self, amount):          # every method takes self\n        self.balance += amount\n        return self.balance\n\nacct = BankAccount(\"ann\")   # __init__ runs; no explicit self argument\nacct.deposit(50)            # 50\nacct.deposit(25)            # 75\nacct.balance                # 75\n```\n\n`self` is the object itself; Python passes it automatically when you call `acct.deposit(...)`. Forgetting self in a method definition is the #1 rust error; its signature is the confusing `takes 1 positional argument but 2 were given`."
     },
     {
       "type": "text",
-      "md": "## The rules of the shape\n\n- **State lives in `__init__`**, almost always dicts keyed by name/id. A dict of dicts (`self.users[user][\"files\"]`) outruns any clever structure.\n- **Every method takes `self`.** Forgetting it is the #1 rust error; the symptom is `takes 1 positional argument but 2 were given`.\n- **Return, don't print**, and match the spec's types exactly: if it says return `\"\"` on failure, `None` fails the tests.\n- **Instance vs class attributes**: assign in `__init__` (per object), not in the class body (shared). A mutable class-body attribute is the classy cousin of the mutable default arg.\n\n```python\nclass Bad:\n    items = []          # ONE list shared by every instance\nclass Good:\n    def __init__(self):\n        self.items = []  # fresh per instance\n```"
+      "md": "## State lives in dicts\n\nReal systems track many named things, so the instance state is almost always a dict keyed by name/id:\n\n```python\nclass FileHost:\n    def __init__(self):\n        self.files = {}                     # name -> size\n\n    def add_file(self, name, size):\n        if name in self.files:              # duplicate? refuse\n            return False\n        self.files[name] = size\n        return True\n\n    def get_file_size(self, name):\n        return self.files.get(name)         # None if missing, no crash\n\n    def delete_file(self, name):\n        return self.files.pop(name, None)    # remove AND return, or None\n```\n\nRead those three method bodies again: `in` for existence, `.get` for safe reads, `.pop(k, None)` for safe deletes. The whole of lesson 2, earning its keep. This 12-line shape is the level-1 answer to most \"build a system\" tasks."
+    },
+    {
+      "type": "quiz",
+      "question": "The spec says: delete(name) returns the deleted file's size, or None if it doesn't exist. self.files maps name -> size. The fastest correct body?",
+      "choices": [
+        "size = self.files[name]; del self.files[name]; return size",
+        "return self.files.pop(name, None)",
+        "if name in self.files: del self.files[name]",
+        "return self.files.remove(name)"
+      ],
+      "answer": 1,
+      "explain": "pop(key, default) removes the entry AND returns its value, falling back to the default instead of raising: the entire spec in one line. Option A raises KeyError on a missing name; C never returns the size; and dicts have no .remove method."
+    },
+    {
+      "type": "text",
+      "md": "## Instance attributes vs class attributes\n\nWhere you assign matters. In `__init__` (through self): per-object. In the class body: SHARED by every object:\n\n```python\nclass Good:\n    def __init__(self):\n        self.items = []       # each instance gets its own list\n\nclass Bad:\n    items = []                # ONE list, shared by all instances\n\na, b = Bad(), Bad()\na.items.append(1)\nprint(b.items)                # [1]  <- b sees a's append!\n```\n\nThis is the class-shaped cousin of the mutable default argument from lesson 1: same disease (one shared mutable object), same cure (create it per-instance, in `__init__`).\n\nClass attributes have legitimate uses (constants, counters shared on purpose); just never for per-object mutable state."
     },
     {
       "type": "quiz",
       "question": "class Counter:\n    count = 0\n    def bump(self):\n        self.count += 1\n\na, b = Counter(), Counter(); a.bump(); a.bump(); b.bump()\n\nWhat are a.count and b.count?",
       "choices": [
-        "2 and 1: self.count += 1 creates an INSTANCE attribute on first bump, so each object counts separately",
-        "3 and 3: count is shared by the class",
+        "2 and 1",
+        "3 and 3",
         "2 and 3",
         "AttributeError"
       ],
       "answer": 0,
-      "explain": "Subtle but worth knowing cold: self.count += 1 READS the class attribute (0) then WRITES an instance attribute, shadowing the class one from then on. Ints being immutable makes this per-instance. With a mutable class attribute (items = []), .append would mutate the SHARED list: that's the dangerous case."
+      "explain": "Subtle: self.count += 1 READS the class attribute (0) but WRITES an instance attribute, which shadows the class one from then on. Ints are immutable, so each object ends up counting separately: 2 and 1. The shared-state danger is specifically MUTABLE class attributes (lists/dicts) that you mutate in place."
     },
     {
       "type": "text",
-      "md": "## The dunders that earn their keep\n\n```python\nclass Item:\n    def __init__(self, name, qty):\n        self.name, self.qty = name, qty\n    def __repr__(self):\n        return f\"Item({self.name!r}, {self.qty})\"   # debugging gold\n    def __eq__(self, other):\n        return (self.name, self.qty) == (other.name, other.qty)\n    def __lt__(self, other):\n        return self.qty < other.qty                  # enables sorted(items)\n    def __len__(self): ...\n    def __contains__(self, x): ...\n\n# or skip the boilerplate:\nfrom dataclasses import dataclass, field\n\n@dataclass\nclass Item:\n    name: str\n    qty: int = 0\n    tags: list = field(default_factory=list)   # NEVER tags: list = []\n```\n\n@dataclass writes __init__, __repr__, and __eq__ for you. On a timed screen it's legitimate speed; just remember field(default_factory=list) for mutable defaults."
-    },
-    {
-      "type": "quiz",
-      "question": "The spec says delete(name) returns the deleted file's size, or None if absent. Fastest correct body given self.files is a dict?",
-      "choices": [
-        "size = self.files[name]; del self.files[name]; return size",
-        "return self.files.pop(name, None)",
-        "if name in self.files: return self.files.pop(name)",
-        "return self.files.remove(name)"
-      ],
-      "answer": 1,
-      "explain": "pop(key, default) removes AND returns in one call, defaulting instead of raising: the entire spec in one line. Option A raises KeyError on missing; C works but is two lines and forgets to return None explicitly (accidentally correct, less clear); dicts have no .remove."
+      "md": "## The dunders worth knowing (and the shortcut)\n\nDouble-underscore methods plug your class into Python's syntax. Two that pay for themselves:\n\n```python\nclass Item:\n    def __init__(self, name, qty):\n        self.name, self.qty = name, qty\n    def __repr__(self):                          # what print() shows\n        return f\"Item({self.name!r}, {self.qty})\"\n    def __lt__(self, other):                     # enables sorted(items)\n        return self.qty < other.qty\n```\n\nWithout `__repr__`, printing gives `<Item object at 0x10...>`; with it, debugging is readable.\n\nThe shortcut when a class is mostly data: **dataclasses** write `__init__`, `__repr__`, and `__eq__` for you:\n\n```python\nfrom dataclasses import dataclass, field\n\n@dataclass\nclass Item:\n    name: str\n    qty: int = 0\n    tags: list = field(default_factory=list)   # NEVER tags: list = []\n```\n\nNote the last line: mutable defaults need `field(default_factory=list)`. Same shared-list trap, third costume. (Python actually refuses the bare `= []` in a dataclass: it's seen this movie.)"
     },
     {
       "type": "text",
-      "md": "## Level-to-level survival (the multi-level format)\n\nLater levels EXTEND earlier ones: level 3 will add users/permissions/timestamps to whatever you built in level 1, and old tests keep running (backward compatibility).\n\n- **Store richer values than you need**: `self.files[name] = {\"size\": size}` costs nothing now and absorbs new fields later without migration. A bare int forces a refactor mid-clock.\n- **New optional parameters get defaults**: `def add_file(self, name, size, owner=None)` keeps every level-1 call working.\n- **Route shared logic through helpers**: when level 3 adds \"capacity checks on every write,\" you want ONE `_can_store(user, size)` to edit, not four copies.\n- **Don't gold-plate level 1.** Build the simplest thing that passes; the seams above are cheap insurance, speculative features are pure time loss."
+      "md": "## Growing a class level by level\n\nMulti-level screens EXTEND your class: level 3 adds users, capacities, or timestamps to level 1's methods, and level 1's tests keep running. Backward compatibility is graded. Three habits make that painless:\n\n**Habit 1: store dicts, not bare values.**\n\n```python\nself.files[name] = {\"size\": size}          # room to grow\n# level 3 arrives: files[name][\"owner\"] = user   <- no migration\n```\n\nWith `files[name] = size`, adding ownership means rewriting every access site mid-clock.\n\n**Habit 2: new parameters get defaults.**\n\n```python\ndef add_file(self, name, size, owner=None):   # old calls still work\n```\n\n**Habit 3: shared rules become helpers.** When level 3 adds \"capacity checks on every write,\" you want ONE `_can_store(user, size)` method to edit, not four copies of the check."
     },
     {
       "type": "quiz",
-      "question": "Level 1 asked for add_file(name, size). Level 3 adds per-user ownership. Which level-1 storage choice ages best?",
+      "question": "Level 1 asked for add_file(name, size). You suspect level 3 will add per-user ownership. Which level-1 storage choice ages best?",
       "choices": [
         "self.files = set() of names",
         "self.files = {} mapping name -> size",
@@ -53,11 +57,11 @@
         "self.files = [] of (name, size) tuples"
       ],
       "answer": 2,
-      "explain": "The dict-of-dicts adds \"owner\" as one more key with zero migration: files[name][\"owner\"] = user. The name->size dict needs every access site rewritten when size becomes a dict; the set can't hold sizes at all; the list makes lookups O(n) and updates painful. Value-as-dict is the cheap seam."
+      "explain": "The dict-of-dicts absorbs new fields as one more key: files[name]['owner'] = user, zero migration. The name->size version needs every read/write rewritten when the value grows; the set can't hold sizes at all; the tuple list makes every lookup a scan. Values-as-dicts is cheap insurance, not over-engineering."
     },
     {
       "type": "text",
-      "md": "## Exceptions: the working subset\n\n```python\ntry:\n    qty = int(fields[\"qty\"])\nexcept (KeyError, ValueError):\n    return None                  # catch SPECIFIC exceptions\n\nif size < 0:\n    raise ValueError(f\"size must be >= 0, got {size}\")\n\n# EAFP is idiomatic when failure is the edge case:\ntry:\n    return self.files[name]\nexcept KeyError:\n    return None\n# ...but .get(name) says the same thing shorter. Prefer it.\n```\n\nOn practical screens, specs usually say \"return False/None on failure\" rather than \"raise\": read which one they want and be exact. A bare `except:` swallows typos in your own code; never write it under a clock.\n\n**Next:** the standard library grab-bag: json, datetime, itertools, heapq."
+      "md": "## Errors: read what the spec wants\n\nPractical specs usually say \"return False/None on failure\" rather than \"raise\". Match them EXACTLY: if it says return `\"\"`, then None fails the test. When you do need exceptions:\n\n```python\ntry:\n    qty = int(fields[\"qty\"])\nexcept (KeyError, ValueError):      # catch the SPECIFIC ones\n    return None\n\nif size < 0:\n    raise ValueError(f\"size must be >= 0, got {size}\")\n```\n\nTwo rules under a clock: never write a bare `except:` (it swallows typos in your own code, hiding the actual bug), and prefer `.get()`-style safe reads over try/except when a one-liner does the same job.\n\nNext lesson: the standard-library grab-bag: json, datetime, itertools, and friends."
     }
   ]
 }

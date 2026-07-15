@@ -5,43 +5,51 @@
   "steps": [
     {
       "type": "text",
-      "md": "## json and files\n\n```python\nimport json\nobj = json.loads(text)            # string -> dict/list\ntext = json.dumps(obj, indent=2)  # dict -> string\n\nwith open(\"data.json\") as f:      # 'with' closes even on error\n    data = json.load(f)           # note: load vs loads (s = string)\nwith open(\"out.json\", \"w\") as f:\n    json.dump(data, f)\n\nlines = open(\"log.txt\").read().splitlines()   # fine for screens\nfor line in open(\"big.txt\"): ...               # streams line by line\n```\n\nAfter json.loads, everything is plain dicts/lists/strings/numbers: all your dict fluency applies immediately."
+      "md": "## What this lesson is\n\nFive corners of the standard library that practical screens reach for: json, files, datetime, itertools, and a few loose ends. None is deep; each is a place to blank under a clock. We take them one at a time, simplest form first."
+    },
+    {
+      "type": "text",
+      "md": "## json: two pairs of functions\n\nJSON text becomes plain Python objects (dicts, lists, strings, numbers) and back:\n\n```python\nimport json\n\nobj = json.loads('{\"name\": \"ann\", \"scores\": [90, 85]}')\nobj[\"name\"]              # 'ann'   <- it's just a dict now\nobj[\"scores\"][0]         # 90\n\ntext = json.dumps(obj)               # back to a string\ntext = json.dumps(obj, indent=2)     # pretty-printed\n```\n\nThe naming rule: **the s means string**. `loads`/`dumps` work on strings; `load`/`dump` work on open files:\n\n```python\nwith open(\"data.json\") as f:\n    data = json.load(f)              # no s: file\nwith open(\"out.json\", \"w\") as f:\n    json.dump(data, f)\n```\n\nOnce parsed, all your dict fluency applies directly. There's no special JSON object to learn."
     },
     {
       "type": "quiz",
       "question": "What's the difference between json.load and json.loads?",
       "choices": [
         "load is the deprecated alias",
-        "loads parses a STRING; load reads from a FILE object (the s means string)",
+        "loads parses a STRING; load reads from an open FILE (the s means string)",
         "loads is safe, load is unsafe",
         "load returns a string, loads returns a dict"
       ],
       "answer": 1,
-      "explain": "loads/dumps work on strings; load/dump work on file objects. Mixing them up is a 30-second penalty you don't need. Same convention as pickle. (Both return the same parsed objects; neither executes code, unlike pickle, which is its own story.)"
+      "explain": "loads/dumps: strings. load/dump: file objects. Passing a string to json.load is a classic 30-second penalty (AttributeError: 'str' object has no attribute 'read'). Both parse to the same plain dicts/lists."
     },
     {
       "type": "text",
-      "md": "## datetime: timestamps without tears\n\nPractical screens love timestamps: session lengths, rate limits, TTL expiry.\n\n```python\nfrom datetime import datetime, timedelta\n\ndt = datetime.strptime(\"2026-07-14 09:30:00\", \"%Y-%m-%d %H:%M:%S\")\ns = dt.strftime(\"%Y-%m-%d\")            # strPtime Parses, strFtime Formats\ndt2 = datetime.fromisoformat(\"2026-07-14T09:30:00\")   # ISO shortcut\n\ndelta = end - start                     # timedelta\ndelta.total_seconds()                   # THE method (.seconds is a trap)\ndt + timedelta(days=30, hours=2)\ndt1 < dt2                               # compare directly\n\n# honest shortcut: \"YYYY-MM-DD HH:MM:SS\" strings sort/compare correctly\n# as plain strings; for pure ordering you may not need datetime at all\n```"
+      "md": "## Files: the with-block\n\n```python\nwith open(\"log.txt\") as f:        # closes automatically, even on error\n    text = f.read()               # whole file as one string\n\nlines = text.splitlines()          # list of lines, newlines stripped\n\n# or line by line (streams, good for big files):\nwith open(\"log.txt\") as f:\n    for line in f:\n        line = line.rstrip(\"\\n\")  # iteration KEEPS the newline; strip it\n        ...\n\nwith open(\"out.txt\", \"w\") as f:   # 'w' truncates; 'a' appends\n    f.write(\"one\\n\")              # write adds NO newline itself\n```\n\nTwo stumbles to know: iterating a file keeps each line's trailing `\\n` (splitlines doesn't), and `f.write` doesn't add one. Screens usually hand you strings instead of files, but when files appear, this is all of it."
+    },
+    {
+      "type": "text",
+      "md": "## datetime: parse, format, compare\n\nTimestamp tasks (session lengths, expiry, rate limits) all start the same way: text to datetime object.\n\n```python\nfrom datetime import datetime, timedelta\n\ndt = datetime.strptime(\"2026-07-14 09:30:00\", \"%Y-%m-%d %H:%M:%S\")\ndt = datetime.fromisoformat(\"2026-07-14T09:30:00\")   # ISO shortcut\n\ndt.strftime(\"%Y-%m-%d\")     # back to text: '2026-07-14'\n```\n\nMnemonic: str**P**time **P**arses, str**F**time **F**ormats. The codes you need: `%Y` year, `%m` month, `%d` day, `%H %M %S` time.\n\nOnce parsed, datetimes compare and subtract naturally:\n\n```python\nstart < end                        # True/False\nend - start                        # a timedelta\ndt + timedelta(days=30, hours=2)   # arithmetic\n```\n\nOne honest shortcut: `\"2026-07-14 09:30:00\"` strings sort and compare correctly AS STRINGS (that's the point of ISO format). For pure ordering, you may not need datetime at all."
     },
     {
       "type": "quiz",
-      "question": "delta = timedelta(days=2, seconds=30). What is delta.seconds vs delta.total_seconds()?",
+      "question": "delta = timedelta(days=2, seconds=30). What are delta.seconds and delta.total_seconds()?",
       "choices": [
         "Both 172830",
-        ".seconds is 30 (just the seconds COMPONENT); .total_seconds() is 172830.0 (the full duration)",
+        ".seconds is 30; .total_seconds() is 172830.0",
         ".seconds is 172830; .total_seconds() is 30",
         "They're aliases"
       ],
       "answer": 1,
-      "explain": "timedelta stores (days, seconds, microseconds) separately, and .seconds is only the middle component: a notorious silent bug when durations exceed a day. Always .total_seconds() for real math. If a rate-limit task passes with 1-hour gaps but fails at 25 hours, this is why."
+      "explain": "timedelta stores days and seconds as separate components, and .seconds is ONLY the seconds component (30 here): a notorious silent bug the moment durations pass 24 hours. For real duration math, always .total_seconds(). If a rate-limit solution works at 1-hour gaps and fails at 25, this is why."
     },
     {
       "type": "text",
-      "md": "## itertools + heapq + bisect: the occasional heavy hitters\n\n```python\nfrom itertools import combinations, permutations, product, groupby, accumulate\ncombinations(\"abc\", 2)    # ab ac bc (order-free pairs)\npermutations(\"abc\", 2)    # ab ba ac ca ... (ordered)\nproduct(range(3), repeat=2)  # 2D grid coordinates\n[k for k, g in groupby(sorted(words, key=len), key=len)]  # SORT FIRST\n\nimport heapq\nheapq.nlargest(3, scores, key=lambda s: s[1])\nheapq.heappush(h, x); heapq.heappop(h)     # min-heap; negate for max\n\nimport bisect\nbisect.bisect_left(sorted_list, x)          # binary-search insert point\n```\n\ngroupby only groups CONSECUTIVE equal keys: unsorted input silently gives fragmented groups. For \"pick all pairs\" tasks, combinations beats a double loop and can't get the i<j condition wrong."
+      "md": "## itertools: pairs and grids without index math\n\nThree generators that replace fiddly nested loops:\n\n```python\nfrom itertools import combinations, permutations, product\n\nlist(combinations(\"abc\", 2))    # [('a','b'), ('a','c'), ('b','c')]\n#   unordered pairs, no repeats: \"compare every pair of users\"\n\nlist(permutations(\"abc\", 2))    # both directions: ab AND ba (6 total)\n#   order matters: \"every way to arrange\"\n\nlist(product(range(2), repeat=2))  # [(0,0), (0,1), (1,0), (1,1)]\n#   full grid, self-pairs included: coordinates, cartesian options\n```\n\nCount check for a 6-item list choosing 2: combinations 15, permutations 30, product 36. Knowing which count you want picks the function for you.\n\nOne itertools trap: `groupby` only groups CONSECUTIVE equal keys; sort by the key first or the groups come back fragmented."
     },
     {
       "type": "quiz",
-      "question": "You need every unordered pair of distinct users from a list of 6. Which gives exactly the 15 pairs?",
+      "question": "You need every unordered pair of distinct users from a list of 6 (15 pairs). Which one?",
       "choices": [
         "product(users, users)",
         "permutations(users, 2)",
@@ -49,11 +57,15 @@
         "zip(users, users[1:])"
       ],
       "answer": 2,
-      "explain": "combinations gives order-free pairs without repeats: C(6,2)=15. permutations doubles them (30, both directions), product includes self-pairs too (36), zip gives only the 5 neighbors. Knowing this trio by their counts is instant speed on \"compare every pair\" tasks."
+      "explain": "combinations = unordered, no repeats: C(6,2) = 15, and the i<j bookkeeping can't be gotten wrong because it doesn't exist. permutations doubles to 30 (both directions), product hits 36 (self-pairs too), and zip gives just the 5 neighboring pairs."
     },
     {
       "type": "text",
-      "md": "## Odds and ends that show up\n\n```python\nimport math\nmath.inf, -math.inf         # sentinels for min/max hunting\nmath.ceil(7 / 2)            # 4 (or arithmetic trick: (a + b - 1) // b)\nmath.sqrt, math.gcd\nround(2.675, 2)             # 2.67! banker's float surprise; f\"{x:.2f}\" for display\n\nabs(-3); divmod(17, 5)      # (3, 2): quotient and remainder together\nsum(xs); min(xs); max(xs)\nsum(xs) / len(xs)           # there's no builtin mean (statistics.mean exists)\n\nid_counter = 0               # simplest unique-id generator\ndef next_id():\n    global id_counter        # or: make it a class attribute\n    id_counter += 1\n    return id_counter\n```\n\n**Next:** the 90-minute game plan: how to spend the clock on a multi-level practical screen."
+      "md": "## heapq and math: the occasional reach\n\nTop-k without sorting everything:\n\n```python\nimport heapq\nheapq.nlargest(3, scores)                          # top 3 values\nheapq.nlargest(3, users, key=lambda u: u[\"age\"])   # top 3 BY something\nheapq.nsmallest(2, xs)\n```\n\nFor a live priority queue: `heappush(h, x)` and `heappop(h)` on a plain list; it's a MIN-heap, so push negatives for max-behavior.\n\nAnd the math grab-bag:\n\n```python\nimport math\nmath.inf, -math.inf     # clean sentinels for hunting min/max\nmath.ceil(7 / 2)        # 4    (trick without math: (a + b - 1) // b)\nmath.sqrt(16), math.gcd(12, 18)\n\nround(2.675, 2)         # 2.67, not 2.68! float storage surprise\nf\"{2.675:.2f}\"          # for DISPLAY, format instead of round\n```"
+    },
+    {
+      "type": "text",
+      "md": "## Loose ends that win minutes\n\n```python\nsum(xs); min(xs); max(xs); len(xs)\nsum(xs) / len(xs)               # mean (no builtin; statistics.mean exists)\nmax(d, key=d.get)               # dict key with the LARGEST VALUE\n\nsorted(d.items())               # dict -> sorted (key, value) pairs\n\nunique_id = 0                    # simplest id generator: a counter\ndef next_id(self):\n    self.counter += 1            # as instance state in your class\n    return self.counter\n```\n\n`max(d, key=d.get)` is worth staring at: it iterates the KEYS, ranks them by their values, and hands back the winning key: \"which user has the most storage\" in one line.\n\nNext lesson: the game plan: how to spend 90 minutes on a multi-level practical screen."
     }
   ]
 }
