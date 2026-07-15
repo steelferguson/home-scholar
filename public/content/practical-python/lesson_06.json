@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The 90-Minute Game Plan",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Know the format you're walking into\n\nCodeSignal's industry-style assessment (METR's screen) is one evolving system across **4 progressive levels** in 90 minutes:\n\n- **Level 1**: basic operations (add/get/delete on some entity). Warmup, but corner cases count.\n- **Level 2**: data processing on top: filtering, aggregation, top-N queries.\n- **Level 3**: a real extension: users, permissions, capacities, timestamps. Usually the biggest lift, often forcing a refactor.\n- **Level 4**: a final extension, e.g. backup/restore, undo, or merging entities.\n\nTwo facts shape all strategy: **earlier tests keep running** (backward compatibility is graded), and **scoring is by tests passed**: full completion is NOT expected. Finishing 3 levels cleanly beats four levels of wreckage."
+    },
+    {
+      "type": "text",
+      "md": "## The time budget\n\nFor 90 minutes, walking in with a plan beats improvising one:\n\n- **Level 1: ~15 min.** Read the WHOLE level, set up the class with dict storage (values as dicts: the seam that pays at level 3), pass the tests, move on. No architecture astronautics.\n- **Level 2: ~20 min.** Usually sorting with tuple keys + comprehension filters. Your lesson-2 muscle memory.\n- **Level 3: ~30 min.** The refactor level. Read it twice before typing; identify what shared logic to extract; keep old tests green as you go.\n- **Level 4: whatever remains.** Partial credit is real: passing 3 of 7 level-4 tests still counts.\n\nRun the tests CONSTANTLY, after every method, not after every level. A wrong turn caught in 2 minutes costs 2 minutes; caught after 20, it costs the level."
+    },
+    {
+      "type": "quiz",
+      "question": "Level 3 says operations now need a timestamp parameter, and level 1 tests (which don't pass timestamps) must still pass. What's the move?",
+      "choices": [
+        "Rewrite the level 1 methods to require timestamps and hope",
+        "Add timestamp as an optional parameter with a default (e.g. timestamp=None), so old calls work unchanged and new calls supply it",
+        "Duplicate every method: add_file and add_file_v2",
+        "Skip level 3"
+      ],
+      "answer": 1,
+      "explain": "Optional parameters with defaults are THE backward-compatibility tool: def add_file(self, name, size, timestamp=None). Old tests call it the old way, new tests pass the new argument. Method duplication splits your logic in two places and doubles every future change; forced rewrites break the tests that were passing."
+    },
+    {
+      "type": "text",
+      "md": "## Working style under the clock\n\n- **Make tests pass in order.** Read the failing assertion, satisfy it exactly (return types included: \"\" is not None is not False), re-run.\n- **Parse the spec like a lawyer.** \"Returns the file size if deleted, empty string if it didn't exist\": that sentence IS the test suite.\n- **Print-debug without shame.** print(self.files) before the failing assert, run, read, delete. Fastest tool in a bare editor.\n- **When stuck 5+ minutes**: hardcode past the weird edge case (if n == 0: return \"\"), pass the test, leave a # TODO, keep moving. A stalled level is worse than an ugly line.\n- **Name things fast and consistently.** files, users, add_, get_, by_name. Cleverness in naming costs seconds and buys nothing here."
+    },
+    {
+      "type": "quiz",
+      "question": "20 minutes left, you're mid-level-3, and you spot a much cleaner architecture that would require rewriting levels 1-2. What do you do?",
+      "choices": [
+        "Rewrite: code quality is part of the grade",
+        "Keep the working structure, extract only the helper you need right now, and spend the 20 minutes passing more tests",
+        "Stop coding and write comments describing the better design",
+        "Delete level 3 and perfect levels 1-2"
+      ],
+      "answer": 1,
+      "explain": "The score is tests passed, and a rewrite puts currently-GREEN tests at risk with no test-count upside. Surgical extraction (pull out the one shared helper level 3 needs) captures most of the benefit at a fraction of the risk. Grand refactors under a clock are how passing candidates become failing ones."
+    },
+    {
+      "type": "text",
+      "md": "## Your prep loop for the next few days\n\n1. **Lessons 1-5 of this course**: rebuild the recall (~2 hours).\n2. **The ICA simulation drill** (p14 in the handcoding folder): a full 4-level system, timed at 75 minutes, no AI, no docs. This is the single highest-value rep, and doing it once removes most of the day-of surprise.\n3. **Grade it with Claude**: which level did time die on? That's the lesson to re-read.\n4. If you have one more session in you, re-run the drill variant or redo levels 3-4 fresh.\n\nOne more METR-specific note: they allow no AI assistance and it's proctored, so ALL practice should be bare-editor. The typing rust is the enemy; reps are the cure. Good hunting."
+    }
+  ]
+}

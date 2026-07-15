@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Classes at Speed",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why classes are THE practical-screen skill\n\nMulti-level assessments (CodeSignal's industry format included) are almost always \"build a system\": a storage service, a banking ledger, an inventory. One class, state in dicts, methods added level by level. You need to write this shape without thinking:\n\n```python\nclass CloudStorage:\n    def __init__(self):\n        self.files = {}            # name -> size\n        self.users = {}            # user -> capacity info\n\n    def add_file(self, name, size):\n        if name in self.files:\n            return False\n        self.files[name] = size\n        return True\n\n    def get_file_size(self, name):\n        return self.files.get(name)   # None if missing\n```"
+    },
+    {
+      "type": "text",
+      "md": "## The rules of the shape\n\n- **State lives in `__init__`**, almost always dicts keyed by name/id. A dict of dicts (`self.users[user][\"files\"]`) outruns any clever structure.\n- **Every method takes `self`.** Forgetting it is the #1 rust error; the symptom is `takes 1 positional argument but 2 were given`.\n- **Return, don't print**, and match the spec's types exactly: if it says return `\"\"` on failure, `None` fails the tests.\n- **Instance vs class attributes**: assign in `__init__` (per object), not in the class body (shared). A mutable class-body attribute is the classy cousin of the mutable default arg.\n\n```python\nclass Bad:\n    items = []          # ONE list shared by every instance\nclass Good:\n    def __init__(self):\n        self.items = []  # fresh per instance\n```"
+    },
+    {
+      "type": "quiz",
+      "question": "class Counter:\n    count = 0\n    def bump(self):\n        self.count += 1\n\na, b = Counter(), Counter(); a.bump(); a.bump(); b.bump()\n\nWhat are a.count and b.count?",
+      "choices": [
+        "2 and 1: self.count += 1 creates an INSTANCE attribute on first bump, so each object counts separately",
+        "3 and 3: count is shared by the class",
+        "2 and 3",
+        "AttributeError"
+      ],
+      "answer": 0,
+      "explain": "Subtle but worth knowing cold: self.count += 1 READS the class attribute (0) then WRITES an instance attribute, shadowing the class one from then on. Ints being immutable makes this per-instance. With a mutable class attribute (items = []), .append would mutate the SHARED list: that's the dangerous case."
+    },
+    {
+      "type": "text",
+      "md": "## The dunders that earn their keep\n\n```python\nclass Item:\n    def __init__(self, name, qty):\n        self.name, self.qty = name, qty\n    def __repr__(self):\n        return f\"Item({self.name!r}, {self.qty})\"   # debugging gold\n    def __eq__(self, other):\n        return (self.name, self.qty) == (other.name, other.qty)\n    def __lt__(self, other):\n        return self.qty < other.qty                  # enables sorted(items)\n    def __len__(self): ...\n    def __contains__(self, x): ...\n\n# or skip the boilerplate:\nfrom dataclasses import dataclass, field\n\n@dataclass\nclass Item:\n    name: str\n    qty: int = 0\n    tags: list = field(default_factory=list)   # NEVER tags: list = []\n```\n\n@dataclass writes __init__, __repr__, and __eq__ for you. On a timed screen it's legitimate speed; just remember field(default_factory=list) for mutable defaults."
+    },
+    {
+      "type": "quiz",
+      "question": "The spec says delete(name) returns the deleted file's size, or None if absent. Fastest correct body given self.files is a dict?",
+      "choices": [
+        "size = self.files[name]; del self.files[name]; return size",
+        "return self.files.pop(name, None)",
+        "if name in self.files: return self.files.pop(name)",
+        "return self.files.remove(name)"
+      ],
+      "answer": 1,
+      "explain": "pop(key, default) removes AND returns in one call, defaulting instead of raising: the entire spec in one line. Option A raises KeyError on missing; C works but is two lines and forgets to return None explicitly (accidentally correct, less clear); dicts have no .remove."
+    },
+    {
+      "type": "text",
+      "md": "## Level-to-level survival (the multi-level format)\n\nLater levels EXTEND earlier ones: level 3 will add users/permissions/timestamps to whatever you built in level 1, and old tests keep running (backward compatibility).\n\n- **Store richer values than you need**: `self.files[name] = {\"size\": size}` costs nothing now and absorbs new fields later without migration. A bare int forces a refactor mid-clock.\n- **New optional parameters get defaults**: `def add_file(self, name, size, owner=None)` keeps every level-1 call working.\n- **Route shared logic through helpers**: when level 3 adds \"capacity checks on every write,\" you want ONE `_can_store(user, size)` to edit, not four copies.\n- **Don't gold-plate level 1.** Build the simplest thing that passes; the seams above are cheap insurance, speculative features are pure time loss."
+    },
+    {
+      "type": "quiz",
+      "question": "Level 1 asked for add_file(name, size). Level 3 adds per-user ownership. Which level-1 storage choice ages best?",
+      "choices": [
+        "self.files = set() of names",
+        "self.files = {} mapping name -> size",
+        "self.files = {} mapping name -> {\"size\": size}",
+        "self.files = [] of (name, size) tuples"
+      ],
+      "answer": 2,
+      "explain": "The dict-of-dicts adds \"owner\" as one more key with zero migration: files[name][\"owner\"] = user. The name->size dict needs every access site rewritten when size becomes a dict; the set can't hold sizes at all; the list makes lookups O(n) and updates painful. Value-as-dict is the cheap seam."
+    },
+    {
+      "type": "text",
+      "md": "## Exceptions: the working subset\n\n```python\ntry:\n    qty = int(fields[\"qty\"])\nexcept (KeyError, ValueError):\n    return None                  # catch SPECIFIC exceptions\n\nif size < 0:\n    raise ValueError(f\"size must be >= 0, got {size}\")\n\n# EAFP is idiomatic when failure is the edge case:\ntry:\n    return self.files[name]\nexcept KeyError:\n    return None\n# ...but .get(name) says the same thing shorter. Prefer it.\n```\n\nOn practical screens, specs usually say \"return False/None on failure\" rather than \"raise\": read which one they want and be exact. A bare `except:` swallows typos in your own code; never write it under a clock.\n\n**Next:** the standard library grab-bag: json, datetime, itertools, heapq."
+    }
+  ]
+}

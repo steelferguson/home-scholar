@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Strings and Parsing",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Half of every practical screen is parsing\n\n\"Given these log lines / commands / records, process them.\" The winners split, strip, and join without thinking. Strings are immutable: every method returns a NEW string.\n\n```python\ns.split()             # any whitespace, collapses runs\ns.split(\",\")          # exact separator (\"a,,b\" -> ['a', '', 'b'])\ns.split(\":\", 1)       # at most 1 split: key, rest\ns.rsplit(\".\", 1)      # from the right: name, extension\ns.splitlines()\n\"-\".join(parts)       # parts must ALL be str: join(map(str, nums))\ns.strip() / .lstrip() / .rstrip()\ns.replace(\"old\", \"new\")\n```"
+    },
+    {
+      "type": "quiz",
+      "question": "\"user:alice:admin\".split(\":\", 1) evaluates to?",
+      "choices": [
+        "[\"user\", \"alice\", \"admin\"]",
+        "[\"user\", \"alice:admin\"]",
+        "[\"user:alice\", \"admin\"]",
+        "(\"user\", \"alice:admin\")"
+      ],
+      "answer": 1,
+      "explain": "maxsplit=1 means one cut, from the left, keeping the remainder intact: ['user', 'alice:admin']. This is THE idiom for key:value lines where the value may itself contain the separator. rsplit(\":\", 1) is the mirror image for peeling a suffix."
+    },
+    {
+      "type": "text",
+      "md": "## Tests, case, and building strings\n\n```python\ns.startswith(\"GET \"); s.endswith((\".jpg\", \".png\"))   # tuple = any-of\n\"error\" in s\ns.lower(); s.upper(); s.title(); s.casefold()\ns.isdigit(); s.isalpha(); s.isalnum()\ns.find(\"x\")      # index or -1\ns.index(\"x\")     # index or ValueError\ns.count(\"ab\")\n\nf\"{name}: {score:.2f}\"        # 2 decimals\nf\"{count:>5}\"                 # right-align width 5\nf\"{ratio:.1%}\"                # 42.0%\nf\"{n:,}\"                      # 1,234,567\nstr(x), int(s), float(s)\nint(\"1e3\")                    # ValueError! float(\"1e3\") works\nchr(97), ord('a')             # 'a', 97\n```"
+    },
+    {
+      "type": "quiz",
+      "question": "You're building a report line by line in a loop. Which is the right pattern?",
+      "choices": [
+        "report = \"\"; report += line + \"\\n\" each iteration",
+        "lines = []; lines.append(line) each iteration; \"\\n\".join(lines) at the end",
+        "report = sum(lines)",
+        "Use string.concat(lines)"
+      ],
+      "answer": 1,
+      "explain": "Strings are immutable, so += copies the whole accumulated string every iteration: O(n²) and a known interview tell. Collect in a list, join once. (In CPython += on str is sometimes optimized, but nobody grades you on relying on that.)"
+    },
+    {
+      "type": "text",
+      "md": "## Parsing structured lines: the template\n\n```python\nlog = \"2026-07-14 12:03:11 ERROR auth Login failed for user=alice\"\n\ndate, time, level, module, *msg_parts = log.split()\nmessage = \" \".join(msg_parts)\n\n# key=value fields\nfields = {}\nfor part in msg_parts:\n    if \"=\" in part:\n        k, v = part.split(\"=\", 1)\n        fields[k] = v\n\n# CSV-ish records -> dicts\nheader, *rows = text.splitlines()\ncols = header.split(\",\")\nrecords = [dict(zip(cols, row.split(\",\"))) for row in rows]\n```\n\nsplit + star-unpack + zip covers 90% of parsing tasks with zero imports. Reach for the csv module only when fields can contain quoted commas."
+    },
+    {
+      "type": "quiz",
+      "question": "header = \"id,name,age\" and row = \"7,alice,34\". What does dict(zip(header.split(\",\"), row.split(\",\"))) give you?",
+      "choices": [
+        "{\"id\": 7, \"name\": \"alice\", \"age\": 34}",
+        "{\"id\": \"7\", \"name\": \"alice\", \"age\": \"34\"}",
+        "[(\"id\", \"7\"), (\"name\", \"alice\"), (\"age\", \"34\")]",
+        "TypeError"
+      ],
+      "answer": 1,
+      "explain": "zip pairs the columns with the values and dict() consumes the pairs: a one-line record parser. The values stay STRINGS (\"7\", not 7): everything from split() is a string until you convert it, the source of many wrong answers on summing \"numeric\" columns."
+    },
+    {
+      "type": "text",
+      "md": "## Regex: the 20% you need\n\n```python\nimport re\nre.findall(r\"\\d+\", \"a12b304\")          # ['12', '304']\nre.findall(r\"user=(\\w+)\", log)           # capture group only\nm = re.search(r\"(\\d{4})-(\\d{2})\", s)    # first match anywhere, or None\nif m: year = m.group(1)\nre.sub(r\"\\s+\", \" \", s)                  # normalize whitespace\nre.split(r\"[,;|]\", s)                    # multi-delimiter split\n```\n\nCheat sheet: `\\d` digit, `\\w` word char, `\\s` whitespace, `+` one-or-more, `*` zero-or-more, `?` optional, `[abc]` char class, `()` capture, `^ $` anchors.\n\nHonest guidance: on a practical screen, if string methods can do it, they're faster to write AND debug. Regex earns its keep for \"all numbers in this text\" and multi-delimiter messes."
+    },
+    {
+      "type": "quiz",
+      "question": "re.findall(r\"\\d+\", \"order 12, items 3, total 450\") returns?",
+      "choices": [
+        "['12', '3', '450']",
+        "[12, 3, 450]",
+        "'12 3 450'",
+        "['1','2','3','4','5','0']"
+      ],
+      "answer": 0,
+      "explain": "findall returns every non-overlapping match as a list of STRINGS: \\d+ grabs maximal digit runs. Ints need a map: [int(x) for x in re.findall(r\"\\d+\", s)]. If you chose D, that's \\d without the +, matching single digits."
+    },
+    {
+      "type": "text",
+      "md": "## Speed heuristics for parsing tasks\n\n1. Read the input format FIRST, write a one-line comment describing it, then parse in one place into dicts/lists. Never re-parse mid-logic.\n2. `split(sep, 1)` and star-unpacking beat index arithmetic.\n3. Convert types at the parse boundary (int(...) once), not at every use.\n4. Print one parsed record and eyeball it before writing the logic. Ten seconds spent here saves a debugging spiral later.\n\n**Next:** classes at speed, the shape every multi-level practical assessment takes."
+    }
+  ]
+}

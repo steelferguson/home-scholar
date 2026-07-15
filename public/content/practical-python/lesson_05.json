@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Standard Library Grab-Bag",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## json and files\n\n```python\nimport json\nobj = json.loads(text)            # string -> dict/list\ntext = json.dumps(obj, indent=2)  # dict -> string\n\nwith open(\"data.json\") as f:      # 'with' closes even on error\n    data = json.load(f)           # note: load vs loads (s = string)\nwith open(\"out.json\", \"w\") as f:\n    json.dump(data, f)\n\nlines = open(\"log.txt\").read().splitlines()   # fine for screens\nfor line in open(\"big.txt\"): ...               # streams line by line\n```\n\nAfter json.loads, everything is plain dicts/lists/strings/numbers: all your dict fluency applies immediately."
+    },
+    {
+      "type": "quiz",
+      "question": "What's the difference between json.load and json.loads?",
+      "choices": [
+        "load is the deprecated alias",
+        "loads parses a STRING; load reads from a FILE object (the s means string)",
+        "loads is safe, load is unsafe",
+        "load returns a string, loads returns a dict"
+      ],
+      "answer": 1,
+      "explain": "loads/dumps work on strings; load/dump work on file objects. Mixing them up is a 30-second penalty you don't need. Same convention as pickle. (Both return the same parsed objects; neither executes code, unlike pickle, which is its own story.)"
+    },
+    {
+      "type": "text",
+      "md": "## datetime: timestamps without tears\n\nPractical screens love timestamps: session lengths, rate limits, TTL expiry.\n\n```python\nfrom datetime import datetime, timedelta\n\ndt = datetime.strptime(\"2026-07-14 09:30:00\", \"%Y-%m-%d %H:%M:%S\")\ns = dt.strftime(\"%Y-%m-%d\")            # strPtime Parses, strFtime Formats\ndt2 = datetime.fromisoformat(\"2026-07-14T09:30:00\")   # ISO shortcut\n\ndelta = end - start                     # timedelta\ndelta.total_seconds()                   # THE method (.seconds is a trap)\ndt + timedelta(days=30, hours=2)\ndt1 < dt2                               # compare directly\n\n# honest shortcut: \"YYYY-MM-DD HH:MM:SS\" strings sort/compare correctly\n# as plain strings; for pure ordering you may not need datetime at all\n```"
+    },
+    {
+      "type": "quiz",
+      "question": "delta = timedelta(days=2, seconds=30). What is delta.seconds vs delta.total_seconds()?",
+      "choices": [
+        "Both 172830",
+        ".seconds is 30 (just the seconds COMPONENT); .total_seconds() is 172830.0 (the full duration)",
+        ".seconds is 172830; .total_seconds() is 30",
+        "They're aliases"
+      ],
+      "answer": 1,
+      "explain": "timedelta stores (days, seconds, microseconds) separately, and .seconds is only the middle component: a notorious silent bug when durations exceed a day. Always .total_seconds() for real math. If a rate-limit task passes with 1-hour gaps but fails at 25 hours, this is why."
+    },
+    {
+      "type": "text",
+      "md": "## itertools + heapq + bisect: the occasional heavy hitters\n\n```python\nfrom itertools import combinations, permutations, product, groupby, accumulate\ncombinations(\"abc\", 2)    # ab ac bc (order-free pairs)\npermutations(\"abc\", 2)    # ab ba ac ca ... (ordered)\nproduct(range(3), repeat=2)  # 2D grid coordinates\n[k for k, g in groupby(sorted(words, key=len), key=len)]  # SORT FIRST\n\nimport heapq\nheapq.nlargest(3, scores, key=lambda s: s[1])\nheapq.heappush(h, x); heapq.heappop(h)     # min-heap; negate for max\n\nimport bisect\nbisect.bisect_left(sorted_list, x)          # binary-search insert point\n```\n\ngroupby only groups CONSECUTIVE equal keys: unsorted input silently gives fragmented groups. For \"pick all pairs\" tasks, combinations beats a double loop and can't get the i<j condition wrong."
+    },
+    {
+      "type": "quiz",
+      "question": "You need every unordered pair of distinct users from a list of 6. Which gives exactly the 15 pairs?",
+      "choices": [
+        "product(users, users)",
+        "permutations(users, 2)",
+        "combinations(users, 2)",
+        "zip(users, users[1:])"
+      ],
+      "answer": 2,
+      "explain": "combinations gives order-free pairs without repeats: C(6,2)=15. permutations doubles them (30, both directions), product includes self-pairs too (36), zip gives only the 5 neighbors. Knowing this trio by their counts is instant speed on \"compare every pair\" tasks."
+    },
+    {
+      "type": "text",
+      "md": "## Odds and ends that show up\n\n```python\nimport math\nmath.inf, -math.inf         # sentinels for min/max hunting\nmath.ceil(7 / 2)            # 4 (or arithmetic trick: (a + b - 1) // b)\nmath.sqrt, math.gcd\nround(2.675, 2)             # 2.67! banker's float surprise; f\"{x:.2f}\" for display\n\nabs(-3); divmod(17, 5)      # (3, 2): quotient and remainder together\nsum(xs); min(xs); max(xs)\nsum(xs) / len(xs)           # there's no builtin mean (statistics.mean exists)\n\nid_counter = 0               # simplest unique-id generator\ndef next_id():\n    global id_counter        # or: make it a class attribute\n    id_counter += 1\n    return id_counter\n```\n\n**Next:** the 90-minute game plan: how to spend the clock on a multi-level practical screen."
+    }
+  ]
+}

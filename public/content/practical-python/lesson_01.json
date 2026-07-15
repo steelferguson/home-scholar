@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Core Syntax, Fast",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The goal: zero hesitation\n\nA CodeSignal practical screen is a typing-speed test in disguise: the problems are straightforward, and the score is how far you get in 90 minutes. Every pause to remember \"how do I...\" costs points. This course rebuilds raw syntax recall; every quiz asks you to PREDICT what code does, so commit before you tap.\n\nThis lesson: the core language, the stuff below the libraries."
+    },
+    {
+      "type": "text",
+      "md": "## Functions and unpacking\n\n```python\ndef f(a, b=2, *args, **kwargs):\n    return a, b, args, kwargs      # returns a TUPLE\n\nx, y = 1, 2                        # tuple unpacking\nx, y = y, x                        # swap, no temp\nfirst, *rest = [1, 2, 3, 4]        # rest = [2, 3, 4]\na, (b, c) = 1, (2, 3)              # nested\n\ndef g(*, name):                    # keyword-only after *\n    ...\n```\n\nAnd the one that bites returning hand-coders: default values are evaluated once, at definition time. `def f(acc=[])` shares one list across every call."
+    },
+    {
+      "type": "quiz",
+      "question": "first, *mid, last = \"hello world foo bar\".split()\n\nWhat is mid?",
+      "choices": [
+        "\"world foo\"",
+        "[\"world\", \"foo\"]",
+        "(\"world\", \"foo\")",
+        "ValueError: too many values"
+      ],
+      "answer": 1,
+      "explain": "split() gives ['hello','world','foo','bar']; first takes 'hello', last takes 'bar', and the starred target always collects a LIST of whatever remains: ['world','foo']. Star-unpacking is the fast way to peel headers/footers off parsed lines."
+    },
+    {
+      "type": "text",
+      "md": "## Truthiness and the operators people half-remember\n\n```python\n# falsy: None, False, 0, 0.0, \"\", [], {}, set(), ()\nif not items: ...            # idiomatic empty check\n\nname = value or \"default\"     # first truthy (careful: 0 counts as falsy!)\nx = a if cond else b          # ternary\n\n3 < x <= 10                   # chained comparison, real Python\n\na is None                     # identity: the right way to test None\na == b                        # equality\n\n5 / 2    # 2.5   float division, always\n5 // 2   # 2     floor division\n-5 // 2  # -3    floors toward NEGATIVE infinity, not zero\n5 % 2    # 1     and -5 % 2 == 1 (sign follows the divisor)\n2 ** 10  # 1024\n```"
+    },
+    {
+      "type": "quiz",
+      "question": "count = data.get(\"count\") or 10\n\nWhen data = {\"count\": 0}, what is count?",
+      "choices": [
+        "0",
+        "10",
+        "None",
+        "KeyError"
+      ],
+      "answer": 1,
+      "explain": "0 is falsy, so `or` skips it and returns 10: a real bug if 0 was a legitimate value. When 0/\"\"/[] are valid, use an explicit check: data.get(\"count\") if \"count\" in data else 10, or data.get(\"count\", 10) which only defaults on a MISSING key."
+    },
+    {
+      "type": "text",
+      "md": "## Slicing: the whole grammar\n\n```python\ns = \"abcdefg\"\ns[0], s[-1]        # 'a', 'g'\ns[1:4]             # 'bcd'   (end exclusive)\ns[:3], s[3:]       # 'abc', 'defg'\ns[::2]             # 'aceg'  (step)\ns[::-1]            # 'gfedcba'  (reverse anything sliceable)\ns[-3:]             # 'efg'   (last three)\n\nnums = [1, 2, 3, 4, 5]\nnums[1:3] = [9, 9, 9]     # lists: slice ASSIGNMENT splices in place\n```\n\nSlices never raise on out-of-range: `\"ab\"[5:10]` is just `\"\"`. Indexing does raise: `\"ab\"[5]` is an IndexError. That asymmetry is useful: slice when the input might be short."
+    },
+    {
+      "type": "quiz",
+      "question": "\"banana\"[1:-1:2] evaluates to what?",
+      "choices": [
+        "\"aaa\"",
+        "\"an\"",
+        "\"anan\"",
+        "\"aa\""
+      ],
+      "answer": 3,
+      "explain": "Start at index 1 ('a'), stop before -1 (index 5, the last 'a', excluded), step 2: indexes 1 and 3, both 'a', giving \"aa\". Reading three-part slices without running them is exactly the fluency a timed screen needs."
+    },
+    {
+      "type": "text",
+      "md": "## Loops, with their accessories\n\n```python\nfor i, x in enumerate(items):            # index + value\nfor i, x in enumerate(items, start=1):   # 1-based\nfor a, b in zip(xs, ys):                 # stops at the SHORTER one\nfor x in reversed(items): ...\nfor x in sorted(items): ...\n\nwhile queue:\n    item = queue.pop(0)                  # (deque.popleft() is O(1); lesson 2)\n\nfor x in items:\n    if match(x):\n        break\nelse:                                    # runs only if NO break happened\n    print(\"not found\")\n\nrange(5)        # 0..4\nrange(2, 10, 3) # 2, 5, 8\n```\n\n`for...else` is obscure but real; recognizing it in provided code matters more than writing it."
+    },
+    {
+      "type": "quiz",
+      "question": "Which loop prints pairs of NEIGHBORING items: (a,b), (b,c), (c,d)?",
+      "choices": [
+        "for x, y in zip(items, items): ...",
+        "for x, y in zip(items, items[1:]): ...",
+        "for x, y in enumerate(items): ...",
+        "for x, y in zip(items[1:], items[:1]): ..."
+      ],
+      "answer": 1,
+      "explain": "zip the list against itself shifted by one: zip stops at the shorter sequence, so you get exactly the n-1 neighbor pairs. This little idiom solves a whole family of \"compare consecutive entries\" tasks (price changes, gap detection, pairwise diffs) in one line."
+    },
+    {
+      "type": "text",
+      "md": "## Scope, mutation, and copies\n\n```python\nb = a              # NEW NAME for the same object (lists, dicts...)\nb = a[:]           # shallow copy of a list\nb = dict(a)        # shallow copy of a dict\nimport copy\nb = copy.deepcopy(a)   # nested structures\n\ndef f(items):\n    items.append(1)    # mutates the CALLER's list\n    items = [9]        # rebinds only the local name\n```\n\nMutable default args, aliasing, and mutate-vs-rebind are the three faces of the same fact: variables are names pointing at objects. Say \"I'll copy this so I don't mutate the input\" out loud when it matters; in a practical screen with shared state across levels, it will."
+    }
+  ]
+}

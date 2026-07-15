@@ -16,6 +16,8 @@ _Last updated: 2026-07-13_
 - MLE Coding Refresh: 9 visual lessons (~3.5h) rebuilding hands-on interview
   coding: Python fluency, metrics/models from scratch, beam search, GBMs +
   sklearn workflow, debugging, AI-assisted coding
+- Practical Python Speed-Run: 6 visual lessons (~2.5h) of raw Python syntax
+  recall for timed CodeSignal-style practical screens
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 
