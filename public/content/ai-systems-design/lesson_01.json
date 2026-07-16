@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The AI System Design Interview",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## What this round actually is\n\nAn AI system design interview is 45-60 minutes of \"design a production AI product\": a support agent, a copilot, a RAG knowledge assistant. You talk, sketch, and defend tradeoffs. There's no single right answer; the grade is whether you drive a structured conversation and know where these systems actually break.\n\nYou have an unfair advantage here: you've built and operated these systems (customer-facing agents, judge-gated rollouts, distillation for cost). This course organizes what you already know into an interview-shaped framework, so it comes out in order under pressure."
+    },
+    {
+      "type": "text",
+      "md": "## How it differs from classic system design\n\nClassic system design is about scale: QPS, sharding, consistency. AI system design keeps a little of that and adds four things that don't exist in classic systems:\n\n1. **The core component is nondeterministic.** The same input can produce different outputs, and \"correct\" is a distribution, not a bool. Everything downstream (testing, monitoring, guarantees) changes shape.\n2. **Quality is a first-class design axis.** You design the evaluation system WITH the product, not after it. \"How do you know it's good?\" is not QA's problem; it's an architecture question.\n3. **Unit economics bite immediately.** Every request costs real money (tokens) and real time (generation latency). Cost-per-conversation is a design constraint from day one, not an optimization for later.\n4. **Failure is weird.** Classic systems fail loud (500s, timeouts). AI systems fail QUIET: confidently wrong answers, drift, injection. Detection is harder than recovery."
+    },
+    {
+      "type": "quiz",
+      "question": "The single biggest structural difference between designing an AI system and a classic web service is:",
+      "choices": [
+        "AI systems have higher QPS",
+        "The core component is nondeterministic, so evaluation and monitoring become architecture problems, not afterthoughts",
+        "AI systems can't be horizontally scaled",
+        "AI systems don't need databases"
+      ],
+      "answer": 1,
+      "explain": "Everything distinctive about AI system design flows from nondeterminism: you can't unit-test your way to confidence, so you need eval suites; you can't assert correctness in prod, so you need quality monitoring; outputs vary, so you need guardrails. Scale techniques mostly carry over; the quality machinery is the new discipline."
+    },
+    {
+      "type": "text",
+      "md": "## The spine: six phases, one hour\n\nDrive the interview through these phases, out loud, in order:\n\n1. **Requirements** (5-8 min): what does the system do, for whom, and what does GOOD mean? Get a measurable quality bar.\n2. **Constraints and scale** (5 min): traffic, latency budget, cost ceiling, safety/compliance needs. A few honest numbers.\n3. **High-level architecture** (10 min): boxes and arrows, the request path, where the model(s) sit, where data flows.\n4. **Deep dives** (20 min): the interviewer picks (or you steer to) 2-3 components: retrieval, the agent loop, serving, memory. Go deep, with tradeoffs.\n5. **Evaluation and monitoring** (8 min): offline evals, deploy gates, online signals. In an AI interview, NEVER let this get squeezed out.\n6. **Cost, risks, and evolution** (5 min): unit economics, top failure modes, what you'd build first vs later.\n\nThe order matters because each phase's decisions parameterize the next. Announcing the spine up front (\"here's how I'll structure this\") is itself a strong signal."
+    },
+    {
+      "type": "text",
+      "md": "## Phase 1 in practice: the questions to ask\n\nOpening clarifying questions, tuned for AI products:\n\n- **Task**: \"What exactly should the agent handle: FAQs, account actions, or open-ended troubleshooting?\" (This determines tools, risk, and evals.)\n- **Autonomy**: \"Fully autonomous, or human-in-the-loop? Can it TAKE actions or only recommend them?\" (The single biggest architecture fork.)\n- **Quality bar**: \"What's the cost of a wrong answer: mild annoyance, or money moves?\" (Determines guardrails and confirmation flows.)\n- **Latency**: \"Chat-speed (streaming, seconds) or async (minutes fine)?\"\n- **Scale and cost**: \"How many conversations/day, and is there a cost target per conversation?\"\n- **Data**: \"What do we have: docs, past transcripts, APIs into internal systems?\"\n\nSix questions, two minutes, and you've scoped the entire design. Interviewers grade the questions as much as the answers."
+    },
+    {
+      "type": "quiz",
+      "question": "Which clarifying question most changes the ARCHITECTURE of an AI support agent?",
+      "choices": [
+        "Which LLM provider do we prefer?",
+        "Can the agent take actions (refunds, account changes) autonomously, or does it only draft/recommend with a human approving?",
+        "What frontend framework is the chat widget in?",
+        "Should responses be formal or friendly?"
+      ],
+      "answer": 1,
+      "explain": "Autonomy is the fork: an act-taking agent needs tool permissioning, confirmation flows, idempotency, audit logs, and much stricter evals; a draft-only assistant is a far simpler (and often more shippable) system. Provider choice is a config detail, and tone is a prompt line. Staff-level candidates find the fork immediately."
+    },
+    {
+      "type": "text",
+      "md": "## The numbers to carry in your head\n\nBack-of-envelope currency for AI systems (rough 2026 orders of magnitude; say \"ballpark\" and nobody will quibble):\n\n- A support conversation: ~10 turns, ~1-2K tokens in + a few hundred out per turn, so **~20-50K tokens per conversation** once context re-sends are counted.\n- Frontier-model pricing: order of **$1-10 per million tokens** (in/out differ); small models: 10-100x cheaper. So a conversation costs **cents on a small model, dollars-ish on a frontier model at high volume**.\n- Latency anatomy: time-to-first-token (hundreds of ms to seconds) + tokens/sec generation (tens to hundreds). Streaming hides most of it; a blocking 8-second response feels broken, a streaming one feels fine.\n- 10K conversations/day at 30K tokens = **300M tokens/day**: at frontier prices that's real money/day, which is why model routing (lesson 2) exists.\n\nYou don't need precision; you need to demonstrate that cost math is part of how you think."
+    },
+    {
+      "type": "text",
+      "md": "## What graders reward (and the anti-patterns)\n\nRewarded:\n- **Driving**: you own the clock and the structure, checking in (\"want me to go deeper on retrieval or serving?\").\n- **Tradeoffs stated as tradeoffs**: \"RAG here, not fine-tuning, because the docs change weekly; the cost is retrieval latency and an index to operate.\"\n- **Experience leaking in**: \"in production I've seen judge-model drift, so I'd version the judge and re-baseline\" beats any diagram.\n- **Evaluation woven through**, not bolted on at the end.\n\nAnti-patterns:\n- Jumping straight to architecture without requirements (the classic).\n- Hand-waving quality (\"we'd eval it\") with no mechanism.\n- Designing for 100M users when they said 10K/day.\n- Naming products without reasons (\"we'd use Pinecone and LangChain\") instead of naming NEEDS.\n\nNext lesson: the serving layer: latency, cost, caching, and model routing."
+    }
+  ]
+}
