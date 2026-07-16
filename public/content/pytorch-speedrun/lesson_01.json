@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Tensors: Shapes Without Hesitation",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## What this course is\n\nYou used PyTorch for years; the API left with the reps. This is a five-lesson sprint that puts it back: tensors, autograd, nn.Module, the training loop, and the gotchas. Every example shows its output; every quiz asks you to predict one. Total time: about 90 minutes.\n\nThe one-sentence mental model: **PyTorch is numpy that remembers what you did to it** (so it can compute gradients) **and runs on GPUs**. Most numpy instincts transfer directly; this lesson covers where they do and don't."
+    },
+    {
+      "type": "text",
+      "md": "## Making tensors\n\n```python\nimport torch\n\nt = torch.tensor([1.0, 2.0, 3.0])   # from data\nt.shape                # torch.Size([3])\nt.dtype                # torch.float32  <- the default float\n\ntorch.zeros(2, 3)      # 2x3 of zeros\ntorch.ones(2, 3)\ntorch.randn(2, 3)      # standard normal (the init workhorse)\ntorch.arange(6)        # tensor([0, 1, 2, 3, 4, 5])  <- int64!\n```\n\nTwo dtype facts that matter: floats default to **float32** (numpy defaults to float64), and `torch.tensor([1, 2])` with no decimal points gives you **int64**, which will refuse to hold gradients later. When in doubt mid-interview: put decimal points in your literals or pass `dtype=torch.float32`."
+    },
+    {
+      "type": "text",
+      "md": "## Indexing and slicing: numpy rules apply\n\n```python\nx = torch.arange(12).reshape(3, 4)\n# tensor([[ 0,  1,  2,  3],\n#         [ 4,  5,  6,  7],\n#         [ 8,  9, 10, 11]])\n\nx[0]          # tensor([0, 1, 2, 3])        first row\nx[:, 1]       # tensor([1, 5, 9])           second column\nx[1, 2]       # tensor(6)                   a 0-dim tensor, not a number!\nx[1, 2].item()   # 6                        <- .item() extracts the Python number\nx[x > 6]      # tensor([ 7,  8,  9, 10, 11])   boolean masking\n```\n\n`.item()` is small but constant: loss values, accuracy counts, anything you print or compare goes through it. A 0-dim tensor prints fine but surprises you in f-strings and comparisons."
+    },
+    {
+      "type": "text",
+      "md": "## Reshaping and the dimension jugglers\n\n`reshape` rearranges to any compatible shape; -1 means \"figure this one out\":\n\n```python\nx = torch.arange(6)        # shape [6]\nx.reshape(2, 3)            # shape [2, 3]\nx.reshape(-1, 2)           # shape [3, 2]   (-1 inferred)\n```\n\nThe two you always need for batch dimensions:\n\n```python\nv = torch.tensor([1.0, 2.0, 3.0])   # shape [3]\nv.unsqueeze(0)             # shape [1, 3]   add a dim at position 0 (a \"batch of 1\")\nv.unsqueeze(1)             # shape [3, 1]   add a dim at position 1 (a column)\n\nm = torch.zeros(1, 3)\nm.squeeze(0)               # shape [3]      remove a size-1 dim\n```\n\nMost \"expected 2D input, got 1D\" errors are one unsqueeze away from fixed. (`view` is reshape's stricter sibling; under a clock, just use reshape.)"
+    },
+    {
+      "type": "quiz",
+      "question": "x = torch.randn(4, 5). What's the shape of x.unsqueeze(0)?",
+      "choices": [
+        "[4, 5, 1]",
+        "[1, 4, 5]",
+        "[4, 1, 5]",
+        "[20]"
+      ],
+      "answer": 1,
+      "explain": "unsqueeze(0) inserts a new size-1 dimension at position 0: [1, 4, 5]. Position 2 would give [4, 5, 1], position 1 gives [4, 1, 5]. The mental move: point at the slot in the shape list where the 1 lands."
+    },
+    {
+      "type": "text",
+      "md": "## Math: elementwise, matmul, broadcasting\n\nArithmetic is elementwise, `@` is matrix multiply:\n\n```python\na = torch.tensor([[1.0, 2.0], [3.0, 4.0]])   # [2, 2]\nb = torch.ones(2, 2)\n\na + b          # elementwise\na * b          # elementwise (NOT matmul)\na @ b          # matrix multiply: [2,2] @ [2,2] -> [2,2]\n```\n\nBroadcasting stretches size-1 dims to match, same rules as numpy:\n\n```python\nx = torch.randn(4, 3)\nmu = x.mean(dim=0)      # shape [3]\nx - mu                  # [4,3] - [3] -> broadcast to [4,3]: per-column centering\n```\n\nThe matmul shape rule to say out loud: `[n, k] @ [k, m] -> [n, m]`, inner dims must match. Every `mat1 and mat2 shapes cannot be multiplied` error is this rule telling you a layer's input width is wrong."
+    },
+    {
+      "type": "text",
+      "md": "## Reductions: dim is the axis that disappears\n\n```python\nx = torch.arange(6.0).reshape(2, 3)\n# tensor([[0., 1., 2.],\n#         [3., 4., 5.]])\n\nx.sum()             # tensor(15.)      everything -> 0-dim\nx.sum(dim=0)        # tensor([3., 5., 7.])   rows collapse -> shape [3]\nx.sum(dim=1)        # tensor([3., 12.])      cols collapse -> shape [2]\nx.mean(dim=1)       # tensor([1., 4.])\nx.argmax(dim=1)     # tensor([2, 2])   index of max per row\nx.max(dim=1)        # (values, indices) named tuple!\n```\n\nSame rule as numpy's axis: **the dim you pass is the one that vanishes**. `argmax(dim=1)` on logits of shape [batch, classes] gives the predicted class per example: the single most-typed reduction in classification code."
+    },
+    {
+      "type": "quiz",
+      "question": "logits = torch.randn(32, 10) (a batch of 32, 10 classes). What does logits.argmax(dim=1).shape give?",
+      "choices": [
+        "[10]",
+        "[32]",
+        "[32, 10]",
+        "[] (0-dim)"
+      ],
+      "answer": 1,
+      "explain": "dim=1 (the classes) is the dimension that disappears, leaving one winning index per example: shape [32], the predicted class for each of the 32 inputs. argmax(dim=0) would ask the weirder question \"which example wins each class\": shape [10]."
+    },
+    {
+      "type": "text",
+      "md": "## Bridges to numpy and Python\n\n```python\nt = torch.tensor([1.0, 2.0])\nt.numpy()               # numpy array (shares memory!)\ntorch.from_numpy(arr)    # the other direction (also shares)\nt.tolist()               # plain Python list\nt.item()                 # single value -> Python number\n\nt.detach().numpy()       # required once autograd is involved (lesson 2)\n```\n\nThat's tensor fluency. Next: autograd, the part that makes PyTorch PyTorch: three lines of API around one idea."
+    }
+  ]
+}

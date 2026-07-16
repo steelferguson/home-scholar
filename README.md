@@ -18,6 +18,8 @@ _Last updated: 2026-07-13_
   sklearn workflow, debugging, AI-assisted coding
 - Practical Python Speed-Run: 6 visual lessons (~2.5h) of raw Python syntax
   recall for timed CodeSignal-style practical screens
+- PyTorch Speed-Run: 5 visual lessons (~1.5h): tensors, autograd, nn.Module,
+  the training loop from memory, silent-bug catalog
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 

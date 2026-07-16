@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "nn.Module and Losses",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## From raw tensors to layers\n\nYou could build every model from bare tensors like the last lesson's manual loop, but `torch.nn` packages the standard pieces. The atom is `nn.Linear`:\n\n```python\nimport torch.nn as nn\n\nlayer = nn.Linear(4, 2)     # in_features=4, out_features=2\nx = torch.randn(8, 4)        # batch of 8, each 4 wide\nout = layer(x)               # shape [8, 2]\n\nlayer.weight.shape           # [2, 4]  (out, in)\nlayer.bias.shape             # [2]\n```\n\nIt computes `x @ W.T + b`, and both W and b already have `requires_grad=True`. The shape contract to internalize: **Linear(in, out) eats [batch, in] and returns [batch, out]**. Chaining layers means each one's `out` matches the next one's `in`."
+    },
+    {
+      "type": "text",
+      "md": "## The nn.Module class: the shape you write from memory\n\nEvery PyTorch model is this exact skeleton:\n\n```python\nclass MLP(nn.Module):\n    def __init__(self, in_dim, hidden, out_dim):\n        super().__init__()                     # NEVER forget this line\n        self.fc1 = nn.Linear(in_dim, hidden)\n        self.fc2 = nn.Linear(hidden, out_dim)\n\n    def forward(self, x):\n        x = torch.relu(self.fc1(x))\n        return self.fc2(x)                     # raw logits out, no softmax\n\nmodel = MLP(4, 16, 2)\nlogits = model(torch.randn(8, 4))    # shape [8, 2]; calls forward()\n```\n\nThree rules: `super().__init__()` first (skipping it breaks parameter registration with a cryptic error), layers assigned as `self.something` (that's HOW PyTorch finds their weights), and you call `model(x)`, never `model.forward(x)` directly."
+    },
+    {
+      "type": "quiz",
+      "question": "Why must layers be assigned as self.fc1 = nn.Linear(...) inside __init__, rather than stashed in a plain local variable or list?",
+      "choices": [
+        "Style convention only",
+        "Assignment to self is how nn.Module REGISTERS the layer, so model.parameters() finds its weights; unregistered layers silently never train",
+        "Local variables get garbage collected",
+        "forward() can only see attributes"
+      ],
+      "answer": 1,
+      "explain": "nn.Module hooks attribute assignment: self.fc1 = nn.Linear(...) registers fc1's weight and bias so parameters() (and therefore the optimizer) includes them. A layer hidden in a plain Python list is invisible: the model runs, the loss computes, and those weights just never update. (For lists of layers, nn.ModuleList exists.) 'Model runs but doesn't learn' interviews often plant exactly this."
+    },
+    {
+      "type": "text",
+      "md": "## The shortcut: nn.Sequential\n\nWhen the model is just a stack, skip the class:\n\n```python\nmodel = nn.Sequential(\n    nn.Linear(4, 16),\n    nn.ReLU(),\n    nn.Linear(16, 2),\n)\nlogits = model(torch.randn(8, 4))    # [8, 2]\n```\n\nPerfectly legitimate in an interview for an MLP; reach for the class form when forward() needs logic (branches, skip connections, multiple inputs).\n\nEither way, the optimizer will want the parameters:\n\n```python\nlist(model.parameters())     # all weights and biases, ready for the optimizer\nsum(p.numel() for p in model.parameters())    # parameter count one-liner\n```"
+    },
+    {
+      "type": "text",
+      "md": "## Losses: where everyone gets burned\n\nThe classification loss has two hard rules:\n\n```python\nloss_fn = nn.CrossEntropyLoss()\n\nlogits = model(X)                 # shape [batch, num_classes], RAW logits\nloss = loss_fn(logits, labels)    # labels: shape [batch], dtype int64 (class indices)\n```\n\n**Rule 1: give it logits, NOT softmax output.** CrossEntropyLoss applies log-softmax internally. Adding your own softmax first silently trains a worse model (double-softmax squashes the gradients); it doesn't error, it just underperforms.\n\n**Rule 2: labels are class indices** (`[3, 0, 1]`, int64), not one-hot vectors.\n\nThe other two you'll reach for:\n\n```python\nnn.MSELoss()              # regression: preds [batch], targets [batch], floats\nnn.BCEWithLogitsLoss()    # binary: logits [batch], targets [batch] FLOATS (0.0/1.0)\n```\n\nSame pattern: the WithLogits version exists so you don't sigmoid first."
+    },
+    {
+      "type": "quiz",
+      "question": "Your classifier: probs = torch.softmax(model(X), dim=1); loss = nn.CrossEntropyLoss()(probs, labels). It trains without errors but plateaus early. Why?",
+      "choices": [
+        "The learning rate is too low",
+        "CrossEntropyLoss applies log-softmax itself, so you've softmaxed twice: no error raised, gradients squashed, model quietly undertrains",
+        "labels needed to be one-hot",
+        "dim should be 0"
+      ],
+      "answer": 1,
+      "explain": "The double-softmax is THE classic silent PyTorch bug: everything runs, loss decreases a bit, accuracy disappoints. Pass raw logits to CrossEntropyLoss and only softmax when you need actual probabilities to display. If you chose one-hot: that's the other direction, CrossEntropyLoss wants indices."
+    },
+    {
+      "type": "text",
+      "md": "## Predictions from logits\n\nClosing the loop from model output to answers:\n\n```python\nlogits = model(X)                        # [batch, C]\npreds = logits.argmax(dim=1)             # [batch] predicted class per example\naccuracy = (preds == labels).float().mean().item()\n\nprobs = torch.softmax(logits, dim=1)     # only when you need probabilities\n```\n\nThat accuracy line is worth reading closely: the comparison gives booleans, `.float()` makes them 0.0/1.0, `.mean()` averages, `.item()` extracts the number. Four chained calls you'll type in every evaluation.\n\nNext lesson: the training loop, the eight lines that tie all of this together."
+    }
+  ]
+}
