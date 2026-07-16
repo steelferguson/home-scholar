@@ -9,6 +9,30 @@
     },
     {
       "type": "text",
+      "md": "## Where the tracking actually lives (x never changes)\n\nThe phrase \"x gets tracked\" suggests PyTorch modifies x when you use it. It doesn't. Watch what actually happens:\n\n```python\nx = torch.tensor(2.0, requires_grad=True)\nw = torch.tensor(3.0, requires_grad=True)\n\ny = x * w        # x is UNTOUCHED. y is a brand-new tensor.\n\ny.grad_fn        # <MulBackward0>   <- the record lives on y!\nx.grad_fn        # None             <- x has no history; you created it\n```\n\n`requires_grad=True` is just a flag on x that says \"operations involving me should keep records.\" The record itself gets attached to each OUTPUT: y is born carrying a little receipt (`grad_fn`) that says \"I was made by multiplication, my parents are x and w, and here are the values I'll need later (2 and 3).\"\n\nChain more operations and each new result carries its own receipt pointing back at its parents. That linked trail of receipts IS the computation graph. Nothing is ever edited; the graph grows forward by stapling receipts to new tensors, each pointing backward."
+    },
+    {
+      "type": "quiz",
+      "question": "x = torch.tensor(2.0, requires_grad=True); y = x * 3. What changed about x?",
+      "choices": [
+        "x now stores a reference to y",
+        "x's value was wrapped in a graph node",
+        "Nothing at all: the multiplication record (grad_fn) is attached to the NEW tensor y, which points back at x",
+        "x.grad was initialized to 3"
+      ],
+      "answer": 2,
+      "explain": "x is exactly what it was: a leaf tensor with a flag. All history lives on outputs: y.grad_fn says 'made by Mul, parents: x and the constant 3.' This is why you can use x in ten different computations without them interfering: each output carries its own receipt trail, and x just sits there. (.grad stays None until you call backward.)"
+    },
+    {
+      "type": "text",
+      "md": "## What .backward() actually computes\n\nSo what gets differentiated? Exactly one thing: **the scalar you call backward on**, with respect to every flagged tensor that fed into it. The number that lands in `x.grad` answers one concrete question:\n\n> \"If I nudged x by a tiny amount, how many times that nudge would L move?\"\n\nWork the full example by hand:\n\n```python\nx = torch.tensor(2.0, requires_grad=True)\nw = torch.tensor(3.0, requires_grad=True)\ny = x * w        # y = 6,  receipt: Mul(x, w), saved 2 and 3\nL = y ** 2       # L = 36, receipt: Pow(y),   saved 6\nL.backward()\n\nx.grad           # tensor(36.)\nw.grad           # tensor(24.)\n```\n\nBackward starts at L with gradient 1 (dL/dL = 1) and walks the receipts right to left. The Pow receipt says \"my local derivative is 2y = 12,\" so 1 × 12 = 12 flows to y. The Mul receipt says \"my local derivative w.r.t. x is w = 3, and w.r.t. w is x = 2,\" so x gets 12 × 3 = 36 and w gets 12 × 2 = 24.\n\nSanity-check the meaning: nudge x from 2.0 to 2.01. Then y = 6.03 and L = 36.3609: L moved by 0.36, which is 36 times the 0.01 nudge. **The gradient is literally the nudge multiplier.** Training uses it in the obvious way: if the multiplier is positive, decreasing x decreases the loss, so step against the gradient."
+    },
+    {
+      "type": "text",
+      "md": "## Why each receipt only needs LOCAL knowledge\n\nNotice what each node knew in that walk: the Pow node only knew \"derivative of squaring is 2y,\" the Mul node only knew \"derivative w.r.t. each input is the OTHER input.\" Neither knows anything about the whole expression. The chain rule is just: multiply the local derivatives as you walk back.\n\nThat locality is the entire trick, and it's why this scales: a 100-layer network is a long chain of receipts, each holding a simple local derivative, and backward is one right-to-left multiplication pass. It's also why receipts SAVE VALUES (Mul saved 2 and 3: its local derivatives need them). Those saved values are what the graph's memory cost is, and freeing them is what torch.no_grad() buys you.\n\nOne more precision: `.grad` is only STORED on leaves, the tensors you created yourself with requires_grad=True. Intermediates like y get their gradient computed and passed through, then discarded (call y.retain_grad() before backward if you ever want to inspect it)."
+    },
+    {
+      "type": "text",
       "md": "## Fine print 1: backward needs a scalar\n\n`.backward()` works on a SINGLE number, which is why training code always reduces to a scalar loss before calling it:\n\n```python\nw = torch.randn(3, requires_grad=True)\nx = torch.tensor([1.0, 2.0, 3.0])\n\nloss = ((w * x) ** 2).sum()    # .sum() makes it a scalar\nloss.backward()                 # fine\nw.grad                          # tensor with 3 gradients, one per weight\n```\n\nCall backward on a non-scalar and you get `grad can be implicitly created only for scalar outputs`. The fix is almost always a missing `.sum()` or `.mean()` on your loss."
     },
     {
