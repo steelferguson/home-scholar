@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Back-Office Agents: Automating the Work Itself",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## A different animal than chat\n\nEverything so far assumed a conversation. But a large class of agentic-AI companies (wealth management ops, insurance claims, underwriting support) sells something else: an **AI workforce** that does back-office TASKS: process this capital call, calculate this quarter's billing, extract this K-1, prepare this advisor briefing. No user is chatting; documents and work orders flow in, verified outputs flow out.\n\nThe unit of work changes, and with it the architecture:\n\n| | Chat agent | Task agent |\n|---|---|---|\n| Unit | conversation turn | work item |\n| Latency | seconds (a human waits) | minutes-hours (an SLA waits) |\n| Interface | chat | queues + review UIs |\n| Success metric | resolution rate | straight-through rate + error rate |\n| Failure | bad answer | wrong money moved |\n\nThe loop, tools, evals, and guardrails from lessons 2-6 all transfer; this lesson is what's NEW."
+    },
+    {
+      "type": "text",
+      "md": "## The work-item pipeline\n\nThe backbone is a queue-driven pipeline, and you should draw it as one:\n\n```\nintake -> classify -> extract -> validate -> execute -> QA sample\n            |            |          |           |\n            v            v          v           v\n         human review queues (confidence-routed exceptions)\n```\n\n- **Intake**: documents arrive (email attachments, portal uploads, custodian feeds): PDFs, scans, spreadsheets. Normalize, dedupe, attach to the right client/account.\n- **Classify**: what IS this? (a capital call notice, a K-1, a subscription doc). Cheap model call; misclassification poisons everything downstream, so it gets its own accuracy tracking.\n- **Extract**: pull the structured fields the task needs (amounts, dates, account numbers, wire instructions) with a PER-FIELD confidence.\n- **Validate**: deterministic checks (next step: this is the load-bearing stage).\n- **Execute**: the actual task: book the transaction, generate the invoice, draft the wire, assemble the briefing.\n- **QA sample**: a percentage of straight-through items get human review AFTER the fact, feeding the eval suite.\n\nBecause work items are async and multi-step, this is durable-workflow territory (lesson 4): every step checkpointed, retryable, resumable."
+    },
+    {
+      "type": "quiz",
+      "question": "Which stage of the pipeline deserves per-field confidence scores rather than one document-level score?",
+      "choices": [
+        "Classification, so borderline documents get reviewed",
+        "Extraction: a document can be 95% cleanly extracted with ONE ambiguous field (a smudged wire amount), and routing decisions should hinge on the riskiest field, not the average",
+        "Execution",
+        "Intake"
+      ],
+      "answer": 1,
+      "explain": "Document-level confidence hides exactly what matters: a K-1 where every field is certain except the dollar amount must NOT sail through because the average looks fine. Per-field confidence lets you route surgically: auto-accept the clean fields, send the smudged amount to a human with the source region highlighted. Field-level routing is what makes high straight-through rates SAFE rather than reckless."
+    },
+    {
+      "type": "text",
+      "md": "## STP rate: the metric the business runs on\n\n**Straight-through processing (STP) rate**: the fraction of work items completed with zero human touches. It's the product's economics in one number: every percentage point is human hours returned.\n\nBut STP only means something paired with its counterweight: **error escape rate** (wrong outputs that reached execution). The design pattern connecting them:\n\n- Each item routes by confidence + risk: high-confidence, low-dollar items go straight through; anything below threshold goes to a review queue where a human confirms or corrects IN A PURPOSE-BUILT UI (source doc on the left, extracted fields on the right, one keystroke to approve).\n- The thresholds are DIALS, not constants: you launch conservative (low STP, everything reviewed), measure accuracy per task type, and ratchet autonomy up as measured accuracy earns it.\n- Human corrections are gold: every correction is a labeled example that flows back into evals and extraction improvements: the flywheel that raises STP over time.\n\nThe interview sentence: \"autonomy is earned per task type, with thresholds as dials tied to measured accuracy, and corrections feeding the flywheel.\""
+    },
+    {
+      "type": "text",
+      "md": "## Validation: deterministic checks beat model confidence\n\nHere's the gift of back-office domains that chat never gets: **the right answer is often checkable**. Money must tie out. Use it ruthlessly:\n\n- **Reconciliation**: extracted capital-call amount + prior commitments must reconcile against the fund's committed total. Quarterly billing must sum to fee schedule × AUM, to the penny; if the agent's invoice differs, the ITEM fails validation regardless of how confident the model was.\n- **Cross-document consistency**: the wire instructions on the notice must match the custodian's known instructions for that fund: mismatch = fraud-check queue, not an exception queue.\n- **Business-rule gates**: dates in valid ranges, accounts exist and are open, amounts within historical norms (a 10x outlier fee gets flagged even if arithmetic checks pass).\n- **Two-sided derivation**: where possible, compute the answer TWO ways (extract the total AND sum the line items) and require agreement.\n\nModel confidence is a hint; reconciliation is a proof. Systems that lean on deterministic validation can run high STP safely because the checks, not the model, hold the risk."
+    },
+    {
+      "type": "quiz",
+      "question": "Your billing agent generates quarterly invoices from fee schedules and AUM data. What's the strongest safety mechanism?",
+      "choices": [
+        "Use the largest model for the calculation",
+        "Have a second LLM double-check the first",
+        "Don't let an LLM do the arithmetic at all: the model extracts and maps inputs (schedule terms, AUM, exceptions), deterministic CODE computes the invoice, and a reconciliation check ties totals to the penny",
+        "Human-review every invoice forever"
+      ],
+      "answer": 2,
+      "explain": "The division of labor that defines good back-office agent design: LLMs handle the unstructured parts (reading documents, mapping messy inputs to schema), deterministic code handles anything with a provably correct answer, and reconciliation catches the seams. A second LLM checking the first is correlated failure; reviewing everything forever means the product has no economics. Say this pattern by name: 'LLM for understanding, code for arithmetic, reconciliation for proof.'"
+    },
+    {
+      "type": "text",
+      "md": "## The regulated-industry layer\n\nWealth management and insurance add compliance requirements that shape architecture, and naming them unprompted is a strong signal:\n\n- **Auditability**: every output must be reconstructable years later: which document version, which extraction, which model+prompt version, which human approved. The trace store from lesson 4 stops being observability and becomes a COMPLIANCE RECORD with retention rules (books-and-records style, think multi-year).\n- **Maker-checker (four-eyes)**: consequential actions require a second party: agent-as-maker with human-as-checker is often exactly the approval workflow regulators already accept, which is why the review queue isn't just a safety net; it's the compliance story.\n- **Explainability over eloquence**: \"the fee is $12,340 because schedule tier 2 at 0.85% on $5.8M AUM, minus the legacy discount (source: agreement p.3)\" is the required output shape. Show work, cite sources, link the doc.\n- **Data boundaries**: client financial data is regulated PII: per-firm tenant isolation (WHERE-clause enforced, lesson 5), data-processing agreements constraining which models/providers can even see it, and sometimes on-prem/VPC-hosted models as a hard requirement (the self-hosting fork from lesson 2 arrives as compliance, not economics).\n- **Model risk management**: banks and insurers have formal model-governance regimes: expect to document model purpose, validation evidence, and monitoring. Your eval suite (lesson 6) IS that evidence, formatted for a different audience."
+    },
+    {
+      "type": "text",
+      "md": "## Legacy integration: the unglamorous moat\n\nThe systems of record here are custodians, fund administrators, policy admin systems, and decades-old CRMs. Integration realities to design around:\n\n- **APIs range from decent to nonexistent**: some integration is file-based (SFTP drops of CSVs, overnight batch), some is portal-scraping territory. Your architecture needs an INTEGRATION ADAPTER layer that normalizes all of it into your work-item model, so the agent core never knows how ugly the edges are.\n- **Idempotency against systems you don't control**: posting a transaction twice because a batch retried is a real money bug: dedupe keys, posting references, and reconciliation-after-write (read back what you wrote and verify).\n- **Eventual consistency**: the custodian's data is T+1; your agent must reason about as-of dates explicitly or it will \"correct\" things that are merely not-yet-settled.\n- **Blast-radius control**: new integrations run in shadow mode first (compute what WOULD be posted, compare against the human-produced truth for a few cycles) before touching anything live. Shadow mode is to task agents what canarying is to chat agents.\n\nThe closing frame for an interview: \"the agent is the easy 20%; the defensible product is the pipeline around it: adapters, validation, review queues, and the audit trail.\""
+    },
+    {
+      "type": "quiz",
+      "question": "You're launching the capital-call agent for a new fund administrator whose data feed you've never used. The right first deployment is:",
+      "choices": [
+        "Full automation with tight thresholds",
+        "Shadow mode: the agent processes everything and produces outputs, but humans still do the real work; you compare agent output to human output for several cycles, measure per-field accuracy, THEN ratchet autonomy per task type",
+        "Review-everything mode indefinitely",
+        "Start with the highest-dollar items to prove value"
+      ],
+      "answer": 1,
+      "explain": "Shadow mode gets you real accuracy data at zero risk: the agent's outputs are compared against ground truth that humans are producing anyway. It converts 'trust us' into measured per-field, per-task accuracy, which is exactly what sets the initial thresholds and satisfies the client's model-risk people. Highest-dollar-first is backwards (maximum blast radius, minimum trust), and permanent review-everything never earns the economics."
+    },
+    {
+      "type": "text",
+      "md": "## Fitting it into the interview spine\n\nSame six phases from lesson 1, with the emphasis shifted:\n\n- **Requirements**: which task types, volumes per type, dollar ranges, current human process and its error rate (your baseline to beat), SLA per type.\n- **Numbers**: work items/day per type, documents per item, human-minutes each: the ROI math IS the pitch.\n- **Architecture**: the intake-to-execution pipeline with confidence-routed review queues, drawn as a workflow, not a chat loop.\n- **Deep dives**: extraction + per-field routing, deterministic validation, one legacy adapter, the review UI.\n- **Quality**: STP rate vs error escape rate, shadow-mode launches, corrections flywheel, judge + human QA sampling, and the audit/compliance record.\n- **Evolution**: autonomy ratchet per task type; each new task type reuses the same spine.\n\nWorth one rehearsal rep: \"design a system that processes capital calls and K-1s for RIAs.\" Run it out loud with a 30-minute timer; every section of this lesson should get used."
+    }
+  ]
+}
