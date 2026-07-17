@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Classical ML System Design: The Recommender",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why a recommender, in an AI-agents course\n\nTwo reasons. First, \"design a recommendation/ranking system\" is still the most-asked classical ML system design question, and MLE loops (including agentic-AI companies hiring MLEs) reach for it because it tests ML-in-production thinking end to end. Second, its core patterns are the ANCESTORS of what you've been studying: the two-stage funnel you saw in RAG reranking and the data flywheel from the evals lesson both come from recommender systems. Learning this design is learning where the field's instincts come from.\n\nSame six-phase spine as lesson 1. What changes is the content of the boxes."
+    },
+    {
+      "type": "text",
+      "md": "## Requirements and numbers first, as always\n\nClarifying questions for \"design the homepage feed\":\n\n- **Surface and goal**: homepage feed? \"customers also bought\"? What's the BUSINESS goal (engagement, purchases, watch time), and what proxy will the model optimize (click, add-to-cart)? Name the gap between them out loud; it comes back at the end.\n- **Scale**: how many users, how many items (thousands or hundreds of millions changes candidate generation), requests/sec?\n- **Latency**: a feed render budget is typically ~100-200ms end to end, which immediately rules out scoring every item with a heavy model.\n- **Freshness**: how fast must a new item become recommendable? (This drives index rebuild cadence and the cold-start design.)\n\nThe latency + scale pair produces the architecture in one sentence: you cannot run a good model over millions of items per request, so you need a cheap stage to cut millions to hundreds, then an expensive stage to order them. Sound familiar? It's the reranking argument from RAG, born here first."
+    },
+    {
+      "type": "text",
+      "md": "## The diagram\n\nBefore you look: the drawing has an offline plane and an online plane. Try to predict: which four things run offline in batch, and what's the per-request path through the online plane?"
+    },
+    {
+      "type": "image",
+      "src": "/content/ai-systems-design/diagrams/d7_recommender.svg",
+      "caption": "The recommender: offline training loop above, online two-stage funnel below, one closed data loop"
+    },
+    {
+      "type": "text",
+      "md": "## Walking the online path (the funnel)\n\n**User request → candidate generation → ranker → business re-rank → serve.** Follow the counts on the arrows: millions of items become ~500 become ~50 become the ~10 shown.\n\n- **Candidate generation** optimizes RECALL, cheaply: an ANN lookup against precomputed item embeddings (two-tower models: user vector meets item vectors, the bi-encoder pattern again), unioned with cheap heuristic sources: recently viewed, trending, new-from-followed. Multiple weak sources beat one clever one here.\n- **The ranker** optimizes PRECISION, expensively: a feature-rich model (classically a GBM, at scale a neural net) predicting engagement probability per candidate, using user features, item features, and context features fetched from the feature store. It can afford to be good because it only scores ~500.\n- **Business re-rank** is the layer candidates forget: diversity (don't show 10 near-identical items), freshness boosts, seller/policy constraints, dedupe against recently shown. Pure code, no ML, and where product strategy actually lives.\n\nThe interview sentence: \"candidate generation is allowed to be wrong as long as the right items are IN the pool; the ranker is allowed to be slow per item as long as the pool is small.\""
+    },
+    {
+      "type": "quiz",
+      "question": "Why not skip candidate generation and have the (better) ranker score all 10 million items?",
+      "choices": [
+        "The ranker would overfit",
+        "Latency and cost: a feature-rich model at ~1ms per item would take hours per request at corpus scale; the funnel spends cheap recall first so expensive precision only runs on ~500: the exact economics of RAG's retrieve-then-rerank",
+        "Rankers can only handle 1000 items by design",
+        "It would require a bigger feature store"
+      ],
+      "answer": 1,
+      "explain": "It's arithmetic: 10M items × even 0.1ms of feature-fetch + scoring each = ~17 minutes per request against a 200ms budget. The two-stage funnel is the only shape that fits, and it recurs everywhere the same tension exists: RAG (bi-encoder then cross-encoder), search, ads. Recognizing it as ONE pattern across domains is a strong interview signal."
+    },
+    {
+      "type": "text",
+      "md": "## Walking the offline loop\n\nTop plane, left to right: **interaction logs → training pipeline → model registry**, plus the **embedding + index build** job that recomputes user/item vectors and rebuilds the ANN index on a schedule.\n\nThe training pipeline's quiet subtleties, worth naming:\n\n- **Labels are implicit**: nobody labels \"relevant\"; clicks, purchases, and watch time stand in. Impressions WITHOUT clicks become negatives, which is why logging impressions (not just clicks) is load-bearing.\n- **Negative sampling**: most items were never shown, so you sample negatives rather than enumerate them; how you sample changes what the model learns.\n- **Position bias**: users click position 1 more regardless of quality, so naive training teaches the model \"whatever we already ranked first is good.\" Fixes: log position and model it, or randomize a small traffic slice.\n\nThen the two dashed arrows crossing planes: the registry DEPLOYS the ranker into serving (through eval gates: lesson 6's machinery applies verbatim), and the index build refreshes the ANN index. And the long gray return path: **served impressions and clicks flow back into the logs**: the closed loop that trains tomorrow's model on today's traffic."
+    },
+    {
+      "type": "quiz",
+      "question": "Your recommender trains on clicked-vs-not-clicked data and its offline AUC keeps improving, but online A/B tests show it increasingly just recommends whatever was already popular and ranked first. What's the classic diagnosis?",
+      "choices": [
+        "The model is underfitting",
+        "Feedback loop + position bias: the model trains on ITS OWN past ranking decisions, where position-1 items get clicked regardless of quality, so it learns to imitate the old ranker: fixes include modeling position as a feature and keeping a small randomized-ranking traffic slice for unbiased data",
+        "The learning rate is too high",
+        "AUC is the wrong metric for ranking"
+      ],
+      "answer": 1,
+      "explain": "This is THE classical recsys trap: the training data isn't nature, it's the previous model's output. Offline metrics improve because the model predicts its own biased logs better, while genuine quality stagnates. The randomized slice (or logged-position modeling, or inverse-propensity weighting) is what breaks the loop. Note the family resemblance to judge drift in lesson 6: in both cases, the measurement system is entangled with the thing being measured."
+    },
+    {
+      "type": "text",
+      "md": "## The feature store and training-serving skew\n\nThe feature store box carries the most important sentence in the diagram: \"same values as training.\"\n\n**Training-serving skew** is the classical silent killer: the feature \"user's 30-day purchase count\" gets computed one way in the offline training job (SQL over the warehouse) and a subtly different way in the online path (a service with different filters, timezone handling, or staleness). The model learned one distribution and serves against another; accuracy quietly sags and nothing errors.\n\nThe feature store is the architectural fix: define each feature ONCE, serve the same definition to both training (with **point-in-time correctness**: features as they were AT the interaction, no peeking at the future) and online inference (low-latency lookups). When an interviewer asks \"how do you keep offline and online consistent,\" the answer is: one feature definition, two access paths, plus a skew monitor comparing live feature distributions against training distributions.\n\nYou've hit the leakage version of this in lesson 3's pipelines; skew is its sneakier production sibling."
+    },
+    {
+      "type": "text",
+      "md": "## Cold start and exploration\n\nTwo standing questions every recommender interview reaches:\n\n**Cold start.** New ITEM: no interactions, so no learned embedding: fall back on content features (title/category embeddings: which text models make far easier than a decade ago), give it exploratory impressions, graduate it as data accrues. New USER: recommend from popularity + context (locale, device, source), personalize within the session as signals arrive.\n\n**Exploration.** Pure exploitation calcifies: the system only learns about what it already shows. Reserve a small slice for exploration: epsilon-greedy at its simplest, contextual bandits when you're fancy; this is also what feeds the unbiased data slice from the position-bias fix. The one-liner: \"a recommender that never explores can't discover that its model is wrong.\"\n\nBoth answers are really the same idea: the system must deliberately spend some traffic on LEARNING rather than maximizing today's click-through."
+    },
+    {
+      "type": "text",
+      "md": "## Evaluation, and closing the interview\n\n**Offline**: AUC or log-loss for the CTR model, NDCG/recall@k for ranking quality, on held-out interactions with point-in-time features. Necessary but insufficient: offline metrics are computed on biased logs (see the quiz you just did).\n\n**Online**: the A/B test is the real exam: engagement per session, retention, and GUARDRAIL metrics (latency, diversity, revenue) that a change must not regress. Note this is lesson 6's per-dimension gates wearing classical clothes.\n\n**The objective gap**: you optimized clicks; the business wanted long-term value. Close the interview by naming it: \"I'd watch for clickbait creep: click-optimizing models drift toward it: and consider longer-horizon labels (return visits, completion rate) or explicit quality terms in the re-rank layer.\"\n\nAnd the mapping to everything else you've studied: candidate-gen/ranker IS retrieve/rerank; the closed data loop IS the corrections flywheel; the registry-with-gates IS the control plane. Classical and agentic system design are one discipline with different nouns. Rehearse this lesson by redrawing the diagram from memory, then answering \"design the feed\" out loud in 30 minutes."
+    }
+  ]
+}

@@ -22,8 +22,8 @@ _Last updated: 2026-07-13_
   the training loop from memory, silent-bug catalog
 - AI Systems Design: 10 visual lessons (~3.5h): designing AI agents and AI
   systems for interviews (serving, RAG, agent loops, memory, evals,
-  contact-center capstone, back-office task agents, and a 6-diagram
-  architecture gallery with walkthroughs)
+  contact-center capstone, back-office task agents, a 7-diagram
+  architecture gallery with walkthroughs, and a classical recommender design)
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 
