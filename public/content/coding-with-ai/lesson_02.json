@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Read the Assignment Like an Engineer",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The work before the prompt\n\nThe biggest mistake in AI-assisted coding happens before a single prompt: jumping to \"build me X\" without understanding X. AI amplifies this error, because it will confidently produce a polished solution to the wrong problem, and polished-but-wrong is harder to notice than rough-but-wrong.\n\nSo the first phase is pure comprehension, no AI generation yet. Four moves: understand the real problem, surface the ambiguities, locate the risk, and sketch the shape."
+    },
+    {
+      "type": "text",
+      "md": "## Move 1: find the real problem\n\nAn assignment states a task; you need the intent behind it. \"Build a CSV parser\" is the task. The real problem is questions like: how big are the files (streaming or in-memory?), how messy is the data (quoted commas, bad rows?), who consumes the output, what happens on malformed input.\n\nThe difference matters because the architecture forks on those answers, and AI will pick a fork for you silently if you do not. Read the assignment asking \"what is this really for,\" not just \"what does it literally say.\" For a take-home, the unstated question is usually \"can this person build production-quality software,\" which tells you they care about the edges, not just the happy path."
+    },
+    {
+      "type": "text",
+      "md": "## Move 2: surface and decide the ambiguities\n\nEvery assignment has gaps. List them explicitly. For a rate limiter: per-user or global? sliding window or fixed? what happens at the limit, reject or queue? persistence across restarts?\n\nThen decide each one yourself, with a reason, BEFORE prompting. This is the single highest-leverage habit in the course, because:\n\n- An unstated decision becomes AI's decision, made by autocomplete, and it will not match your intent.\n- A stated decision becomes a constraint in your prompt, so the AI builds YOUR design.\n- In an interview, your list of surfaced ambiguities and your reasoning IS a large part of what is being graded.\n\nWhen you genuinely cannot decide (real requirement missing), that is when you ask a human, not the AI."
+    },
+    {
+      "type": "quiz",
+      "question": "A take-home says 'build an API that returns the most popular products.' The definition of 'popular' is unspecified. Best first move?",
+      "choices": [
+        "Prompt the AI to build it and let it choose a definition",
+        "Decide what 'popular' means yourself (e.g. most purchases in the last 30 days), write down why, and make that an explicit part of the spec you give the AI: an unstated decision becomes the AI's guess, a stated one becomes your design",
+        "Build every possible definition to be safe",
+        "Pick whichever is easiest to code"
+      ],
+      "answer": 1,
+      "explain": "'Popular' is a fork with real consequences (all-time vs recent, purchases vs views vs revenue). Left unspecified, the AI picks one by autocomplete and you own a design you never chose. Deciding it deliberately, with a stated reason, is both better engineering and exactly the judgment a take-home is testing. Note it as an assumption in your writeup too."
+    },
+    {
+      "type": "text",
+      "md": "## Move 3: locate the risk\n\nScan the assignment and sort the work into two buckets:\n\n- **Boilerplate**: the parts that are standard and low-risk (CRUD endpoints, argument parsing, test scaffolding, data models). Safe to delegate aggressively and skim on review.\n- **Risk**: the parts that are genuinely hard, novel, or where a subtle bug hides (concurrency, the core algorithm, tricky edge cases, anything with money or security). Delegate carefully and review like a hawk, or write yourself.\n\nThis map tells you where to spend your attention. A common failure is spending equal scrutiny everywhere, which means the boilerplate wastes your time and the risky core gets the same shallow glance as a getter."
+    },
+    {
+      "type": "text",
+      "md": "## Move 4: sketch the shape\n\nBefore prompting, you should be able to draw the solution's skeleton: the main components, how data flows, the key interfaces. Not code, just the architecture in your head or on paper.\n\nWhy this matters with AI specifically: if you do not have the shape, you cannot tell whether the AI's shape is good, so you will accept its architecture by default. And the AI's default architecture is often more complex than needed, because it pattern-matches to elaborate examples. Having your own sketch lets you say \"no, simpler, one class with these three methods,\" which is the taste-level direction only you can give.\n\nWith the problem understood, ambiguities decided, risk mapped, and shape sketched, you are finally ready to prompt. Next lesson: decomposition, breaking the shape into AI-sized pieces."
+    }
+  ]
+}

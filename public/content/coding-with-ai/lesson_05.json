@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Reviewing AI Output",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The load-bearing skill\n\nIf one skill separates good AI-assisted engineers from dangerous ones, it is reviewing generated code. Writing the prompt is easy; reading the answer with real skepticism is the discipline that keeps bugs out.\n\nThe stance to adopt: **assume the code is wrong until you have verified it is right, and do that efficiently.** Not paranoid line-by-line rewriting, but deliberate, structured reading that spends attention where risk lives. This lesson is how to read."
+    },
+    {
+      "type": "text",
+      "md": "## Two passes: intent, then correctness\n\nRead generated code in two distinct passes, because they catch different things:\n\n- **Pass 1, intent**: does this even do the right thing? Did it solve the problem I specified, or a nearby different problem? Is the approach sound? This is a fast structural read: skim the shape, check it matches your design. Many failures die here (it built a fixed-window limiter when you specified sliding).\n- **Pass 2, correctness**: given the approach is right, is the implementation right? Now read closely: boundaries, edge cases, the specific lines where bugs hide.\n\nDoing these as one blurred pass is how subtle bugs slip through: you get absorbed in line-level detail and miss that the whole approach is wrong, or you nod along at the structure and miss the off-by-one."
+    },
+    {
+      "type": "text",
+      "md": "## Where AI reliably fails\n\nGenerated code has characteristic failure modes. Knowing them tells you where to look:\n\n- **Happy-path only**: handles the example, ignores empty input, limits, nulls, concurrency. The single most common gap, which is why YOU specify the edge cases.\n- **Hallucinated or wrong-version APIs**: a method that does not exist, or a signature from an older library version.\n- **Subtle boundary errors**: off-by-one in slices, < vs <=, inclusive vs exclusive ranges. The code looks right and is wrong at the edges.\n- **Silently changed spec**: you asked for ties-broken-by-first-seen, it did ties-broken-by-value, and never mentioned the change.\n- **Over-engineering**: three helper classes and a factory where a function would do. Plausible, professional-looking, and more surface area to maintain and be wrong.\n- **Plausible-but-wrong**: confident, well-formatted code that is simply incorrect. The dangerous one, because polish reads as correctness."
+    },
+    {
+      "type": "quiz",
+      "question": "The AI returns 40 clean, well-formatted lines that look professional. What is the right next move?",
+      "choices": [
+        "Run it: if it passes, it is fine",
+        "Read it in two passes (intent, then correctness) against your spec BEFORE running, because polish is not correctness and running-first means you meet the bug as a confusing stack trace in code you never read",
+        "Ask the AI if it is sure",
+        "Accept it and move on to save time"
+      ],
+      "answer": 1,
+      "explain": "Well-formatted is the trap: fluency reads as correctness and it is not. Running first turns a reviewable problem into a debugging problem in unfamiliar code. Asking the AI 'are you sure' mostly yields confident agreement, since models are far better at generating than at self-critiquing. Your own structured read is the check that actually works, and it is the exact skill an AI-assisted interview grades."
+    },
+    {
+      "type": "text",
+      "md": "## Read against the spec, out loud\n\nThe technique that makes review reliable: read each part of the code against the spec you wrote, narrating what it does. \"This loop builds the window... it is using a list and scanning it, fine for small N... wait, it never evicts old timestamps, so the window is not actually sliding.\"\n\nNarrating forces you to actually process each line rather than pattern-matching \"looks like a rate limiter\" and moving on. It is also exactly what an AI-assisted interview wants to hear, because it shows the reviewing judgment that is the point of the exercise.\n\nAnd it converts review into specific, checkable claims: every \"this should do X\" becomes something you can confirm with a test. Which is the next lesson: turning your review suspicions into verification."
+    },
+    {
+      "type": "text",
+      "md": "## When review is harder than rewriting\n\nOne honest boundary: sometimes reviewing the AI's code costs more than writing it yourself. This happens when:\n\n- The chunk is subtle enough that verifying correctness requires the same deep thought as authoring it (a tricky concurrency primitive, a numerical algorithm).\n- The AI's approach is convoluted, so following its logic is harder than following a clean version you would write.\n\nWhen you hit this, take over and write that piece. Recognizing it is a skill, not a failure: the goal is correct software fast, not maximal AI usage. A good rule: if you have read the generated chunk twice and still cannot confidently say whether it is correct, stop reviewing and either rewrite it or decompose it smaller. Do not ship code you could not verify. Next lesson: verification proper."
+    }
+  ]
+}

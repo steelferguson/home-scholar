@@ -25,6 +25,9 @@ _Last updated: 2026-07-13_
   contact-center capstone, back-office task agents, a 7-diagram
   architecture gallery with walkthroughs, a classical recommender design, and
   a deep dive on designing the evaluator itself)
+- Coding With AI: 8 visual lessons (~2.5h): a thinking framework for driving
+  AI to build software (decompose, spec, review, verify, iterate), with a
+  worked take-home assignment
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 

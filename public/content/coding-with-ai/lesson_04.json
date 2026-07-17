@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Specifying a Task to AI",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The prompt is a spec\n\nOnce you have a well-sized chunk, the prompt that describes it is a specification, and the quality of the spec bounds the quality of the output. Vague prompts produce code you then have to reverse-engineer to understand, which erases the time savings. Precise prompts produce code you can review against the spec you just wrote.\n\nThe shift in mindset: you are not asking a question, you are writing a contract. This lesson is what goes in that contract."
+    },
+    {
+      "type": "text",
+      "md": "## Constraints, not vibes\n\nCompare two prompts for the same chunk:\n\n**Vibes**: \"write a function to rate limit requests\"\n\n**Spec**:\n```\nWrite allow(user_id) -> bool for a sliding-window rate limiter.\n- Limit: N requests per W seconds, both constructor args.\n- Sliding window (not fixed buckets).\n- In-memory, single process; no external store.\n- Return True if allowed and record the request; False if over limit.\n- Assume single-threaded; note if you rely on that.\n```\n\nThe second gives the AI your actual design and gives YOU a checklist to review against. Every constraint you leave out is a decision the AI makes for you, often the elaborate default (it might reach for Redis when you wanted in-memory). Specificity is not bureaucracy; it is you doing the design instead of outsourcing it."
+    },
+    {
+      "type": "text",
+      "md": "## What a good spec contains\n\nThe checklist for a non-trivial chunk:\n\n- **Interface**: exact signature, parameter types, return type.\n- **Behavior**: what it does, in terms precise enough to test.\n- **Edge cases**: the ones you decided in lesson 2. Empty input, limits, ties, concurrent access.\n- **Examples**: one or two input-to-output pairs. These pin down ambiguity better than prose and double as test cases.\n- **Constraints**: no new dependencies, match this existing pattern, this performance target, this error-handling style.\n- **Context**: the surrounding code it must fit (the types it uses, the conventions), but only the RELEVANT surrounding code, not the whole file.\n\nNot every chunk needs all six. A getter needs almost none; the core algorithm needs all of them."
+    },
+    {
+      "type": "quiz",
+      "question": "Which piece of a spec most reduces the chance the AI silently builds the wrong behavior?",
+      "choices": [
+        "Asking it to write clean code",
+        "Concrete input-to-output examples, especially for the tricky cases: they pin down exactly what 'correct' means in a way prose often leaves ambiguous, and they become your test cases",
+        "Telling it which model to imagine it is",
+        "Requesting lots of comments"
+      ],
+      "answer": 1,
+      "explain": "Examples are the highest-bandwidth part of a spec. 'Handle ties' is ambiguous; 'top_k([a:2, b:2, c:1], 1) returns [a] because a appeared first' is not. Concrete cases resolve the ambiguities prose glosses over, and you can lift them straight into your verification. 'Write clean code' and 'add comments' are style requests that do not constrain behavior at all."
+    },
+    {
+      "type": "text",
+      "md": "## Ask for the approach before the code\n\nFor anything non-trivial, add one step: ask the AI to describe its APPROACH before writing the implementation. \"Before coding, tell me how you would structure this.\"\n\nThis is cheap insurance. A wrong plan is fast to spot and fast to correct in prose; a wrong plan already turned into 80 lines is expensive to unwind and tempting to accept because it looks finished. You catch \"it is about to use the wrong data structure\" or \"it misunderstood the concurrency requirement\" before any code exists.\n\nCritically, you do NOT delegate the approach on the parts that are the actual assignment. If the assignment is testing whether you can design a cache eviction policy, you decide the policy and tell the AI; you do not ask it to decide. Ask for the approach to CHECK alignment on mechanics, not to outsource the core judgment."
+    },
+    {
+      "type": "text",
+      "md": "## Give context, not noise\n\nThe AI needs enough surrounding context to fit in, and no more:\n\n- **Include**: the interfaces it must use, the types it takes and returns, the one or two conventions it must match, the specific code it integrates with.\n- **Exclude**: unrelated files, the entire codebase, long history that does not bear on this chunk.\n\nToo little context and it invents interfaces that do not match yours (hallucinated method names, wrong signatures). Too much and the signal drowns; the model spends attention on irrelevant code and can latch onto the wrong pattern. Curating the context is itself a design act: you are deciding what this chunk needs to know. Next lesson: reading what comes back, the load-bearing skill."
+    }
+  ]
+}

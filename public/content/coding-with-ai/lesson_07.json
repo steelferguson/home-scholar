@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Iterating, Debugging, and Drift",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## When it is wrong (it will be)\n\nVerification found a bug, or the AI produced something off. How you iterate from here determines whether you converge fast or spin. The core mistakes are treating the AI like a slot machine (regenerate and hope) and letting it un-verify work you already checked. This lesson is disciplined iteration."
+    },
+    {
+      "type": "text",
+      "md": "## Surgical fixes over regeneration\n\nWhen a chunk has a bug, you have two options:\n\n- **Surgical**: identify the specific problem and ask for (or make) that specific fix. \"The window never evicts old timestamps; add eviction before the count check.\"\n- **Regenerate**: throw it out and ask for the whole thing again.\n\nStrongly prefer surgical. Regeneration is dangerous because it un-verifies everything: the parts you already reviewed and confirmed can silently change, so you have to re-review the entire chunk, and the new version may fix your bug while introducing a different one in a part that was fine. Full regeneration is occasionally right (the whole approach was wrong), but as a reflex it destroys the verification you have banked. Keep verified code verified; change only what is broken."
+    },
+    {
+      "type": "text",
+      "md": "## Diagnose, then direct\n\nThe slot-machine trap: the code fails, so you say \"that is wrong, try again,\" the AI produces a different wrong thing, and you repeat. Each round is random because you never told it WHAT is wrong.\n\nInstead, diagnose first, exactly as you would debug your own code: what is the actual failure, what is the smallest input that reproduces it, what does the intermediate state show. Then direct the AI with the diagnosis: \"it returns 3 instead of 2 because it counts the current request before checking the limit; check first, then record.\"\n\nA precise diagnosis turns the AI from a slot machine into a targeted tool. And often, doing the diagnosis reveals the fix is a one-line change you can just make yourself, faster than a round trip."
+    },
+    {
+      "type": "quiz",
+      "question": "The AI's code fails a test. You tell it 'that is wrong, fix it.' It returns different code that fails differently. You repeat twice more. What is the actual problem with your process?",
+      "choices": [
+        "The AI model is too weak",
+        "You are regenerating blindly instead of diagnosing: without telling it WHAT is wrong (the specific failure and cause), each attempt is a random new guess; diagnose the failure first, then direct a surgical fix",
+        "You need more tests",
+        "The task is impossible"
+      ],
+      "answer": 1,
+      "explain": "'Fix it' with no diagnosis gives the AI nothing to aim at, so it wanders the space of plausible rewrites, each un-verifying the last. This is slot-machine debugging. The fix is the same as debugging your own code: reproduce, find the cause, then either make the one-line change yourself or hand the AI the specific diagnosis. Vague iteration is the single biggest time sink in AI-assisted work."
+    },
+    {
+      "type": "text",
+      "md": "## Managing drift over a long task\n\nOn a long assignment, the AI progressively loses the thread: it forgets decisions made earlier, reintroduces patterns you rejected, and its sense of the overall design decays as the conversation grows. This is context drift, and it is your job to counter it, because you are the only component holding the whole picture.\n\nThe moves:\n\n- **Keep a running spec/scratchpad**: the decisions, conventions, and interfaces you have locked. Feed the relevant slice into prompts to re-ground the AI.\n- **Re-state constraints that keep slipping**: if it keeps adding a dependency you forbade, say so again, explicitly, each time it matters.\n- **Reset context when it is thoroughly confused**: a fresh start with a clean summary of the current state often beats fighting a long, muddled thread. The summary you write IS the value; the old conversation was just accumulated noise.\n\nDrift is not the AI failing; it is the expected behavior of a system with a finite, decaying working memory. Plan for it."
+    },
+    {
+      "type": "text",
+      "md": "## Know when to drop the AI\n\nThe last skill is knowing the boundary of useful delegation. Take over and write it yourself when:\n\n- **It is the core insight of the assignment**: the part that IS the point (the clever algorithm, the key design). Delegating this both risks a worse result and, in an interview, outsources exactly what is being evaluated.\n- **You have iterated three-plus times without convergence**: the task is either underspecified (fix the spec) or genuinely subtle (write it yourself). More rounds rarely help past this point.\n- **Verification keeps being harder than authoring**: if checking the AI's version costs more than writing a clean one, write the clean one.\n\nThis is not giving up on AI; it is using judgment about where AI helps. The strongest practitioners move fluidly between delegating and taking over, and never let \"use the AI\" override \"ship correct software.\" Next lesson: the whole framework on one worked example, plus the meta-pitfalls."
+    }
+  ]
+}

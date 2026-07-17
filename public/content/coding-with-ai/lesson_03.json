@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Decomposition: The Unit of Delegation",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The most important skill\n\nAI is dramatically better at bounded, verifiable chunks than at whole systems. \"Build the entire app\" produces something that looks complete and hides bugs everywhere. \"Build this one function with this signature and these tests\" produces something you can actually verify.\n\nSo decomposition, breaking the assignment into the right-sized pieces, is the skill that most determines whether AI speeds you up or buries you. This lesson is how to size and sequence those pieces."
+    },
+    {
+      "type": "text",
+      "md": "## The right size for a chunk\n\nA good unit of delegation is:\n\n- **Big enough to save real typing**: not a single line (that is micromanaging), but a coherent function, class, or module.\n- **Small enough to verify in one careful read**: if you cannot hold the whole chunk's correctness in your head after reading it once, it is too big. You will end up trusting it unverified, which is abdication.\n- **Bounded by a clear interface**: it takes defined inputs and produces defined outputs, so you can test it in isolation.\n\nThe verifiability constraint is the binding one. The question to ask before delegating a chunk is not \"can the AI build this\" (it usually can) but \"can I CHECK what it built in a reasonable time.\" If not, split it smaller."
+    },
+    {
+      "type": "quiz",
+      "question": "You need a full authentication system. Which decomposition sets you up to verify as you go?",
+      "choices": [
+        "One prompt: 'build a complete auth system with signup, login, sessions, and password reset'",
+        "Split into verifiable units (password hashing, token generation/validation, the session store, each endpoint) and build/verify them one at a time against clear interfaces",
+        "Build the frontend first, then ask AI for a matching backend",
+        "Ask AI to build it, then read the whole thing once at the end"
+      ],
+      "answer": 1,
+      "explain": "Auth is security-critical, exactly where unverified AI code is dangerous. The one-shot prompt gives you a large surface you cannot review deeply, and the read-at-the-end approach means bugs compound before you look. Splitting into interface-bounded units lets you verify each (does token validation reject tampered tokens? does hashing use a real KDF?) before it becomes load-bearing."
+    },
+    {
+      "type": "text",
+      "md": "## Vertical slices beat horizontal layers\n\nTwo ways to cut a system apart:\n\n- **Horizontal**: build all of one layer first (all the models, then all the services, then all the endpoints). You have nothing that runs until the end, so integration problems surface late and all at once.\n- **Vertical**: build one thin end-to-end path first (one endpoint that goes request to database to response), then add features along that working spine.\n\nPrefer vertical. With AI this matters even more, because a working end-to-end slice is a VERIFICATION HARNESS: every later chunk can be checked against a system that actually runs. Horizontal decomposition delays the moment you can run anything, which is the moment you can catch the AI being wrong."
+    },
+    {
+      "type": "text",
+      "md": "## Sequence: skeleton first, then flesh\n\nWithin your decomposition, order the work so that structure comes before detail:\n\n1. **Interfaces and types first**: define the function signatures, the data shapes, the module boundaries. This is where you encode your architecture, and it is worth doing yourself or reviewing very carefully, because everything else hangs off it.\n2. **A walking skeleton**: the thin vertical slice that runs end to end, even if each piece is a stub.\n3. **Fill the pieces**: now each chunk has a clear contract (its interface) and a harness (the running skeleton), so the AI has maximum context and you have maximum ability to verify.\n\nThis order also fixes a common AI failure: if you let the AI design the interfaces while writing the first implementation, later chunks inherit whatever it chose, and it is expensive to change. Pin the interfaces first, deliberately."
+    },
+    {
+      "type": "text",
+      "md": "## Keeping the pieces coherent\n\nDecomposition has a cost: the pieces have to fit together, and the AI building piece 7 does not remember piece 2. You manage this by being the integration point:\n\n- Hold the interfaces stable (you defined them; do not let them drift chunk to chunk).\n- Keep a running list of the decisions and conventions (naming, error handling, patterns) and feed the relevant ones into each chunk's prompt.\n- Integrate continuously: after each chunk, wire it into the running skeleton and check the whole thing still works, rather than assembling everything at the end.\n\nYou are the only component that sees the whole system. The AI sees whatever you put in front of it. Next lesson: how to specify a single chunk so the AI builds the right thing."
+    }
+  ]
+}
