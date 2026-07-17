@@ -1,0 +1,51 @@
+<svg viewBox="0 0 960 460" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/></marker>
+    <marker id="ag" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+  </defs>
+
+  <rect x="40" y="70" width="170" height="70" rx="6" fill="#f8fafc" stroke="#94a3b8"/>
+  <text x="125" y="98" font-size="16" fill="#334155" text-anchor="middle">Change</text>
+  <text x="125" y="120" font-size="12" fill="#64748b" text-anchor="middle">prompt, model, retrieval,</text>
+  <text x="125" y="134" font-size="12" fill="#64748b" text-anchor="middle">tool description</text>
+
+  <rect x="270" y="70" width="190" height="70" rx="6" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="365" y="98" font-size="16" fill="#1e3a8a" text-anchor="middle">Offline eval suite</text>
+  <text x="365" y="120" font-size="12" fill="#3b82f6" text-anchor="middle">versioned scenarios,</text>
+  <text x="365" y="134" font-size="12" fill="#3b82f6" text-anchor="middle">calibrated + pinned judge</text>
+
+  <rect x="520" y="70" width="160" height="70" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+  <text x="600" y="98" font-size="16" fill="#134e4a" text-anchor="middle">Gates</text>
+  <text x="600" y="120" font-size="12" fill="#0f766e" text-anchor="middle">per-dimension:</text>
+  <text x="600" y="134" font-size="12" fill="#0f766e" text-anchor="middle">no silent regressions</text>
+
+  <rect x="740" y="70" width="180" height="70" rx="6" fill="#fffbeb" stroke="#d97706"/>
+  <text x="830" y="98" font-size="16" fill="#92400e" text-anchor="middle">Canary 5%</text>
+  <text x="830" y="120" font-size="12" fill="#b45309" text-anchor="middle">old config stays hot:</text>
+  <text x="830" y="134" font-size="12" fill="#b45309" text-anchor="middle">rollback is a flip</text>
+
+  <line x1="210" y1="105" x2="268" y2="105" stroke="#64748b" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="460" y1="105" x2="518" y2="105" stroke="#64748b" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="680" y1="105" x2="738" y2="105" stroke="#64748b" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="712" y="93" font-size="12" fill="#0f766e">pass</text>
+
+  <rect x="740" y="270" width="180" height="80" rx="6" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="830" y="298" font-size="16" fill="#1e3a8a" text-anchor="middle">Online monitoring</text>
+  <text x="830" y="318" font-size="12" fill="#3b82f6" text-anchor="middle">completion + escalation,</text>
+  <text x="830" y="332" font-size="12" fill="#3b82f6" text-anchor="middle">re-asks, sampled judging,</text>
+  <text x="830" y="346" font-size="12" fill="#3b82f6" text-anchor="middle">per-segment + per-tenant</text>
+
+  <line x1="830" y1="140" x2="830" y2="268" stroke="#64748b" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <rect x="520" y="280" width="160" height="60" rx="6" fill="#f0fdfa" stroke="#0d9488"/>
+  <text x="600" y="306" font-size="16" fill="#134e4a" text-anchor="middle">Ramp 100%</text>
+  <text x="600" y="326" font-size="12" fill="#0f766e" text-anchor="middle">healthy metrics</text>
+  <line x1="738" y1="310" x2="682" y2="310" stroke="#0d9488" stroke-width="1.5" marker-end="url(#ag)"/>
+
+  <path d="M 738 290 L 710 290 L 710 235 L 125 235 L 125 142" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#ar)"/>
+  <text x="330" y="227" font-size="13" fill="#b91c1c">regression detected: rollback, diagnose, new change</text>
+
+  <path d="M 830 352 L 830 400 L 365 400 L 365 142" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#a)"/>
+  <text x="560" y="392" font-size="13" fill="#3b82f6">production failures become permanent suite cases (the flywheel)</text>
+</svg>

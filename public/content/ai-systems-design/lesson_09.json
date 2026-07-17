@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Architecture Gallery: The Request Path",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## How to use the gallery\n\nThese two lessons are reference architectures: the diagrams you'd draw on the whiteboard, with a guided walk through each. For every diagram: first look at it and trace the path yourself, THEN read the walkthrough. In the interview you'll be drawing these from memory, so the rep that matters is reconstructing, not recognizing.\n\nThis lesson covers the request path: what happens between a user's message and the reply. Three diagrams: the agent request path, the serving/routing layer inside it, and the RAG pipeline beside it."
+    },
+    {
+      "type": "text",
+      "md": "## Diagram 1: the agent request path\n\nThe backbone drawing for any \"design an AI assistant/agent\" question. Before looking: can you name the two boxes that should sit between the user and the LLM, and the two that sit after it?"
+    },
+    {
+      "type": "image",
+      "src": "/content/ai-systems-design/diagrams/d1_agent_request_path.svg",
+      "caption": "The conversational agent request path: guardrails bracket the loop, support systems hang off it"
+    },
+    {
+      "type": "text",
+      "md": "## Walking diagram 1\n\nTrace the solid path first: **User → channel gateway → input guardrail → agent loop → output guardrail → streamed reply back to the user.** Guardrails BRACKET the loop: nothing enters unchecked, nothing leaves unchecked.\n\nInside the loop box, the two-beat cycle: the LLM proposes tool calls, the executor runs them, results return to the LLM, repeat until it produces a user-facing answer. The \"(routed)\" note carries lesson 2: this box is really several models behind a router.\n\nOff the right side: the three support systems the executor reaches (tools, RAG, memory). Off the left, the two dashed flows people forget to draw: **every step logs to the trace store** (dashed because it's async, off the latency path), and **escalation to the human console** with a handoff package: an exit that's a feature, not a failure.\n\nWhiteboard order when you redraw it: main path left to right, then the loop's internal cycle, then support systems, then the dashed flows. Narrate in the same order."
+    },
+    {
+      "type": "quiz",
+      "question": "In diagram 1, why are the trace store and human console drawn with DASHED arrows while the main path is solid?",
+      "choices": [
+        "Purely visual style",
+        "They're conditional or asynchronous flows off the hot path: tracing happens async for every turn, escalation only when triggered: while the solid path is what every single request traverses in order",
+        "They're optional components you can skip",
+        "Dashed means deprecated"
+      ],
+      "answer": 1,
+      "explain": "The solid/dashed distinction is a real communication tool on a whiteboard: solid = the synchronous request path (where latency lives), dashed = async or conditional flows. Saying \"tracing is off the latency path\" while drawing the dashed line shows you think about what the user is waiting on. Neither is optional in a production design; the human console especially is load-bearing."
+    },
+    {
+      "type": "text",
+      "md": "## Diagram 2: inside \"LLM (routed)\"\n\nZoom into the model box from diagram 1. The design problem: one frontier model for everything is slow and expensive; this layer decides which model serves which call, and what happens when a model fails."
+    },
+    {
+      "type": "image",
+      "src": "/content/ai-systems-design/diagrams/d2_serving_routing.svg",
+      "caption": "The serving layer: router fans out by task and difficulty; cache and fallbacks do the quiet work"
+    },
+    {
+      "type": "text",
+      "md": "## Walking diagram 2\n\nThe router fans requests across three tiers: **small model** for the narrow auxiliary calls (triage, query rewriting, extraction, guardrail checks: most calls by count), **frontier model** only for the quality-critical user-facing answer, and the **distilled model** that gradually absorbs routine traffic once frontier transcripts have trained it: the cost curve bends down over time.\n\nTwo quiet workhorses: the **prefix cache** below the router (stable prompt head cached across requests: the reason prompt ORDER is an architecture decision), and the **fallback chain** on the right (alternate provider, then graceful degradation): drawn dashed and red because it's the exception path.\n\nThe annotation worth repeating from the top left: stream everything, first token under a second, volatile tokens last. When you draw this in an interview, the three-tier fan-out plus the words \"routing is the biggest cost lever\" carries the section."
+    },
+    {
+      "type": "text",
+      "md": "## Diagram 3: the RAG pipeline\n\nThe knowledge system beside the agent. The key structural feature to notice before you look: it's TWO pipelines sharing one index, drawn as two lanes, because they have different latency and consistency properties."
+    },
+    {
+      "type": "image",
+      "src": "/content/ai-systems-design/diagrams/d3_rag_pipeline.svg",
+      "caption": "RAG as two lanes: offline ingestion feeds the index; the online query lane races the clock"
+    },
+    {
+      "type": "text",
+      "md": "## Walking diagram 3\n\n**Top lane, offline**: documents → structure-aware chunking with metadata → embedding → the index (which holds vectors AND keywords AND filterable metadata: that one box quietly encodes hybrid search and tenant isolation). Dashed border because it's batch: retryable, eventually consistent, triggered on doc changes.\n\n**Bottom lane, online**: question + history → **rewrite** (small model turns \"and for Enterprise?\" into a standalone query: the cheap step that saves conversational RAG) → hybrid search hitting the index → rerank (top 30 down to top 5) → grounded, cited generation.\n\nAnd the red exit at the bottom: **abstain/handoff when retrieval comes back weak**. Systems without that path hallucinate precisely when retrieval fails. Drawing the abstain box unprompted is one of the strongest RAG signals you can send.\n\nWhiteboard order: two lane rectangles first, index between them, then fill each lane left to right, abstain path last."
+    },
+    {
+      "type": "quiz",
+      "question": "An interviewer asks: \"why draw ingestion and query as separate lanes instead of one pipeline?\" The best answer:",
+      "choices": [
+        "It looks cleaner",
+        "They have different properties to engineer for: ingestion is offline batch (retryable, eventually consistent, scales with doc volume) while query sits on the user's latency path (every hop counts, scales with traffic): separating them lets you reason about freshness, scaling, and failures independently",
+        "They're owned by different teams",
+        "Vector databases require it"
+      ],
+      "answer": 1,
+      "explain": "The two-lane drawing isn't aesthetic; it encodes that one half is a data pipeline and the other half is a serving path. Freshness questions (\"how stale can the index be?\") live in the top lane; latency questions (\"can we afford a reranker?\") live in the bottom. When something breaks, the first diagnostic question is WHICH lane. That separation-of-concerns answer generalizes to most systems with an offline/online split."
+    }
+  ]
+}
