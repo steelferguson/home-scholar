@@ -1,7 +1,7 @@
 -- Seed the AI Systems Design course (content served from the app at /content/...)
 
 INSERT INTO courses (slug, title, description, language_from, language_to, lesson_count, sort_order, audience) VALUES
-  ('ai-systems-design', 'AI Systems Design', 'System design for AI agents and AI systems: the interview framework, LLM serving and cost, RAG, agent loops and tools, memory, evals/guardrails, and a worked contact-center agent capstone. ~2.5h.', 'English', 'English', 12, 8, 'adult')
+  ('ai-systems-design', 'AI Systems Design', 'System design for AI agents and AI systems: the interview framework, LLM serving and cost, RAG, agent loops and tools, memory, evals/guardrails, and a worked contact-center agent capstone. ~2.5h.', 'English', 'English', 13, 8, 'adult')
 ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO lessons (course_id, lesson_number, title, lesson_type, content_url)
@@ -61,6 +61,11 @@ ON CONFLICT (course_id, lesson_number) DO UPDATE
   SET title = EXCLUDED.title, lesson_type = EXCLUDED.lesson_type, content_url = EXCLUDED.content_url;
 INSERT INTO lessons (course_id, lesson_number, title, lesson_type, content_url)
 SELECT id, 12, 'Designing the Evaluator Itself', 'visual', '/content/ai-systems-design/lesson_12.json'
+FROM courses WHERE slug = 'ai-systems-design'
+ON CONFLICT (course_id, lesson_number) DO UPDATE
+  SET title = EXCLUDED.title, lesson_type = EXCLUDED.lesson_type, content_url = EXCLUDED.content_url;
+INSERT INTO lessons (course_id, lesson_number, title, lesson_type, content_url)
+SELECT id, 13, 'Trust and Abuse: Defending an Eval Platform', 'visual', '/content/ai-systems-design/lesson_13.json'
 FROM courses WHERE slug = 'ai-systems-design'
 ON CONFLICT (course_id, lesson_number) DO UPDATE
   SET title = EXCLUDED.title, lesson_type = EXCLUDED.lesson_type, content_url = EXCLUDED.content_url;

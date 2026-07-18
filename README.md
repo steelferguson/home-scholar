@@ -24,7 +24,8 @@ _Last updated: 2026-07-13_
   systems for interviews (serving, RAG, agent loops, memory, evals,
   contact-center capstone, back-office task agents, a 7-diagram
   architecture gallery with walkthroughs, a classical recommender design, and
-  a deep dive on designing the evaluator itself)
+  a deep dive on designing the evaluator itself, and defending an eval platform
+  from abuse)
 - Coding With AI: 8 visual lessons (~2.5h): a thinking framework for driving
   AI to build software (decompose, spec, review, verify, iterate), with a
   worked take-home assignment
