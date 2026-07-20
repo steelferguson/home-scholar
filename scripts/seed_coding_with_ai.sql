@@ -1,7 +1,7 @@
 -- Seed the Coding With AI course (content served from the app at /content/...)
 
 INSERT INTO courses (slug, title, description, language_from, language_to, lesson_count, sort_order, audience) VALUES
-  ('coding-with-ai', 'Coding With AI', 'A thinking framework for driving AI to build software well: own the problem/architecture/correctness, decompose into verifiable chunks, spec each as a contract, review in two passes, verify with real signal, iterate surgically. Ends with a worked take-home. ~2.5h.', 'English', 'English', 14, 9, 'adult')
+  ('coding-with-ai', 'Coding With AI', 'A thinking framework for driving AI to build software well: own the problem/architecture/correctness, decompose into verifiable chunks, spec each as a contract, review in two passes, verify with real signal, iterate surgically. Ends with a worked take-home. ~2.5h.', 'English', 'English', 15, 9, 'adult')
 ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO lessons (course_id, lesson_number, title, lesson_type, content_url)
@@ -71,6 +71,11 @@ ON CONFLICT (course_id, lesson_number) DO UPDATE
   SET title = EXCLUDED.title, lesson_type = EXCLUDED.lesson_type, content_url = EXCLUDED.content_url;
 INSERT INTO lessons (course_id, lesson_number, title, lesson_type, content_url)
 SELECT id, 14, 'Tailoring the Build: Back-Office Document Products', 'visual', '/content/coding-with-ai/lesson_14.json'
+FROM courses WHERE slug = 'coding-with-ai'
+ON CONFLICT (course_id, lesson_number) DO UPDATE
+  SET title = EXCLUDED.title, lesson_type = EXCLUDED.lesson_type, content_url = EXCLUDED.content_url;
+INSERT INTO lessons (course_id, lesson_number, title, lesson_type, content_url)
+SELECT id, 15, 'Practice Scenarios', 'visual', '/content/coding-with-ai/lesson_15.json'
 FROM courses WHERE slug = 'coding-with-ai'
 ON CONFLICT (course_id, lesson_number) DO UPDATE
   SET title = EXCLUDED.title, lesson_type = EXCLUDED.lesson_type, content_url = EXCLUDED.content_url;

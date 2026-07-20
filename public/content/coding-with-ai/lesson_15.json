@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Practice Scenarios",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## How to use this module\n\nFive build prompts of the kind a back-office AI company would hand you, each with the curveballs an interviewer throws mid-build. Each scenario gets two steps: **the prompt**, then **a strong-answer sketch**.\n\nUse them properly: when you hit a prompt, STOP. Spend five minutes designing it yourself out loud (v1, then your layers, with the tradeoff for each) before advancing to the sketch. Reading the sketches without attempting first is worth maybe a tenth as much.\n\nThe five are deliberately different: each rewards a different pattern combination and hides a different trap. If you only do two, do scenario A and scenario D."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario A: capital call notices\n\n> \"We receive PDFs of capital call notices from fund administrators. Build something that reads one and tells us whether we can process it automatically.\"\n\n**Curveballs they will add:**\n- \"What if the wire instructions on the notice differ from what we have on file for that fund?\"\n- \"We get 200 of these on a busy day. Does that change anything?\"\n- \"How do you know the extraction is right?\"\n\nDesign it now: v1, then your layers, each with the failure it answers. Five minutes, out loud, before you advance."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario A: sketch\n\n- **v1**: one call, PDF text in, JSON out (fund, investor, amount, due date, wire instructions).\n- **Layer 1, schema**: per-field confidence plus exact-span evidence and page location.\n- **Layer 2, deterministic validation**: amount does not exceed remaining commitment; due date is sane and in the future; line items sum to the stated total (derive twice); required fields present.\n- **Layer 3, routing**: clean and within tolerance goes straight through; low confidence on any field goes to review with that field flagged.\n- **Layer 4**: audit record, retry caps, degrade to human rather than crash.\n\n**The trap, and the curveball answer**: a wire-instruction mismatch is not an exception, it is a **fraud signal**, and it belongs in a different queue with different urgency and a different reviewer. Say that explicitly. Also: the comparison against the known-good wire instructions is a string comparison in code against a trusted record, never a model judgment.\n\n**On volume**: 200/day is small, so it does not change the architecture. Saying \"that volume does not push me to redesign; the constraint here is accuracy, not throughput\" is a better answer than inventing scale machinery."
+    },
+    {
+      "type": "quiz",
+      "question": "In scenario A, why does the wire-instruction mismatch deserve a separate queue rather than the normal exception queue?",
+      "choices": [
+        "Because it is more likely to be a formatting issue",
+        "Because it is a potential fraud indicator rather than a data-quality problem: it needs urgency, a different reviewer, and possibly a fraud process, whereas the exception queue is tuned for routine clarification of ambiguous fields",
+        "Because wire instructions are always low confidence",
+        "It does not; one queue is simpler"
+      ],
+      "answer": 1,
+      "explain": "Business-email-compromise attacks on capital calls are a real and expensive fraud pattern: an attacker sends a legitimate-looking notice with altered wire details. Routing that into the same queue as 'this date was smudged' means a reviewer optimizing for speed may click through it. Different failure class, different queue, different handling. Naming this shows you understand the actual risk landscape of the domain, not just the extraction problem."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario B: the advisor briefing\n\n> \"Before a client meeting, an advisor needs a one-page briefing. Inputs are the last few meeting notes, a portfolio summary, and recent account activity. Build it.\"\n\n**Curveballs:**\n- \"What if two meeting notes contradict each other?\"\n- \"The advisor says the briefing is accurate but missed the thing they actually cared about.\"\n\nDesign it before advancing. Warning: this one is not the problem it first appears to be."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario B: sketch\n\n- **v1**: everything into one call, out comes a briefing.\n- **Layer 1, fan-out**: summarize each source separately, then synthesize, so no source gets drowned and length is manageable.\n- **Layer 2, grounding**: every line in the briefing carries which source it came from; a verifier checks support. An advisor acting on an unsupported claim in front of a client is the failure that matters.\n- **Layer 3, salience ranking**: an explicit pass that decides what matters MOST for this meeting: open commitments, changes since last contact, anomalies. This is the layer that answers the second curveball.\n- **Layer 4, recency and conflict**: facts carry dates, and newer supersedes older, resolved in structured state rather than hoping the model notices.\n\n**The trap**: this reads like a summarization problem and it is a **salience** problem. A complete, accurate, well-written briefing that buries the one thing the advisor needed is a failed product. Say that out loud: \"the hard part is not compression, it is deciding what is worth their sixty seconds.\" That reframe is the whole scenario.\n\n**On contradictions**: do not average them. Surface the conflict explicitly with both dates (\"in March they wanted X, in June they said Y\"), because a contradiction is itself information the advisor needs."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario C: insurance claim triage\n\n> \"Claims arrive as free text plus attachments. Route each one: fast-track, standard review, or investigate.\"\n\n**Curveballs:**\n- \"How do you make sure fraud does not get fast-tracked?\"\n- \"What happens when the classifier is wrong?\"\n\nDesign it. Think about what the error costs are before you think about the model."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario C: sketch\n\n- **v1**: one call, text in, category out.\n- **Layer 1, extract then classify**: pull structured fields first (claim type, amount, dates, parties, policy number), then classify FROM the structure. More reliable than text-to-label in one hop, and far more auditable, because you can see which facts drove the routing.\n- **Layer 2, deterministic rules with veto power**: policy status, coverage dates, and amount thresholds are hard constraints. A claim outside its coverage window cannot be fast-tracked no matter how confident the model is. Rules override the model.\n- **Layer 3, risk signals for the investigate path**: claim filed shortly after policy inception, amount just under an authority threshold, prior claim frequency, narrative inconsistent with the attachments.\n- **Layer 4, asymmetric thresholds**, below.\n\n**The trap**: optimizing accuracy. The costs here are wildly asymmetric: a fraudulent claim wrongly fast-tracked costs many multiples of a legitimate claim wrongly sent to review, where the only cost is delay. So you deliberately bias thresholds toward review on anything with risk signal, and you measure with that asymmetry in mind rather than with a symmetric accuracy number. Saying \"I would not use accuracy as the metric here, the error costs are not symmetric\" is a strong moment."
+    },
+    {
+      "type": "quiz",
+      "question": "Scenario C: your triage model is 94% accurate. Why is that number nearly useless for deciding whether to ship?",
+      "choices": [
+        "94% is too low for any production system",
+        "Accuracy weights all errors equally, but a fraudulent claim fast-tracked and a clean claim delayed have wildly different costs; you need per-class error rates weighted by consequence, especially the false-fast-track rate on risky claims",
+        "Accuracy cannot be measured on text data",
+        "It is useless because the classes are balanced"
+      ],
+      "answer": 1,
+      "explain": "A single accuracy figure hides the distribution of errors, and in triage the whole design question is WHICH errors you are making. 94% accuracy achieved by fast-tracking everything (if most claims are legitimate) would be catastrophic. The right instrumentation is per-route error rates with the costly direction called out, which is the same per-dimension thinking as gating evals by dimension rather than by a blended score."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario D: reconciliation\n\n> \"We have a custodian statement and our own internal records for the same account and period. Find where they disagree and explain the differences.\"\n\n**Curveballs:**\n- \"The custodian changes their statement format every few months.\"\n- \"How do you tell a real break from a timing difference?\"\n\nDesign it. This scenario has the cleanest right answer of the five, and getting it right is a strong signal."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario D: sketch\n\n- **v1**: both documents into one call, ask for the differences. It will be plausible and unreliable, which is useful to observe out loud.\n- **Layer 1, normalize separately**: two independent extraction calls, each mapping its source into the SAME schema (positions, quantities, values, dates). The model's only job is translation into your common format.\n- **Layer 2, diff in code**: compare the two normalized structures deterministically. This is the whole scenario. A code diff is exhaustive, exact, and cannot hallucinate a match or miss a row.\n- **Layer 3, explain with a model**: for each discrepancy code found, a model classifies it (settlement timing, corporate action, fee accrual, genuine break) and writes the explanation. Model explains, code finds.\n- **Layer 4, materiality and as-of logic**: a threshold below which differences are noise, and T+1 settlement awareness so pending trades are not flagged as breaks.\n\n**The trap**: letting the model do the comparison. It will silently miss rows and confidently assert matches, and you cannot audit it. This scenario is the purest expression of \"the model reads, code decides,\" which is exactly why it is worth rehearsing.\n\n**On changing formats**: that is an argument FOR this architecture, not against it. Only the normalization prompt has to tolerate the new format; the diff logic, thresholds, and explanations are all downstream of a stable schema and never change."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario E: commitments from client email\n\n> \"Client emails come in. Extract what we committed to, who owns it, and by when.\"\n\n**Curveballs:**\n- \"Here's an email with no action items in it at all.\"\n- \"This one says 'by end of quarter.'\"\n\nDesign it. Both curveballs are pointing at the same class of mistake."
+    },
+    {
+      "type": "text",
+      "md": "## Scenario E: sketch\n\n- **v1**: email in, list of action items out.\n- **Layer 1, schema with evidence**: each item carries the exact quote that produced it, plus confidence. If it cannot quote the commitment, it should not assert it.\n- **Layer 2, the null case**: explicitly handle and TEST \"no action items.\" Models are strongly biased toward producing a non-empty list when asked to extract a list, so an email that is purely social will yield invented commitments unless the prompt permits (and the tests verify) an empty result. Run that test in front of them.\n- **Layer 3, resolve relative dates in code**: the model extracts the phrase (\"end of quarter\") and the email's date; deterministic code converts that to an actual date. Never let the model do calendar arithmetic.\n- **Layer 4, owner resolution**: match named people against a known roster with fuzzy matching in code, and abstain (flag for human) when there is no confident match, rather than guessing a plausible name.\n\n**The trap**: both curveballs probe the same weakness, which is the model's eagerness to produce output. The empty case and the abstain case are the ones nobody tests and everybody's system gets wrong."
+    },
+    {
+      "type": "quiz",
+      "question": "Across scenarios A, D, and E, the same principle appears three times in different costumes. What is it?",
+      "choices": [
+        "Always use the largest available model",
+        "Anything with a provably correct answer belongs in deterministic code (wire-instruction comparison, record diffing, date resolution, roster matching); the model handles only the unstructured reading and explaining",
+        "Always fan out to parallel calls",
+        "Confidence scores should gate every decision"
+      ],
+      "answer": 1,
+      "explain": "String comparison, structured diffing, calendar arithmetic, and fuzzy name matching are all computable, so making them probabilistic adds a hallucination surface for zero benefit and destroys auditability. The recurring shape is the same one from lesson 14: the model reads and explains, code decides anything decidable, and reconciliation proves it. If you internalize one thing before this interview, make it this."
+    },
+    {
+      "type": "text",
+      "md": "## Getting the reps\n\nHow to actually practice, in increasing order of value:\n\n1. **Design-only, five minutes each**: for each scenario, say your v1 and layers out loud with tradeoffs. Do this on a walk. Cheap and surprisingly effective at making the vocabulary automatic.\n2. **Timed build, 60 minutes, with a real coding agent**: pick one scenario, invent a sample document, and actually build it. This is where you find out that your v1 takes longer than you thought.\n3. **Live mock with an interviewer**: someone who picks the problem, adds curveballs at bad moments, and pushes back on your choices.\n\nFor number three, say **\"run a multi-LLM build interview\"** and I will run a full hour: I pick the scenario, play the interviewer, throw the curveballs mid-build, and afterward grade you against lessons 9 through 14 with specific notes on what to do differently.\n\nBefore the real thing, do at least one of number two and one of number three."
+    }
+  ]
+}
