@@ -29,7 +29,7 @@ _Last updated: 2026-07-13_
 - Coding With AI: 13 visual lessons (~4h): a thinking framework for driving
   AI to build software (decompose, spec, review, verify, iterate) plus the
   live multi-LLM build interview (pattern library, layering, driving the
-  agent live), with two worked examples
+  agent live, back-office document tailoring), with two worked examples
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 

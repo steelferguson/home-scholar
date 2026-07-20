@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Tailoring the Build: Back-Office Document Products",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why tailor the hour\n\nThe format from lessons 9 through 13 is constant, but which ideas LAND depends on what the company sells. If they automate back-office work in wealth management or insurance (capital calls, K-1s, subscription docs, billing, advisor briefings), then the graded ideas shift hard toward a specific set of moves.\n\nThe reason is a domain fact: in a consumer AI product a wrong answer is annoying. Here, a wrong output means money moves incorrectly, a client gets a bad invoice, or a compliance record is falsified. **The architecture must center on verification and routing, not on generation quality.** A candidate who builds an elegant generator and no verification path has misread the business entirely.\n\nThis module is the domain-specific design vocabulary for that hour. It pairs with AI Systems Design lesson 8, which covers the same territory as system design rather than as a live build."
+    },
+    {
+      "type": "text",
+      "md": "## Predict the task shape\n\nThey will likely pick something adjacent to their product but not proprietary. The plausible shapes, all of which reward the same moves:\n\n- **Extract and validate**: given a document (an invoice, a notice, a statement), pull structured fields and decide whether the result is trustworthy.\n- **Summarize into a deliverable**: given a client's documents, produce a briefing, a summary, or talking points.\n- **Classify and route**: given a stream of mixed documents, identify each and dispatch it.\n- **Reconcile across sources**: given two documents (or a document and a record), find where they disagree.\n\nEven if they hand you a generic task (summarize these articles), you can bring the domain lens: treat the output as something a professional will act on, and design accordingly. Prepare for **document in, structured decision out.**"
+    },
+    {
+      "type": "text",
+      "md": "## Move 1: per-field confidence, not per-document\n\nThe first move that separates you from a generic candidate. A naive extractor returns fields plus one document-level confidence. That hides exactly what matters: a notice can be 95% cleanly extracted with ONE ambiguous field, and if that field is the dollar amount, the document-level average is dangerously reassuring.\n\nSo design the extraction stage to return per-field confidence from the start:\n\n```\n{\"field\": \"wire_amount\", \"value\": \"1,250,000.00\",\n \"confidence\": 0.62, \"evidence\": \"<exact source text>\",\n \"location\": \"page 2, line 14\"}\n```\n\nNow routing can be surgical: auto-accept the clean fields, send the one uncertain field to a human with the source region highlighted. Say this out loud when you design the schema, because the schema IS the design decision here."
+    },
+    {
+      "type": "text",
+      "md": "## Move 2: the model reads, code decides\n\nThe most important principle in this domain, and it is a one-liner worth memorizing:\n\n> **LLM for understanding, code for arithmetic, reconciliation for proof.**\n\nThe model's job is the unstructured part: reading the document, finding the fields, mapping messy inputs to your schema. The moment the work becomes computable (summing line items, computing a fee from a schedule and an AUM figure, prorating a period), it moves into deterministic code, where it cannot hallucinate and can be unit tested.\n\nThis is a genuine architectural stance, not a preference. In a live build, the moment a task involves numbers, say: \"I don't want the model doing this arithmetic. It extracts the inputs, then a plain Python function computes the result, and then I reconcile.\" Interviewers at these companies have watched candidates let a model add up an invoice, and they remember which ones did not."
+    },
+    {
+      "type": "quiz",
+      "question": "The task involves generating a quarterly invoice from a fee schedule and an account value. Where should the multiplication happen, and why?",
+      "choices": [
+        "In the model, with a careful prompt asking it to show its work",
+        "In deterministic code: the model extracts the schedule terms and the account value into a schema, plain code computes the fee, and a reconciliation check confirms the total ties to the line items; arithmetic has a provably correct answer, so nothing about it should be probabilistic",
+        "In the model, then have a second model check the math",
+        "Either is fine if you verify the output"
+      ],
+      "answer": 1,
+      "explain": "Anything with a provably correct answer should be computed, not generated. Showing work makes a wrong answer more convincing, not more correct, and a second model checking the first is correlated failure plus double the cost for a task a single line of Python does perfectly. The division of labor (model reads, code computes, reconciliation proves) is the defining design stance in financial document work, and stating it unprompted is a strong signal."
+    },
+    {
+      "type": "text",
+      "md": "## Move 3: exact-span evidence for every field\n\nEvery extracted value should carry the exact source text it came from, ideally with a location. This costs one line in your schema and buys three things:\n\n- **Mechanical verification**: you can check in code whether the quoted evidence actually appears in the document, which catches a model that invented its own justification.\n- **A usable review UI**: the human reviewer sees the source passage next to the extracted value and can approve in one keystroke instead of hunting through a PDF.\n- **The audit trail**: months later, you can reconstruct exactly which text produced which value.\n\nThis is the same exact-quote discipline from the verifier in the worked hour, and it matters more here because a reviewer and an auditor both depend on it. Paraphrased evidence is nearly worthless for all three purposes."
+    },
+    {
+      "type": "text",
+      "md": "## Move 4: route by confidence AND risk\n\nThe routing decision is not confidence alone. It is confidence crossed with consequence:\n\n```\nhigh confidence + low dollar   -> straight through\nhigh confidence + high dollar  -> review anyway (or maker-checker)\nlow confidence  + any amount   -> review, with the weak field flagged\nfailed validation              -> review, regardless of confidence\n```\n\nThat second row is the sophisticated one. A model can be confidently wrong, so for high-consequence items you do not let confidence alone authorize the action. Risk-based thresholds are how real systems get high automation rates safely.\n\nName the metric while you are here: **straight-through processing rate** (the fraction completed with zero human touches) is the product's economics, and it only means something paired with the **error escape rate**. Thresholds are dials you set conservatively and ratchet up as measured accuracy earns it."
+    },
+    {
+      "type": "quiz",
+      "question": "Your extractor reports 0.97 confidence on a $2.4M wire amount. Should it go straight through?",
+      "choices": [
+        "Yes, 0.97 clears any reasonable threshold",
+        "No: confidence is a model-produced estimate and models can be confidently wrong, so high-consequence items get a human check (or a deterministic cross-validation) regardless of confidence; the routing rule is confidence AND risk, not confidence alone",
+        "Yes, if the model has been accurate historically",
+        "Only if a second model agrees"
+      ],
+      "answer": 1,
+      "explain": "Treating model confidence as authorization for a high-consequence action is the failure mode that ends these products. Confidence is a useful signal for prioritizing review, not a guarantee, and its calibration is itself unverified unless you measured it. Real systems bound automation by consequence: small routine items flow through, large ones get a second party (which is also the maker-checker pattern regulators already expect)."
+    },
+    {
+      "type": "text",
+      "md": "## Move 5: cross-validate by deriving twice\n\nA cheap, powerful pattern that is native to this domain: compute the answer two independent ways and require agreement.\n\n- Extract the stated total AND sum the line items. They must match.\n- Extract the fee AND recompute it from the rate and the balance. They must match.\n- Extract a date range AND check it against the period stated in the header.\n\nWhen the two derivations agree, your confidence is genuinely earned rather than model-asserted. When they disagree, you have found a real problem, and disagreement is a far better routing signal than any confidence score because it is deterministic.\n\nThis is the domain's version of a verifier stage, and it is better than a model verifier wherever it applies, because it cannot hallucinate. Reach for it first, and use a model verifier only for the parts that are not computable."
+    },
+    {
+      "type": "text",
+      "md": "## Move 6: the audit trail is an output, not a log\n\nIn a regulated context, the record of HOW a decision was made is part of the deliverable. Design it as a first-class output of the pipeline:\n\n```\ndocument version + hash\nextracted values with evidence spans\nmodel and prompt versions used\nvalidations run and their results\nconfidence scores and the routing decision\nwho reviewed and approved, and when\n```\n\nThe distinction to state: this is not observability for engineers, it is a compliance record with multi-year retention that someone may need to reconstruct years later. Building it in from the start costs almost nothing; retrofitting it across derived stores is miserable.\n\nMentioning this unprompted in a build for a wealth or insurance company is a strong signal that you understand their actual constraints rather than just the AI problem."
+    },
+    {
+      "type": "text",
+      "md": "## The layering arc for this hour\n\nPutting the moves in order, driven by observed failure as always:\n\n- **v1**: one call, document in, structured JSON out. Run it on a real messy document.\n- **Layer 1, the schema**: per-field confidence plus exact-span evidence. This is usually your first upgrade because it is the interface everything downstream depends on.\n- **Layer 2, deterministic validation**: reconciliation and business rules in plain code. Watch it catch something the model got wrong; that moment sells the whole design.\n- **Layer 3, routing**: confidence and risk thresholds sending items straight through or to a review queue, with the review payload (source, extracted values, flagged fields) as a real output.\n- **Layer 4, the model verifier**: only for the parts code cannot check, with exact-quote evidence and a capped retry.\n- **Layer 5, robustness and record**: schema validation at the seams, graceful degradation (route to human rather than crash), and the audit record.\n- **If time**: model routing (cheap model for classification, strong model for hard extraction), and cross-validation on the highest-risk field.\n\nNote what is deliberately NOT here: an elaborate agent loop. This is a pipeline problem, and proposing a fancy autonomous agent for a task that wants a deterministic pipeline with human checkpoints would read as pattern-matching rather than judgment."
+    },
+    {
+      "type": "quiz",
+      "question": "In the middle of the build, the interviewer asks how you would launch this at a new client whose document formats you have never seen. Best answer?",
+      "choices": [
+        "Turn it on with conservative thresholds and monitor",
+        "Shadow mode first: run the pipeline on real documents while humans continue doing the work, compare the outputs to measure per-field accuracy at zero risk, then set thresholds from that measurement and ratchet automation up per document type",
+        "Ask the client to standardize their document formats",
+        "Fine-tune a model on their documents before launching"
+      ],
+      "answer": 1,
+      "explain": "Shadow mode converts 'trust us' into measured per-field accuracy using ground truth the humans are producing anyway, at zero blast radius. It is the task-agent equivalent of canarying, and it also satisfies the client's risk people, who will ask exactly this question. Conservative-thresholds-and-monitor still exposes real work to an unmeasured system, and fine-tuning before you have measured anything optimizes before you know what is broken."
+    },
+    {
+      "type": "text",
+      "md": "## The vocabulary and the through-line\n\nTerms that signal domain fluency, used naturally: straight-through processing rate, error escape rate, exception queue, maker-checker (four-eyes), reconciliation, audit trail, shadow mode, autonomy ratchet, per-field confidence, corrections flywheel.\n\nAnd the through-line sentence to land during your close:\n\n> \"The shape I keep coming back to is: the model reads, deterministic code decides anything computable, humans resolve the exceptions the system flags, and every step is recorded well enough to reconstruct later. The automation rate is then a dial you earn by measuring accuracy, not a bet you place up front.\"\n\nThat sentence is their product strategy stated as an architecture, which is exactly what you want the final interview to remember."
+    },
+    {
+      "type": "text",
+      "md": "## What would sink you\n\nThe anti-patterns, specific to this domain:\n\n- **Letting the model do arithmetic**, or accepting its computed totals without reconciliation.\n- **Document-level confidence** used as the routing signal, hiding the one bad field.\n- **No human path**: designing full automation with no exception queue, which is both unsafe and not how the product works.\n- **Treating the reviewer as a fallback** instead of a designed part of the system with a real payload and UI.\n- **Over-agentifying**: an autonomous multi-agent loop where a validated pipeline is correct and auditable.\n- **Silence on compliance**: never mentioning audit, retention, or approval records in a regulated domain.\n\nRehearsal: run the worked hour from lesson 13, but swap the task to \"extract the key financial fields from this notice and decide whether we can process it automatically,\" and hit every move in this module. Or say \"run a multi-LLM build interview, back-office document flavor\" and I will play the interviewer for a full hour and grade you against both modules."
+    }
+  ]
+}
