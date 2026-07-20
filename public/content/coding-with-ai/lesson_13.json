@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "A Worked Hour",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The prompt\n\n> \"Let's build something that takes a long article and produces a short summary you can actually trust. We'll start simple and add complexity.\"\n\nDeliberately open-ended, which is the norm. Watch the whole hour unfold: scope, v1, then four layers each driven by an observed failure. Try to predict each move before reading it, especially which layer comes next and why."
+    },
+    {
+      "type": "text",
+      "md": "## Minutes 0-8: scope and propose\n\n**Clarify**: How long are the articles (a few pages, or book-length)? What makes a summary trustworthy here, factually supported or just concise? Any latency or cost target? Real API or stubbed? Say: \"assume 5 to 50 pages, and trustworthy means every claim traces to the source.\"\n\n**Name the success criterion**, because it determines the architecture: \"I'll treat a summary as good if it covers the main points AND every factual claim is supported by the source. That second half is what pushes me toward a verification stage.\"\n\n**Propose the arc out loud**: \"v1 is a single summarize call so we have something running. I expect two failures: on long inputs it will lose content or blow the context, and it will produce claims that sound right but are not in the source. So my planned layers are fan-out with a real synthesis step for length, then an independent claim verifier for trust. If we have time, routing so short articles skip the chunking, plus validation and caps at the seams.\"\n\nThat paragraph is the interview's high-water mark for demonstrating design vocabulary, and it lands before any code exists."
+    },
+    {
+      "type": "text",
+      "md": "## Minutes 8-18: v1, deliberately bare\n\nPrompt the agent for one stage:\n\n```\nWrite summarize(article: str) -> str. One model call,\nprompt asks for a 150-word summary of the key points.\nHardcode a sample article at the bottom and print the result.\nNo error handling, no CLI. Keep it minimal.\n```\n\nRun it on a real article. It works, and now you have evidence to react to.\n\n**Critique the output out loud**: \"On the 5-page piece this is decent. Two things I notice: it's weighted heavily toward the opening sections, which suggests it will get worse as inputs get longer, and this sentence here states a statistic I can't find in the source. Those are exactly the two failures I predicted, so let's address length first since it's structural.\"\n\nYou have just turned a prediction into observed evidence, which is the strongest possible justification for the next layer."
+    },
+    {
+      "type": "quiz",
+      "question": "At minute 18 you have a working single-call summarizer that is weak on long inputs and occasionally states unsupported facts. Which layer should come first, and why?",
+      "choices": [
+        "The verifier, because trust was the stated goal",
+        "Fan-out for length first, because it is structural (it changes what the summarize stage even sees) and the verifier you build afterward will then be verifying the real final output rather than one you are about to replace",
+        "Refinement rounds, because they improve quality generally",
+        "Routing, because it is cheapest to add"
+      ],
+      "answer": 1,
+      "explain": "Order matters when one layer changes the shape of the pipeline. Fan-out replaces the generation path entirely, so a verifier built first would need rework, and any tuning you did against single-call output would be wasted. Structural/capability layers before quality layers that wrap them. Saying this reasoning out loud ('I'll do length first because it changes the pipeline the verifier would wrap') is exactly the sequencing judgment being graded."
+    },
+    {
+      "type": "text",
+      "md": "## Minutes 18-32: layer 1, fan-out and reduce\n\nPrompt in two small pieces, not one big one:\n\n```\n1) Write chunk_article(article: str, max_chars: int) -> list[str].\n   Split on paragraph boundaries, never mid-sentence, ~200 char overlap.\n   Pure Python, no model call.\n\n2) Write summarize_chunks(chunks: list[str]) -> list[str],\n   one model call per chunk, run in parallel, each returning\n   the key points of that chunk as 2-4 bullet lines.\n```\n\nNote the first is deterministic code, no model, applying \"do in code what does not need a model.\" Then the reduce, and this is where you show the map-reduce insight:\n\n```\n3) Write synthesize(chunk_summaries: list[str]) -> str.\n   One model call. Deduplicate overlapping points, order by\n   significance not by source order, produce one coherent\n   150-word summary. Do NOT simply concatenate.\n```\n\nRun it. \"Better coverage across the whole article now, and the synthesis reads as one voice rather than 12 stitched pieces. The unsupported-claim problem is still there, and honestly fan-out may have made it slightly worse since the synthesizer is now two steps removed from the source text. That's the next layer.\""
+    },
+    {
+      "type": "text",
+      "md": "## Minutes 32-45: layer 2, the independent verifier\n\nThe centerpiece. Prompt it as a contract with a rubric:\n\n```\nWrite verify_claims(summary: str, source: str) -> list[dict].\nOne model call. Extract each factual claim in the summary and\nfor each return {\"claim\": str, \"supported\": bool,\n\"evidence\": str | None} where evidence is an EXACT sentence\nfrom source. Judge only support by the source, not truth in general.\n```\n\nDesign points to narrate as you build:\n\n- **Independent**: it sees the summary and the source, not the generator's reasoning, so it does not inherit the generator's assumptions.\n- **Exact evidence, not paraphrase**: a quote can be checked mechanically (is this string actually in the source?), which lets deterministic code catch a verifier that hallucinates its own evidence.\n- **The rubric is narrow**: supported-by-source, not \"is this true,\" because the narrow question is the one the model can answer reliably.\n\nThen close the loop: if any claim is unsupported, regenerate the summary with those claims flagged for removal, **max 2 retries**. Say the cap out loud when you add it."
+    },
+    {
+      "type": "text",
+      "md": "## Minutes 45-55: layers 3 and 4, robustness and efficiency\n\nWith trust handled, spend the remaining time on the seams and the obvious waste:\n\n**Robustness at the interfaces**: \"Every stage boundary is currently trusting that the model returned parseable JSON. Let me add schema validation after the verifier with one retry on a parse failure, and a fallback that ships the unverified summary with a warning rather than crashing if we exhaust retries.\" Graceful degradation is a good look.\n\n**Efficiency, if it earns its place**: \"Two cheap wins. Short articles do not need chunking at all, so a length check routes them straight to a single call, which is a router in its simplest form. And the per-chunk summarization is a narrow mechanical task, so it can run on a small cheap model while the synthesis and verification stay on the strong one.\"\n\nThat last move is model routing, and articulating WHICH stages are capability-critical versus mechanical is a genuinely senior distinction."
+    },
+    {
+      "type": "quiz",
+      "question": "You propose running per-chunk summarization on a cheap small model while synthesis and verification stay on the frontier model. What principle are you applying?",
+      "choices": [
+        "Always use the cheapest model available",
+        "Match model capability to stage difficulty: narrow mechanical stages (summarize this one chunk) are handled well by small models, while the stages where capability is visible in the final quality (global synthesis, judging support) keep the strong model",
+        "Cheap models are more reliable for parallel work",
+        "Small models have larger context windows"
+      ],
+      "answer": 1,
+      "explain": "This is task-based routing, the biggest cost lever in compound systems. In a pipeline with many calls, most are auxiliary and narrow; usually only one or two carry the quality. Downgrading the narrow ones cuts most of the cost with negligible quality loss, while downgrading the synthesis or the verifier would show immediately. The skill is identifying WHICH stages are capability-critical, and saying that out loud is the part that reads as experienced."
+    },
+    {
+      "type": "text",
+      "md": "## Minutes 55-60: the close\n\nStop building. Summarize deliberately:\n\n> \"So we built a four-stage compound system: deterministic chunking, parallel per-chunk summarization on a cheap model, a synthesis step that deduplicates and orders by significance, and an independent claim verifier with exact-quote evidence and a capped regenerate loop, plus schema validation and graceful degradation at the seams, and a length router so short articles skip chunking entirely.\n>\n> Each layer answered something we watched fail: fan-out because v1 lost the back half of long articles, the verifier because it stated a statistic that was not in the source.\n>\n> With more time, my next two moves would be an eval set (twenty articles with known key points and some planted unsupported claims, so I can measure whether a change actually helps rather than eyeballing it), and caching per-chunk summaries so re-runs on edited articles are near-free. The biggest risk in what we have is that the verifier is itself a model and I have not calibrated it, so I would sample its judgments against my own labels before trusting the pass rate.\"\n\nThat close does four things: recaps the architecture, ties every layer to evidence, names next steps, and identifies the top risk with a specific mitigation."
+    },
+    {
+      "type": "text",
+      "md": "## What made that hour work\n\nExtract the transferable moves:\n\n- **Predicted the failures during scoping**, then confirmed them with real output. Every layer had evidence behind it.\n- **Ordered layers by structure before quality**: the thing that changes the pipeline shape came before the thing that wraps it.\n- **Prompted stage by stage against self-defined interfaces**, so the architecture stayed the candidate's and the diffs stayed reviewable.\n- **Pushed deterministic work into code** (chunking, quote checking) so fewer things could hallucinate.\n- **Capped every loop and validated every seam**, unprompted.\n- **Narrated tradeoffs continuously**, so the reasoning was visible rather than implied.\n- **Closed with risk and next steps**, including the honest one that the verifier itself is uncalibrated.\n\nRehearse it: run this same prompt yourself, out loud, on a 60-minute timer, with a coding agent. Or say \"run a multi-LLM build interview\" and I will play the interviewer, pick the problem, push back on your design choices, and grade you against these five modules."
+    }
+  ]
+}

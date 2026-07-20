@@ -26,9 +26,10 @@ _Last updated: 2026-07-13_
   architecture gallery with walkthroughs, a classical recommender design, and
   a deep dive on designing the evaluator itself, and defending an eval platform
   from abuse)
-- Coding With AI: 8 visual lessons (~2.5h): a thinking framework for driving
-  AI to build software (decompose, spec, review, verify, iterate), with a
-  worked take-home assignment
+- Coding With AI: 13 visual lessons (~4h): a thinking framework for driving
+  AI to build software (decompose, spec, review, verify, iterate) plus the
+  live multi-LLM build interview (pattern library, layering, driving the
+  agent live), with two worked examples
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 

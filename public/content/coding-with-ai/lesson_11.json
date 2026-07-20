@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Layering Complexity Deliberately",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The instruction is the test\n\n\"We'll start simple and layer on complexity\" is not scheduling advice, it is the evaluation. They want to watch HOW you decide what to add next. A candidate who adds layers in a thoughtful, failure-driven order looks like an engineer. One who adds impressive-sounding components in arbitrary order looks like someone reciting a blog post.\n\nThe governing rule for the whole hour: **let observed failure drive the next layer.** Build, run it on a real input, see what is actually wrong, then add the layer that fixes THAT. Every addition should have a sentence attached: \"I'm adding this because I just saw it do X.\""
+    },
+    {
+      "type": "text",
+      "md": "## v1: the simplest thing that runs end to end\n\nYour first version should be almost embarrassingly simple: one or two inferences, hardcoded input, output printed to the console. No error handling, no config, no abstraction.\n\nWhy so bare:\n\n- It gets you a working spine fast, and everything after is an improvement to something that runs, which is far easier than debugging a large system that has never worked.\n- It gives you a real output to CRITIQUE, which is what generates the failure evidence your next layer answers.\n- It respects the clock. The layers are the interesting part; v1 is the launchpad.\n\nSay this out loud as you do it: \"I'm deliberately keeping v1 minimal so we have something running to react to.\" Otherwise a sparse v1 can read as sloppiness rather than strategy."
+    },
+    {
+      "type": "quiz",
+      "question": "Your v1 runs and produces a mediocre summary. What is the most useful next move?",
+      "choices": [
+        "Immediately add the most sophisticated pattern you know",
+        "Look closely at the actual output and diagnose HOW it is bad (missing key points? unsupported claims? wrong length? ignored half the input?), because the specific failure determines which layer is worth adding",
+        "Refactor v1 to be cleaner before adding anything",
+        "Ask the agent to make it better"
+      ],
+      "answer": 1,
+      "explain": "Different failures call for completely different layers: unsupported claims call for a verifier, missing content from a long input calls for fan-out, wrong length or tone calls for a better prompt or a refinement pass, and inconsistency across runs calls for ensembling. Adding a sophisticated layer before diagnosing is how you end up with an elaborate system that still has the original bug. 'Make it better' outsources the diagnosis, which is the graded part."
+    },
+    {
+      "type": "text",
+      "md": "## The layer menu\n\nWhen you have diagnosed the weakness, you are choosing from four families. Knowing them as categories helps you pick fast:\n\n- **Quality layers**: verifier, refinement, ensembling, a better decomposition. Add when the output is wrong or weak.\n- **Capability layers**: fan-out for long inputs, routing for heterogeneous inputs, tools/retrieval for missing knowledge. Add when the system cannot handle the real input space.\n- **Robustness layers**: schema validation at the seams, retries, fallbacks, loop caps, graceful degradation. Add when it works on the happy path but you can see how it breaks.\n- **Efficiency layers**: model routing (cheap models for mechanical stages), parallelism, caching, prompt trimming. Add when it works but is slow or expensive.\n\nA strong hour usually touches quality first (because a fast, cheap, wrong answer is worthless), then capability or robustness, with efficiency last unless they signal cost matters."
+    },
+    {
+      "type": "text",
+      "md": "## Narrate the tradeoff every time\n\nEach layer costs something, and saying the cost is what turns a build into a design conversation:\n\n- Verifier: better correctness, but an extra call of latency and cost per item, and a new failure mode if the verifier is wrong.\n- Fan-out: handles long inputs and cuts wall-clock, but the reduce step becomes a quality bottleneck and cost scales with chunks.\n- Ensembling: less variance, but N times the cost, and no help against systematic bias.\n- Routing: cheaper and more specialized, but misclassification sends work down the wrong path.\n\nThe sentence pattern: \"I'm adding X because we just saw Y. It costs us Z, which I think is worth it here because W.\" Three clauses, and you have demonstrated design judgment rather than pattern recall."
+    },
+    {
+      "type": "text",
+      "md": "## Keep the layers composable\n\nAs you add, protect your ability to keep adding:\n\n- **Stable interfaces between stages.** If each stage takes and returns a defined structure, a new stage slots in without touching its neighbors. This is the dict-not-bare-value habit applied to pipelines.\n- **One stage, one job.** When you feel tempted to make an existing stage also do the new thing, that is usually a new stage instead.\n- **Keep the previous version runnable.** Being able to compare v2's output to v1's on the same input is how you demonstrate the layer actually helped, which is a wonderful thing to show an interviewer.\n\nThat last one is underrated: \"here is the same input through v1 and v2, and you can see the unsupported claim is now caught\" is concrete evidence, far stronger than asserting the layer was an improvement."
+    },
+    {
+      "type": "text",
+      "md": "## Knowing when to stop\n\nTwo stopping instincts, both worth voicing:\n\n- **Stop layering when the marginal layer does not address a real observed weakness.** Adding a debate ensemble to a system whose actual problem is unparsed JSON is theater. Say \"I don't think another quality layer is the right spend here; the bigger risk is that stage 2 has no validation.\"\n- **Stop polishing when the clock says the next layer is more valuable than this one's last 10%.** Time management IS judgment, and narrating the trade (\"good enough, I'd rather spend the remaining time on robustness\") is a positive signal, not an admission.\n\nAnd close deliberately: with a few minutes left, stop building and summarize the architecture, the layers you added and why, and the two things you would do next with more time. That summary is what they will remember. Next module: the prompting craft that makes all this fast."
+    }
+  ]
+}

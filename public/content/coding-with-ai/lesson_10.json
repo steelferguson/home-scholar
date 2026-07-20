@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Multi-Inference Pattern Library",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why more than one inference\n\nBefore the patterns, the principle that justifies all of them: **one mega-prompt asked to do five things does all five worse than five prompts each doing one thing.** Splitting a task across inferences buys you:\n\n- **Focus**: each call has a narrow job and a prompt tuned for it.\n- **Verifiability**: you can check the output of each stage instead of one opaque blob.\n- **Targeted cost**: cheap models for the mechanical stages, the expensive model only where capability shows.\n- **Composability**: swap or improve one stage without touching the others.\n\nThe cost is latency, orchestration complexity, and more places to fail. That tradeoff is what you narrate. This module is the vocabulary of ways to split."
+    },
+    {
+      "type": "text",
+      "md": "## Pattern 1: chain (pipeline)\n\nThe simplest composition. Output of one inference becomes input to the next, each doing one job.\n\n```\ninput -> [extract facts] -> [draft answer] -> [format as JSON] -> output\n```\n\nUse it when the task has natural sequential phases where each phase's output is a clean input to the next. Almost every multi-LLM app has a chain as its spine.\n\nThe key design decision inside a chain is the INTERFACE between stages. Use structured output (a JSON schema) rather than prose, so stage 2 parses a contract instead of interpreting a paragraph. Prose interfaces are where multi-stage systems quietly break, because stage 1's phrasing drifts and stage 2 misreads it."
+    },
+    {
+      "type": "text",
+      "md": "## Pattern 2: router (classify and dispatch)\n\nA cheap first inference classifies the input, then dispatches to a specialized prompt, model, or sub-pipeline.\n\n```\ninput -> [classify intent] -> billing prompt   | technical prompt | escalate\n```\n\nUse it when inputs are heterogeneous and one prompt cannot serve them all well. Two distinct wins: specialized prompts beat a general one on each category, and you route cheap inputs to cheap models.\n\nThe design question to raise out loud: what happens on a low-confidence classification. A good answer is a default branch or a clarifying question, not a coin flip."
+    },
+    {
+      "type": "text",
+      "md": "## Pattern 3: fan-out and reduce (map-reduce)\n\nSplit the work into N independent pieces, run them in parallel, then merge with a final inference.\n\n```\nlong doc -> chunk -> [summarize each] x N (parallel) -> [synthesize] -> output\n```\n\nUse it when input exceeds what one call should handle, or when the work is naturally parallel (evaluate 20 candidates, research 5 subtopics). It buys wall-clock time and handles scale.\n\nThe two things to say when you propose it: the reduce step is where quality is won or lost (a naive concatenation produces a lumpy result, so the synthesizer needs a real prompt), and chunk boundaries matter (split on structure, overlap slightly) for exactly the reasons chunking matters in retrieval."
+    },
+    {
+      "type": "quiz",
+      "question": "You fan out to summarize 30 chunks, then concatenate the 30 summaries as your final output. What is the flaw, and what does the pattern actually require?",
+      "choices": [
+        "Nothing; concatenation is the reduce step",
+        "Concatenation is not a reduce: the result is repetitive, unordered, and has no global structure, because no inference ever saw the whole picture; the pattern needs a real synthesis call that reads the partial results and produces one coherent output",
+        "You should use 10 chunks instead",
+        "The flaw is latency"
+      ],
+      "answer": 1,
+      "explain": "Map-reduce's value lives in the reduce. Concatenating map outputs gives you 30 disconnected voices with duplicate points and no narrative, which is usually worse than a single mediocre summary. The synthesizer is a genuine design surface: it may need to deduplicate, rank by importance, and impose structure. Candidates who say 'and then a synthesis stage that dedupes and orders by significance' are visibly a level above."
+    },
+    {
+      "type": "text",
+      "md": "## Pattern 4: generator and verifier\n\nOne inference produces, a separate one checks the result against explicit criteria, and failures go back for a retry.\n\n```\n[generate] -> [verify against rubric] -> pass? ship : regenerate (max N times)\n```\n\nThis is the highest-value pattern in most builds, because **verification is often easier than generation**: checking whether every claim in a summary appears in the source is a simpler task than writing the summary. It is also where you demonstrate that you think about correctness rather than just output.\n\nThree design points to state: the verifier should be INDEPENDENT (a fresh call that does not see the generator's reasoning, so it does not inherit its assumptions), it needs a concrete rubric rather than \"is this good,\" and the loop needs a hard iteration cap so a stubborn failure cannot spin forever."
+    },
+    {
+      "type": "text",
+      "md": "## Pattern 5: iterative refinement\n\nDraft, critique, revise, repeated a fixed number of rounds.\n\n```\n[draft] -> [critique] -> [revise] -> [critique] -> [revise] -> output\n```\n\nDistinct from generator-verifier in intent: the verifier GATES correctness (pass or fail), while refinement IMPROVES quality on something already acceptable. Use it when output quality has headroom and the criteria are subjective (writing, design, code style).\n\nBe honest about its limit when you propose it: gains fall off fast after a round or two, and unbounded self-revision can drift or converge to bland. Say \"two rounds, then stop,\" which shows you know the curve rather than assuming more is better."
+    },
+    {
+      "type": "text",
+      "md": "## Pattern 6: ensemble and voting\n\nRun the same task several times (same prompt sampled repeatedly, or several different prompts or models), then aggregate: majority vote, or a judge picking the best.\n\n```\n[solve] x 5 -> [majority vote or judge] -> output\n```\n\nUse it when the task has a mostly-objective answer and single-pass reliability is not enough (extraction, classification, math-like reasoning). It converts variance into accuracy at a linear cost multiple.\n\nThe honest tradeoff to name: it is expensive (5x the calls) and it does not help when the model is confidently and consistently wrong, because five identical wrong answers still vote wrong. Ensembling fixes variance, not bias."
+    },
+    {
+      "type": "text",
+      "md": "## Pattern 7: plan, execute, merge\n\nOne inference decomposes the task into subtasks, workers handle each, and a final call assembles the result.\n\n```\n[plan subtasks] -> [worker] x N -> [merge into deliverable]\n```\n\nUse it for open-ended tasks where the decomposition itself depends on the input (research a topic, write a multi-section report, handle a complex request). It is the most flexible pattern and the least predictable, which is exactly the tradeoff to name: the planner can produce a bad plan, so validate the plan before executing it (cheap) rather than discovering the problem after N worker calls (expensive).\n\nAdd a tool-using loop to the workers and you have a full agent, which is the AI Systems Design course's territory."
+    },
+    {
+      "type": "quiz",
+      "question": "Your extraction stage returns the right answer about 85% of the time, with the errors looking random rather than systematic. Which pattern most directly addresses this, and which would NOT help?",
+      "choices": [
+        "Add refinement rounds; a router would not help",
+        "Ensemble/self-consistency (run it several times and vote) targets random variance directly; ensembling would NOT help if the model were consistently wrong the same way, since that is bias, not variance",
+        "Add a router; ensembling would not help",
+        "Fan-out and reduce; verification would not help"
+      ],
+      "answer": 1,
+      "explain": "Random errors are variance, and voting across independent samples is the classic variance reducer: the majority converges on the answer the model finds most often, which is usually the right one. The diagnostic discipline matters more than the pattern: FIRST characterize the failure (random vs systematic), THEN pick the pattern that addresses that failure. A verifier would also help here by catching bad extractions; refinement and routing address different problems entirely."
+    },
+    {
+      "type": "text",
+      "md": "## The glue that makes it all work\n\nFour non-pattern decisions that determine whether your compound system is solid or flaky:\n\n- **Structured output between stages**: JSON schemas as the interface, so each stage parses a contract. This is the single biggest reliability lever in multi-stage systems.\n- **Validate at the seams**: check stage output before passing it on (did it parse, are required fields present, is the value in range) and retry that stage on failure. Cheap, and it stops one bad stage from poisoning everything downstream.\n- **Do in code what does not need a model**: sorting, filtering, arithmetic, deduplication, formatting. Every deterministic step you move out of a prompt is a step that cannot hallucinate.\n- **Cap every loop**: max iterations on any verify-retry or refine cycle, so a pathological input cannot spin your cost and latency to infinity.\n\nSay these while designing and you sound like someone who has run these systems, not just read about them. Next module: how to layer these patterns in the right order."
+    }
+  ]
+}
