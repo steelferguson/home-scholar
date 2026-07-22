@@ -26,6 +26,9 @@ _Last updated: 2026-07-13_
   architecture gallery with walkthroughs, a classical recommender design, and
   a deep dive on designing the evaluator itself, and defending an eval platform
   from abuse)
+- LLM Training at Scale: 8 visual lessons (~3h): tokenization, embeddings,
+  transformer LMs + LoRA, the memory wall, data/tensor/pipeline parallelism,
+  ZeRO/FSDP, GPU efficiency (MFU, FlashAttention), tied to safety ML at scale
 - Coding With AI: 13 visual lessons (~4h): a thinking framework for driving
   AI to build software (decompose, spec, review, verify, iterate) plus the
   live multi-LLM build interview (pattern library, layering, driving the

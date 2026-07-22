@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Efficiency: Making It Fast, Not Just Fit",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Fitting is not the goal\n\nFitting a model on the cluster is table stakes. The role asks for EFFICIENT utilization of hardware, which is a different question: are your expensive GPUs actually doing useful math, or waiting? This lesson is the efficiency mindset, which is often where a strong candidate separates from a merely competent one.\n\nThe single most important idea: **GPUs are usually starved, not maxed.** A training step that should be compute-bound is frequently stalled on memory bandwidth, communication, or data loading. Efficiency work is finding and removing those stalls."
+    },
+    {
+      "type": "text",
+      "md": "## The one metric that matters: utilization\n\nModel FLOPs Utilization (MFU) is the fraction of the GPU's theoretical peak compute you are actually achieving on useful work. Real large-scale training often runs at 30 to 50% MFU; getting there from a naive 10 to 15% is enormous value.\n\nThe framing to carry: every efficiency technique is trying to raise the fraction of time the GPU spends doing the matrix multiplies that train the model, versus:\n\n- **Waiting on communication** (gradient all-reduce, parameter gather).\n- **Waiting on memory** (moving data to and from GPU memory faster than it computes).\n- **Waiting on the data pipeline** (the next batch is not ready).\n- **Doing recompute** (activation checkpointing's cost).\n\nName MFU and 'are the GPUs starved or fed' and you are speaking the language of the people who do this for a living."
+    },
+    {
+      "type": "text",
+      "md": "## Compute-bound vs memory-bound\n\nThe most useful diagnostic distinction. An operation is:\n\n- **Compute-bound** if it does a lot of math per byte of data moved (big matrix multiplies). These use the GPU well.\n- **Memory-bound** if it moves a lot of data per unit of math (elementwise ops, softmax, layer norm, attention). These leave the compute units idle waiting on memory bandwidth.\n\nMuch of transformer efficiency work is turning memory-bound patterns into compute-bound ones. The headline example is **FlashAttention**: standard attention writes the giant N-by-N score matrix to memory and reads it back (memory-bound and memory-hungry); FlashAttention fuses the whole operation to compute it in fast on-chip memory without ever materializing the full matrix, making attention faster AND lower-memory. Knowing WHY it helps (avoids materializing and moving the score matrix) is better than just naming it."
+    },
+    {
+      "type": "quiz",
+      "question": "FlashAttention speeds up attention and reduces its memory. What is the core reason?",
+      "choices": [
+        "It approximates attention with fewer computations",
+        "It avoids materializing the full N-by-N attention score matrix in GPU memory: by fusing the softmax and the value multiply and computing in on-chip SRAM tile by tile, it removes the memory-bandwidth bottleneck of writing and re-reading that matrix, so attention becomes compute-bound rather than memory-bound",
+        "It runs attention on the CPU",
+        "It uses lower precision for the scores"
+      ],
+      "answer": 1,
+      "explain": "FlashAttention is EXACT, not an approximation, which is the common misconception. The win is purely about memory movement: standard attention's O(N^2) score matrix is written to and read from slow GPU memory, and for long sequences that traffic dominates. Fusing the operation to work in fast on-chip memory tile by tile eliminates that traffic. This is the canonical example of the memory-bound-to-compute-bound transformation, and it matters most exactly when sequences are long."
+    },
+    {
+      "type": "text",
+      "md": "## The efficiency toolkit\n\nThe levers, grouped by what they attack:\n\n- **Feed the GPU**: an efficient data pipeline (prefetching, enough loader workers, data already tokenized) so the next batch is always ready. A GPU waiting on the CPU data loader is pure waste and a very common one.\n- **Kernel fusion**: combine many small memory-bound ops into one (torch.compile, fused optimizers, fused layer norm). Fewer round trips to memory.\n- **Overlap communication with compute**: start the gradient all-reduce for early layers while later layers are still computing, so communication hides behind math. Frameworks do this; misconfiguration defeats it.\n- **Right batch size**: large enough to keep the GPU busy and amortize communication, using gradient accumulation to reach a large effective batch if memory limits the real one.\n- **Precision**: bf16 compute, and fp8 on the newest hardware, doing more math per second.\n- **Bigger matmuls**: shapes that are multiples of the hardware tile size (e.g. 8 or 128) so tensor cores run at full efficiency; odd dimensions waste cycles."
+    },
+    {
+      "type": "text",
+      "md": "## The diagnostic loop\n\nHow you actually improve a slow run, which is the practitioner story to be able to tell:\n\n1. **Profile first.** Do not guess. Use the profiler to see where time goes: compute, communication, data loading, idle. The bottleneck is often not where intuition points.\n2. **Classify the bottleneck.** GPU idle waiting on data? Fix the loader. Communication-bound? Overlap it, or reduce sync frequency (gradient accumulation), or rethink the parallelism split. Memory-bound kernels? Fuse them, or use FlashAttention. Recompute-heavy? Maybe you over-applied checkpointing.\n3. **Fix the biggest one, remeasure.** Same one-bottleneck-at-a-time discipline as debugging, because fixing a non-bottleneck changes nothing and misleads you.\n\nThe closing frame for an interview: 'I would profile to find whether we are compute-, memory-, communication-, or input-bound, then attack that specific bound, because efficiency is about keeping expensive GPUs fed, and the fix depends entirely on what is starving them.' That sentence is the whole lesson. Next: tying it all to the Reddit Safety role."
+    }
+  ]
+}

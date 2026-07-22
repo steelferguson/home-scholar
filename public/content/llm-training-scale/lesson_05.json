@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Parallelism Strategies",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The four ways to split\n\nThere are four axes of parallelism, and real large-scale training combines several. Know each one's unit of splitting and its communication cost, because that pairing is the whole subject:\n\n- **Data parallelism**: split the BATCH across GPUs.\n- **Tensor parallelism**: split individual LAYERS across GPUs.\n- **Pipeline parallelism**: split the model's LAYERS into stages across GPUs.\n- **Expert parallelism**: split MoE experts across GPUs.\n\nThis lesson walks the first three (the ones you must know cold) plus how they compose."
+    },
+    {
+      "type": "text",
+      "md": "## Data parallelism: the default\n\nEvery GPU holds a FULL copy of the model and processes a different slice of the batch. After the backward pass, gradients are averaged across all GPUs (an all-reduce) so every copy applies the same update and stays in sync.\n\n```\nGPU 0: full model, batch slice 0 -> grads\nGPU 1: full model, batch slice 1 -> grads\n         all-reduce (average grads) -> identical update everywhere\n```\n\nUse it when the model FITS on one GPU and you just want to go faster or use a bigger batch. It scales throughput nearly linearly until communication becomes the bottleneck. Its limitation is the reason for everything else in this lesson: it replicates the full model on every GPU, so it does nothing for a model too big to fit. The communication cost is the gradient all-reduce each step, proportional to model size."
+    },
+    {
+      "type": "text",
+      "md": "## Tensor parallelism: split the matrix\n\nWhen a single layer is too big, split its weight matrices across GPUs. A big matrix multiply is divided so each GPU computes part of it, and the partial results are combined (an all-reduce or all-gather) WITHIN each layer's forward and backward pass.\n\nThe defining property: the communication happens at every layer, many times per step, so it is extremely bandwidth-hungry. That is why tensor parallelism is kept WITHIN a single node, across GPUs connected by fast interconnect (NVLink), and not spread across the slower network between nodes.\n\nUse it when a layer does not fit or you need to cut per-GPU memory hard. Cost: high-frequency, high-bandwidth communication, so it does not scale beyond a tightly-connected group."
+    },
+    {
+      "type": "quiz",
+      "question": "Why is tensor parallelism typically confined to GPUs within one node (connected by NVLink) rather than spread across nodes over the network?",
+      "choices": [
+        "Nodes cannot share model weights",
+        "Tensor parallelism communicates within every layer, many times per training step, so it needs very high bandwidth and low latency; the fast intra-node interconnect (NVLink) can sustain that, but the slower inter-node network would make the communication dominate and stall the GPUs",
+        "It is a software licensing limit",
+        "Nodes use different precision"
+      ],
+      "answer": 1,
+      "explain": "The rule follows from communication frequency. Tensor parallelism's all-reduces happen inside each layer's forward and backward, so they are frequent and latency-sensitive. Intra-node NVLink has the bandwidth for it; inter-node networking does not, and crossing it would leave GPUs waiting on data. This is why the standard recipe is tensor-parallel WITHIN a node and other strategies (pipeline, data) ACROSS nodes. Matching a parallelism to its communication pattern is the core skill here."
+    },
+    {
+      "type": "text",
+      "md": "## Pipeline parallelism: split the stack\n\nPut different LAYERS on different GPUs: GPU 0 holds layers 1 to 8, GPU 1 holds 9 to 16, and so on. A batch flows through the stages like an assembly line.\n\nThe problem it introduces is the **bubble**: while GPU 0 works on the first micro-batch, GPUs 1+ sit idle waiting, and vice versa at the end. The fix is to split the batch into many **micro-batches** so the stages stay busy in overlapping fashion (GPipe, 1F1B schedules). More micro-batches means a smaller bubble but more scheduling overhead.\n\nUse it to fit a very deep model across GPUs with relatively LOW communication (you only pass activations between adjacent stages, once per micro-batch, not within every layer). Cost: the pipeline bubble, and the complexity of scheduling. Because its communication is light, pipeline parallelism is the one you spread ACROSS nodes."
+    },
+    {
+      "type": "text",
+      "md": "## 3D parallelism: composing them\n\nThe largest training runs use all three at once, chosen to match the hardware topology:\n\n- **Tensor parallel** within a node (needs the fast NVLink).\n- **Pipeline parallel** across a small number of nodes (light communication tolerates the network).\n- **Data parallel** across the remaining groups (replicate the whole tensor+pipeline unit and split the batch over the replicas).\n\nThat is '3D parallelism.' The mental model: tensor splits the width, pipeline splits the depth, data splits the batch, and you assign each axis to the level of the interconnect hierarchy that can afford its communication pattern.\n\nYou will rarely configure this by hand from scratch; frameworks (next lesson) do it. But being able to say WHY tensor goes intra-node and pipeline goes inter-node, and that data parallel wraps the outside, is exactly the distributed-training fluency the role asks for. Next lesson: ZeRO/FSDP, which give you most of the memory savings with the simplicity of data parallelism."
+    }
+  ]
+}

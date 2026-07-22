@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Embeddings",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## From ID to vector\n\nA token ID is just an index; it carries no meaning. The embedding layer turns each ID into a dense vector the model can compute with. Mechanically it is a lookup table: a matrix of shape (vocab_size, d_model), where row i is the learned vector for token i.\n\n```\ntoken id 8221 -> embedding_matrix[8221] -> a d_model vector\n```\n\nThat table is just parameters, learned by backprop like everything else. Over training, tokens that behave similarly drift to similar vectors, so the geometry of the space comes to encode meaning. Nobody assigns the dimensions; the objective shapes them."
+    },
+    {
+      "type": "text",
+      "md": "## What the space encodes\n\nThe famous property: directions in embedding space carry semantic and syntactic relationships. The classic (from word2vec) is king minus man plus woman lands near queen, meaning a consistent 'gender' direction exists in the space. Distances encode similarity: synonyms sit close, unrelated words far.\n\nThe mental model to carry: an embedding is a point positioned so that its neighbors are the things it behaves like. This is exactly the retrieval and recommender geometry from the systems course, and it is the same idea underneath: alignment learned from data, distances supervised, dimensions uninterpretable.\n\nFor a modern LLM these are CONTEXTUAL by the time they leave the model: the input embedding for 'bank' is the same vector every time, but after the attention layers, 'bank' in 'river bank' and 'bank account' have moved to different places. Input embeddings are context-free; hidden states are contextual."
+    },
+    {
+      "type": "quiz",
+      "question": "What is the difference between the input embedding of a token and its hidden state after the transformer layers?",
+      "choices": [
+        "They are the same thing",
+        "The input embedding is context-free (one fixed vector per token id, from the lookup table), while the hidden state is contextual (the same token's representation has been shaped by the surrounding tokens through attention, so 'bank' differs by context)",
+        "The hidden state is lower-dimensional",
+        "Input embeddings are learned, hidden states are not"
+      ],
+      "answer": 1,
+      "explain": "This distinction matters constantly. When someone says 'use the embeddings' for a downstream task, ask WHICH: the static input table (rarely what you want) or the contextual hidden states / pooled sentence embedding (usually what you want). Static word vectors like word2vec are context-free by design; transformer hidden states are the contextual upgrade, which is why 'contextual embeddings' was the whole point of BERT."
+    },
+    {
+      "type": "text",
+      "md": "## Position: embeddings do not know order\n\nThe embedding lookup is order-blind: it gives the same vector wherever the token appears. Attention is also permutation-invariant by itself. So position must be injected, and how it is done is a real design axis you should know:\n\n- **Absolute positional embeddings** (original transformer, BERT): add a per-position vector (learned, or fixed sinusoids) to the token embedding. Simple, but does not extrapolate past the trained length.\n- **Rotary (RoPE)** (LLaMA, most modern LLMs): rotate the query and key vectors by an angle that depends on position, so attention sees RELATIVE position. Extrapolates better and is the current default.\n- **ALiBi**: bias attention scores by distance directly. Also relative, also extrapolates.\n\nThe theme: the field moved from absolute to relative position encodings because relative ones generalize to longer sequences than they were trained on, which matters for long context."
+    },
+    {
+      "type": "text",
+      "md": "## Sentence and document embeddings\n\nFor classification, retrieval, and safety scoring you often want ONE vector per input, not one per token. Options:\n\n- **Pool the hidden states**: mean-pool over tokens, or use a dedicated token's hidden state (BERT's CLS). Mean-pooling is a strong default.\n- **Purpose-trained sentence encoders** (sentence-transformers): fine-tuned with a contrastive objective so that similar sentences are close, which is what you want for retrieval or clustering. A general LLM's pooled states are usually worse for this than a model trained specifically to produce comparable sentence vectors.\n\nFor a safety role this is bread and butter: embed a comment, compare it to known-bad clusters, or feed the embedding to a lightweight classifier. The embedding turns unstructured text into a fixed vector that cheap downstream models can act on, which is often how you scale enforcement without running a huge LLM on every one of billions of comments."
+    },
+    {
+      "type": "text",
+      "md": "## The tie-in for safety at scale\n\nA useful architecture to be able to sketch: you do not run a giant LLM on every comment. You embed cheaply, then a small fast classifier (or a nearest-neighbor lookup against known-violating content) handles the high-volume common case, and you escalate only the uncertain or high-risk items to a larger model. Embeddings are the cheap representation that makes that tiering possible.\n\nThis is the two-stage funnel again (cheap recall, expensive precision) applied to enforcement, and the embedding is stage one's currency. Being able to say 'I would embed once and reuse that representation across multiple downstream safety signals rather than re-encoding per task' is a strong efficiency instinct.\n\nNext lesson: how the transformer that produces these representations is trained as a language model."
+    }
+  ]
+}
