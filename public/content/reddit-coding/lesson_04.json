@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Event and Log Replay",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The pattern\n\nRebuild current state by folding a stream of events into per-entity summaries. The guide's focus: \"default values, missing fields, and ignoring irrelevant fields.\" So the algorithm is easy (a fold) and the entire test is the messy data handling.\n\nReddit-flavored example, from the drill: replay a log of post events (created, voted, commented, reported) into a per-post summary of score, comment count, and report count. Real event streams are dirty, and how you cope is what is graded."
+    },
+    {
+      "type": "text",
+      "md": "## The clean model: a fold\n\nStart empty, apply each event to the right entity's summary:\n\n```python\ndef replay(events):\n    KNOWN = {\"post_created\", \"vote\", \"comment\", \"report\"}\n    summ = {}\n    for e in events:\n        t = e.get(\"type\")\n        if t not in KNOWN:\n            continue                       # ignore unknown types\n        pid = e.get(\"post_id\")\n        if pid is None:\n            continue                       # skip malformed events\n        s = summ.setdefault(pid, {\"score\": 0, \"comments\": 0, \"reports\": 0})\n        if t == \"vote\":\n            s[\"score\"] += e.get(\"delta\", 1)   # missing delta defaults to +1\n        elif t == \"comment\":\n            s[\"comments\"] += 1\n        elif t == \"report\":\n            s[\"reports\"] += 1\n    return summ\n```\n\n`setdefault` creates the summary on first sight, so an event that arrives before its post_created still counts. The fold shape (empty accumulator, apply each event) is the reusable skeleton for any replay problem."
+    },
+    {
+      "type": "text",
+      "md": "## The four data-hygiene decisions\n\nEvery one of these is a deliberate, stated choice, and together they are most of the score:\n\n- **Missing field, clear intent: default it.** A vote with no delta is plus one. `e.get(\"delta\", 1)`.\n- **Irrelevant fields: ignore them.** An event carries an author or a timestamp you do not use; just do not read them. Reading only what you need makes this automatic.\n- **Unknown event type: ignore it.** New event types will appear; skip the ones you do not handle rather than crash. (Decide: does an unknown type create an empty summary? Here, no, only recognized events materialize a post.)\n- **Malformed event: skip it.** No post_id means you cannot attribute it, so skip that one and keep folding the rest. Do not let one bad event abort the whole replay.\n\nSay all four before coding. They are exactly what the guide told you to focus on."
+    },
+    {
+      "type": "quiz",
+      "question": "A vote event arrives with no 'delta' field. What is the right handling, and what general principle does it illustrate?",
+      "choices": [
+        "Skip the event, since it is missing data",
+        "Default delta to +1 and apply it: a missing field with a clear intended meaning gets a sensible default (get(key, default)), which is different from a malformed event you can't interpret at all (skip that one)",
+        "Raise an error for the missing field",
+        "Set the score to None"
+      ],
+      "answer": 1,
+      "explain": "The guide names 'default values' and 'missing fields' as focus areas, and this is the distinction: a vote clearly means a vote, and the conventional weight is +1, so default it. Compare that to an event with no post_id, which you cannot attribute to any entity, so you skip it. Missing-but-inferable gets a default; missing-and-uninterpretable gets skipped; genuinely-invalid gets raised. Naming which bucket each case falls in is the graded judgment."
+    },
+    {
+      "type": "text",
+      "md": "## Layering and reuse\n\nWhat they might add on top:\n\n- **New event type**: one more branch (or better, a dispatch table mapping type to a handler function, which is the model-as-data move again).\n- **Ordering / timestamps**: if events can arrive out of order and you need the latest value of some field, carry a timestamp and only overwrite when newer, resolved at write time rather than hoping the stream is sorted.\n- **Snapshots**: fold up to a checkpoint, store the summary, then continue from there. The fold structure makes this natural because the accumulator IS the snapshot.\n\nThe reusable insight to voice: \"replay is a fold, so the state at any point is just the accumulator after applying every event up to there.\" The drill: r03_event_replay.py, timed at 25 minutes."
+    }
+  ]
+}

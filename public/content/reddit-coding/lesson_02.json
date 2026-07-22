@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "State Machines and Invariants",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The pattern\n\nModel a system as a small set of states with allowed transitions, and enforce the invariant that only defined transitions can change the state. The classic framing: something moves through a lifecycle, and most of the work is deciding which moves are legal from where.\n\nReddit-flavored example, which the drill uses: a piece of content moving through moderation. States: draft, published, flagged, removed. The interviewer will ask you to add a transition or a rule partway through (the layering), so build it to extend cleanly."
+    },
+    {
+      "type": "text",
+      "md": "## The clean model\n\nTransitions as data, apply as a tiny mechanism:\n\n```python\nTRANSITIONS = {\n    (\"draft\", \"publish\"): \"published\",\n    (\"published\", \"flag\"): \"flagged\",\n    (\"flagged\", \"approve\"): \"published\",   # dismiss the flag\n    (\"flagged\", \"remove\"): \"removed\",\n    (\"published\", \"remove\"): \"removed\",     # direct removal\n    (\"removed\", \"restore\"): \"published\",\n}\n\nclass Content:\n    def __init__(self, content_id):\n        self.content_id = content_id\n        self.state = \"draft\"\n        self.history = [\"draft\"]\n\n    def apply(self, action):\n        nxt = TRANSITIONS.get((self.state, action))\n        if nxt is None:\n            return False           # not allowed, state untouched\n        self.state = nxt\n        self.history.append(nxt)\n        return True\n```\n\nThat is the whole thing. The invariant (state is always valid, only defined transitions change it) is guaranteed because the only way state changes is a successful table lookup."
+    },
+    {
+      "type": "text",
+      "md": "## The edge cases they probe\n\n- **Invalid transition leaves state untouched.** Flagging a draft returns False and the state stays \"draft.\" Do not half-apply.\n- **Unknown action.** \"banhammer\" is not in the table, so it returns False rather than crashing.\n- **History records successes only.** A failed transition does not append. This tests whether your failure path truly changes nothing.\n- **Idempotent-looking repeats.** Publishing an already-published item returns False; you cannot publish twice.\n\nSay these before coding: \"failed transitions are no-ops, unknown actions are rejected not crashed, and I only record successful moves.\""
+    },
+    {
+      "type": "quiz",
+      "question": "A transition fails (the action is not allowed from the current state). What must be true afterward?",
+      "choices": [
+        "The state moves to a safe default",
+        "Nothing changed: the state is exactly what it was, and no history/log entry was appended, because a rejected transition is a complete no-op; only successful transitions mutate anything",
+        "An exception is raised and the object is unusable",
+        "The action is queued to retry later"
+      ],
+      "answer": 1,
+      "explain": "The invariant is that only DEFINED transitions change state, so a rejected one must leave everything exactly as it was, including any history or counters. A common bug is appending to history or flipping a flag before checking legality, which corrupts the state on failure. Structuring apply as 'look up, and only if valid do the mutations' makes the no-op automatic. Interviewers specifically test the failure path for exactly this."
+    },
+    {
+      "type": "text",
+      "md": "## Extending under the clock\n\nWhen they add complexity (the layering), the table design absorbs it:\n\n- **New transition**: one new dict entry. \"Add an appeal that moves removed back to flagged\" is `(\"removed\", \"appeal\"): \"flagged\"`.\n- **Per-transition side effects**: if a transition should also do something (increment a counter, log a reason), make the table value carry both the next state and a handler, or keep a parallel table of hooks. Mention the option; do not over-build it until asked.\n- **Guards / conditions**: if a transition is only allowed when some condition holds (\"can only restore within 30 days\"), that is a check layered on top of the table lookup, and worth calling out as where conditional logic goes.\n\nThe drill: r01_state_machine.py. Do it now, timed at 20 minutes, and start by writing your assumptions and edge cases as a comment."
+    }
+  ]
+}

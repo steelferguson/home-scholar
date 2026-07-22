@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Time-Based Throttling",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The pattern\n\nRate limiting: per-user tracking, efficiency, and boundary conditions around timestamps. The guide names all three, and the boundary condition is where most candidates slip.\n\nReddit-flavored example, from the drill: limit how many actions a user can take in a time window (posts per minute, say). A sliding window per user, which is the standard and the one to know cold. This lesson is also the course close, so it ends with the whole-hour advice."
+    },
+    {
+      "type": "text",
+      "md": "## The clean model: a deque per user\n\n```python\nfrom collections import defaultdict, deque\n\nclass RateLimiter:\n    def __init__(self, max_actions, window_seconds):\n        self.max = max_actions\n        self.window = window_seconds\n        self.hist = defaultdict(deque)          # user -> timestamps\n\n    def allow(self, user_id, timestamp):\n        dq = self.hist[user_id]\n        cutoff = timestamp - self.window\n        while dq and dq[0] <= cutoff:           # evict expired from the front\n            dq.popleft()\n        if len(dq) < self.max:\n            dq.append(timestamp)                # record and allow\n            return True\n        return False                            # at limit, do NOT record\n```\n\nA deque because you add recent timestamps at the back and evict old ones from the front, both O(1). Per-user because each user has an independent budget, which `defaultdict` gives you with no existence checks."
+    },
+    {
+      "type": "text",
+      "md": "## Efficiency: evict, do not rescan\n\nThe naive version recomputes \"how many actions in the last window\" by scanning the user's entire history every call, which is O(n) per call and O(n^2) overall. The deque makes it amortized O(1): each timestamp is added once and evicted once, ever.\n\nThe key realization to state: because timestamps are nondecreasing per user, once a timestamp has fallen out of the window it is gone forever, so you can permanently evict it from the front rather than reconsider it. You never look at an expired timestamp twice. That monotonicity is what makes the front-eviction correct, and saying it shows you understand why the efficient version works, not just that it does."
+    },
+    {
+      "type": "quiz",
+      "question": "The window is 10 seconds. An action was made at timestamp 0. At timestamp 10, does it still count toward the limit, and why does the exact answer matter?",
+      "choices": [
+        "It always counts if it is within 10 seconds",
+        "It depends on your interval convention, and you must decide and state it: with a half-open window (cutoff, now] where cutoff = now - window, the action at 0 equals the cutoff at t=10 and has EXPIRED, so it no longer counts; the boundary case is exactly what the interviewer probes",
+        "It never counts after any time passes",
+        "Timestamps do not affect counting"
+      ],
+      "answer": 1,
+      "explain": "The boundary is the whole subtlety. 'Within 10 seconds' is ambiguous at exactly 10: is the window inclusive or exclusive at the far edge? You must pick a convention (a common one: an action exactly window-old has expired, i.e. evict when dq[0] <= now - window) and say it out loud, then make your tests check that exact case. Candidates who never state the boundary rule get caught by the one test that probes it. Deciding it deliberately is the signal."
+    },
+    {
+      "type": "text",
+      "md": "## Edge cases and layering\n\n**Edge cases**: a brand-new user is always allowed (empty history), a rejected action must NOT consume a slot (do not append on the False path), per-user independence (one user hitting the limit does not affect another), and the exact boundary from the last step.\n\n**Layering they might add**: different limits per action type (a dict of limiters, or a limit keyed by (user, action)), a global limit on top of the per-user one, or a token-bucket model instead of a sliding window (which allows bursts and refills over time, worth naming as the alternative). Each composes on top of the per-user deque.\n\nThe drill: r05_rate_limiter.py, timed at 25 minutes."
+    },
+    {
+      "type": "text",
+      "md": "## Closing: how to run the hour\n\nThe whole course, as a checklist for the 60 minutes:\n\n- **Open by restating the requirements and naming the model.** Entities, states or fields, operations. Ask about ambiguities.\n- **List edge cases and failure modes up front**, out loud. Empty, missing, unknown, duplicate, cycle, boundary. Half the score.\n- **Model the rules as data** where you can (transition tables, rule dicts, dispatch on type). It reads as clean structure.\n- **Separate responsibilities**, one object one job, so the layered follow-up slots in instead of forcing a rewrite.\n- **Handle bad input deliberately**: raise, skip, or default, chosen per case and stated.\n- **Write tiny tests as you go**, covering the failure modes, exactly as the recruiter asked.\n\nDo the five r-drills timed, then get a live rep: say \"run a Reddit coding mock\" and Claude will pose a fresh messy-requirements problem, play the interviewer, add the layering complication partway through, and grade you on modeling, edge cases, and structure. Do at least one mock before the interview."
+    }
+  ]
+}

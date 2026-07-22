@@ -26,6 +26,9 @@ _Last updated: 2026-07-13_
   architecture gallery with walkthroughs, a classical recommender design, and
   a deep dive on designing the evaluator itself, and defending an eval platform
   from abuse)
+- Reddit Coding Interview: 6 visual lessons (~1.5h): messy-requirements-to-
+  clean-models coding prep (state machines, composition, event replay, trees,
+  throttling), each paired with a hands-on drill
 - LLM Training at Scale: 8 visual lessons (~3h): tokenization, embeddings,
   transformer LMs + LoRA, the memory wall, data/tensor/pipeline parallelism,
   ZeRO/FSDP, GPU efficiency (MFU, FlashAttention), tied to safety ML at scale

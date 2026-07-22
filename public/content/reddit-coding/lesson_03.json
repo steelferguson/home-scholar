@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Composition",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The pattern\n\nThe guide's exact words: \"one object owns rules, another owns aggregation.\" Layered problems where a simple component becomes a building block for a bigger one. The skill is keeping responsibilities separated so each piece stays simple and swappable.\n\nReddit-flavored example, from the drill: a moderation scoring system. One object (PolicyBook) knows which actions are violations and how severe. A second object (UserModeration) accumulates points per user and decides who gets suspended. Two jobs, two objects, and the second asks the first rather than duplicating its knowledge."
+    },
+    {
+      "type": "text",
+      "md": "## The clean model\n\n```python\nclass PolicyBook:                     # owns the RULES\n    def __init__(self, rules):        # {action_type: points}\n        self.rules = rules\n    def points(self, action_type):\n        return self.rules.get(action_type, 0)   # unknown = not a violation\n\nclass UserModeration:                 # owns the AGGREGATION\n    def __init__(self, policy, threshold):\n        self.policy = policy\n        self.threshold = threshold\n        self.totals = {}\n    def record(self, user_id, action_type):\n        pts = self.policy.points(action_type)     # ASK the policy\n        self.totals[user_id] = self.totals.get(user_id, 0) + pts\n    def points_for(self, user_id):\n        return self.totals.get(user_id, 0)\n    def status(self, user_id):\n        return \"suspended\" if self.points_for(user_id) >= self.threshold else \"ok\"\n```\n\nThe critical line is `self.policy.points(action_type)`. The aggregator never hardcodes a point value; it goes through the policy every time."
+    },
+    {
+      "type": "text",
+      "md": "## Why the separation earns its keep\n\nThe payoff, and the thing to say out loud: because the rules live in a separate object that the aggregator merely consults, you can swap the rules without touching the aggregation logic.\n\n```python\nstrict = PolicyBook({\"harassment\": 5})\nlenient = PolicyBook({\"harassment\": 2})\n\nUserModeration(strict, threshold=5)    # same class...\nUserModeration(lenient, threshold=5)   # ...different behavior, zero code change\n```\n\nIf the point values were baked into UserModeration, changing the policy would mean editing the aggregation code, and you could not run two policies side by side. This is the concrete benefit of composition, and demonstrating it (\"watch, I swap the policy and the aggregator is untouched\") is a strong moment."
+    },
+    {
+      "type": "quiz",
+      "question": "In this design, what is the tell that you separated the responsibilities correctly?",
+      "choices": [
+        "The two classes are in the same file",
+        "You can replace the PolicyBook with a different one and reuse the UserModeration class completely unchanged, because the aggregator only ever asks the policy for points and never hardcodes them",
+        "Both classes have an __init__",
+        "The aggregator caches the rules internally"
+      ],
+      "answer": 1,
+      "explain": "Swappability is the litmus test for good composition. If the aggregator hardcoded point values, a policy change would force edits to the aggregation code, proving the two concerns were tangled. Because it consults the policy object for every lookup, the rules and the accumulation are genuinely independent, and you can vary one while holding the other fixed. Caching the rules inside the aggregator would actually reintroduce the coupling, which is why option D is wrong."
+    },
+    {
+      "type": "text",
+      "md": "## Edge cases and layering\n\n**Edge cases**: an unknown action type is worth 0 points (not a violation), an unseen user has 0 points and status \"ok,\" and the threshold boundary is inclusive (points equal to the threshold means suspended, so decide and state that `>=` rule).\n\n**Layering they might add**: a decay over time (old violations count less), per-policy-area thresholds (spam and harassment tracked separately), or an appeals mechanism that subtracts points. Each of these is a clean extension IF the responsibilities are separate: decay and appeals live in the aggregator, new violation types live in the policy. If they were tangled, every addition would touch both.\n\nThe drill: r02_composition.py, timed at 25 minutes."
+    }
+  ]
+}

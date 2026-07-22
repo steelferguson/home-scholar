@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Format and the Habits",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## What this interview is\n\nStraight from the recruiter: a 60-minute coding session that tests \"whether you can convert messy, real-ish requirements into clear models, correct edge-case handling, and clean code structure.\" Not algorithm puzzles. You are being graded on modeling and structure, not on clever tricks.\n\nThe study guide names five areas: state machines and invariants, composition, event/log replay, trees and graphs, and time-based throttling. This course is one lesson per area, showing what a clean model looks like and the edge cases they probe. Each lesson pairs with a hands-on drill file (r01 through r05) where you actually type the solution against tests, which is how the recruiter told you to study: build small systems, write minimal tests for edge cases and failure modes."
+    },
+    {
+      "type": "text",
+      "md": "## The ritual that scores points\n\nBefore writing any code, out loud:\n\n1. **Restate the requirements** in your own words, and ask about anything ambiguous. Messy requirements are the point; showing you can pin them down is graded.\n2. **Name the model**: what are the entities, what states or fields do they have, what are the operations. Sketch it before coding.\n3. **List the edge cases and failure modes**: empty input, missing fields, unknown types, duplicates, cycles, boundary timestamps, unseen entities. This is roughly half the score, and doing it up front (rather than getting caught by a test) is the signal.\n\nCandidates who dive straight into code and discover the edge cases by failing look worse than candidates who name them first and handle them deliberately."
+    },
+    {
+      "type": "text",
+      "md": "## Model as data, not as branches\n\nThe single most repeated \"clean structure\" move across these areas: represent the rules as DATA rather than as a pile of if/elif.\n\n```python\n# messy: logic buried in branches\nif state == \"draft\" and action == \"publish\":\n    state = \"published\"\nelif state == \"published\" and action == \"flag\":\n    state = \"flagged\"\n# ... ten more elifs\n\n# clean: the rules ARE a table\nTRANSITIONS = {\n    (\"draft\", \"publish\"): \"published\",\n    (\"published\", \"flag\"): \"flagged\",\n}\nnew_state = TRANSITIONS.get((state, action))   # None means not allowed\n```\n\nThe table version is shorter, the invalid transitions are impossible by construction, and adding a rule is one line. The same instinct appears as a rules dict in composition and as a dispatch on event type in replay. When you can turn branches into a lookup, do it, and say why."
+    },
+    {
+      "type": "quiz",
+      "question": "Why does representing a state machine's transitions as a dict keyed by (state, action) read as 'cleaner structure' to an interviewer than an if/elif chain?",
+      "choices": [
+        "It runs faster",
+        "The allowed transitions are DATA that can't express an invalid one, so the invariant is enforced by construction; the code that applies a transition becomes a few lines, and adding a rule is one entry rather than another branch",
+        "Dicts use less memory than if statements",
+        "It avoids using functions"
+      ],
+      "answer": 1,
+      "explain": "The win is conceptual, not performance. A transition table makes the set of legal moves explicit and closed: anything not in the table is rejected by one lookup, so the invariant 'only defined transitions change state' holds automatically. The apply logic shrinks to a lookup plus a success/reject, and extending the machine is data entry, not new control flow. That separation of the rules (data) from the mechanism (a tiny apply) is exactly the clean structure being graded."
+    },
+    {
+      "type": "text",
+      "md": "## Separate responsibilities, expect layering\n\nTwo structural habits the guide calls out directly:\n\n- **One object, one job.** The composition area is explicit: \"one object owns rules, another owns aggregation.\" When a class starts doing two things, that is two classes. Keeping them separate is what lets you swap one without touching the other.\n- **Expect layering.** \"A simple component becomes a building block.\" They will start simple and add complexity, so build the first piece with a stable interface that the next ask can slot into, rather than something you have to tear up. This is the same seam-preserving discipline as storing a dict instead of a bare value: design so growth does not ripple.\n\nWhen the follow-up complication arrives, a well-separated design absorbs it as a new piece; a tangled one forces a rewrite mid-clock."
+    },
+    {
+      "type": "text",
+      "md": "## Handle bad input on purpose\n\nEvery area lists bad-input handling as a requirement. The discipline is to DECIDE, per case, among three responses and be consistent:\n\n- **Raise** when the input is genuinely invalid and cannot be interpreted (a duplicate id, a cycle, a nonexistent parent).\n- **Skip** when one item is malformed but the rest are fine (an event with no entity id).\n- **Default** when a field is merely missing but the intent is clear (a vote with no delta means plus one).\n\nSay which you are choosing and why. A bare crash on unexpected input is the thing that reads worst; a deliberate, stated policy reads best. Next lessons: the five areas, each with its clean model, its edge cases, and a code sketch. Do the paired r-drill after each to get the reps in your fingers."
+    }
+  ]
+}
