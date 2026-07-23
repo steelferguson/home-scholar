@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Name That Pattern: 20 Prompts",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The recognition drill\n\nHalf the battle in this interview is reading a messy prompt and instantly seeing which pattern it wants, because that decides your whole model. This lesson is 20 realistic prompts. For each, decide the type BEFORE tapping, then the explanation shows how you would actually model it.\n\nThe six options are the same every time:\n\n- **State machine and invariants** (a thing moves through a lifecycle; only some transitions are legal)\n- **Composition** (one object owns rules, another owns aggregation)\n- **Event / log replay** (fold a stream of events into per-entity state)\n- **Trees / graphs** (build a structure from relationships, traverse, detect bad input)\n- **Time-based throttling** (rate limit per key over a window)\n- **Combination** (primarily two of the above, layered)\n\nWatch for the tells: words like 'moves through' or 'only allowed' mean state machine; 'given a list of events / transactions / logs, compute the current' means replay; 'each has a parent / manager / dependency' means tree; 'per user, per minute, at most N' means throttling."
+    },
+    {
+      "type": "quiz",
+      "question": "1) Model an order that goes from cart to paid to shipped to delivered. Cancellation is allowed only before it ships. Reject illegal transitions.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 0,
+      "explain": "Classic lifecycle: states (cart, paid, shipped, delivered, cancelled) with a transition table keyed by (state, action). 'Cancel only before shipping' is enforced because (shipped, cancel) simply is not in the table. Reject anything not in the table. The tell was 'goes from X to Y' plus 'reject illegal transitions.'"
+    },
+    {
+      "type": "quiz",
+      "question": "2) Build a discount engine: one part defines discount rules per product category, another applies them to a cart and computes the total.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 1,
+      "explain": "The prompt literally splits it into two responsibilities: a rules object (category to discount) and an aggregator (apply to cart, total). The aggregator asks the rules object for each item's discount and never hardcodes rates, so you can swap the rule set unchanged. The tell was 'one part defines rules, another applies.'"
+    },
+    {
+      "type": "quiz",
+      "question": "3) Given a stream of bank transactions (deposits, withdrawals, transfers), compute each account's current balance.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 2,
+      "explain": "Fold the events into a per-account balance: start each account at 0, add on deposit, subtract on withdrawal, and a transfer is a subtract-here plus add-there. Edge cases they will probe: overdraft (allow negative or reject?), a transaction for an unseen account, unknown transaction types. The tell was 'given a stream of events, compute the current state.'"
+    },
+    {
+      "type": "quiz",
+      "question": "4) Given a list of employees each with a manager id, build the org chart, find the person with no manager, and print it indented.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 3,
+      "explain": "Build children-lists keyed by manager, the root is the employee whose manager is None (or not in the set), then DFS with indentation by depth. Bad input to detect: a manager id that does not exist, and a management cycle (A reports to B reports to A). The tell was 'each has a manager id' plus 'find the root and print.'"
+    },
+    {
+      "type": "quiz",
+      "question": "5) Limit each API key to 100 requests per minute; reject anything beyond that, and track it efficiently.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 4,
+      "explain": "Per-key sliding window: a deque of timestamps per API key, evict everything older than one minute from the front, allow if fewer than 100 remain and record. 'Efficiently' is the hint that you should evict rather than rescan the whole history. The tell was 'per key, N per minute, reject beyond.'"
+    },
+    {
+      "type": "quiz",
+      "question": "6) A support ticket moves open to pending to resolved to closed, and can be reopened from closed within the rules. Enforce which transitions are valid.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 0,
+      "explain": "Lifecycle with a transition table. 'Reopen from closed' is just one more entry (closed, reopen) to open. Invalid moves (resolve an already-closed ticket) are rejected by absence from the table, leaving state untouched. The tell was 'moves through states' plus 'enforce valid transitions.'"
+    },
+    {
+      "type": "quiz",
+      "question": "7) A grading system: one component holds the rubric (points per criterion), another aggregates a student's earned points and assigns a letter grade.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 1,
+      "explain": "Composition: a rubric object owns criterion-to-points, an aggregator sums a student's points and maps the total to a letter via a threshold table. Swap the rubric and the aggregation logic is unchanged. Boundary edge case: is a 90 an A or a B-plus? Decide the inclusive/exclusive threshold and state it. The tell was 'one holds the rules, another aggregates.'"
+    },
+    {
+      "type": "quiz",
+      "question": "8) Users earn karma from upvotes and downvotes. When karma crosses certain thresholds, the account moves between trust tiers that unlock privileges.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 5,
+      "explain": "Two areas layered. Event replay computes each user's karma by folding the vote stream, and a state machine (or threshold table) maps karma to a trust tier and governs the tier transitions. Say both out loud: 'I fold votes into a karma total, then a tier component maps that total to a state.' Recognizing the layering is exactly what the recruiter means by 'a simple component becomes a building block.'"
+    },
+    {
+      "type": "quiz",
+      "question": "9) Given category-to-parent-category rows, build the category hierarchy and detect if someone accidentally created a cycle.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 3,
+      "explain": "Tree from parent pointers, with cycle detection as the headline requirement. Single-parent trick: build children-lists, DFS from the roots (categories with no parent), and if you reach fewer nodes than exist, the unreached ones form a cycle. The tell was 'X to parent-X rows' plus 'detect a cycle.'"
+    },
+    {
+      "type": "quiz",
+      "question": "10) Only allow a user to send one password-reset email per 60 seconds.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 4,
+      "explain": "Throttling with a limit of one per 60-second window per user. Simplest form: store the last-sent timestamp per user and allow only if now minus last is at least 60. The boundary (is exactly 60 seconds allowed?) is the thing to decide and state. The tell was 'one per 60 seconds per user.'"
+    },
+    {
+      "type": "quiz",
+      "question": "11) Replay a list of inventory events (received, sold, returned, adjusted) into the current stock per SKU. Ignore event types you do not recognize.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 2,
+      "explain": "Fold per SKU: received adds, sold subtracts, returned adds, adjusted sets or deltas. 'Ignore unrecognized types' is stated for you, and other edge cases are a sale of an unseen SKU and a missing quantity field. The tell was 'replay a list of events into the current state' plus 'ignore unknown types.'"
+    },
+    {
+      "type": "quiz",
+      "question": "12) A vending machine takes coins, dispenses a product once enough money is inserted, returns change, and can be out of stock. Model its behavior.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 0,
+      "explain": "State machine with states like idle, collecting-coins, dispensing, out-of-stock, and transitions driven by insert-coin, select-product, and refund. There is also a numeric invariant (inserted amount versus price) that gates the dispense transition, which is a nice thing to call out. The tell was 'takes input, changes state, has an out-of-stock state.'"
+    },
+    {
+      "type": "quiz",
+      "question": "13) Given file and folder entries each with a parent path, reconstruct the directory tree and list all files under a given folder.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 3,
+      "explain": "Tree build plus a subtree traversal. Build children-lists, then 'all files under folder X' is a DFS from X collecting leaves. Bad input: a parent path that does not exist, or two entries with the same path. The tell was 'each has a parent' plus 'list everything under a node' (a subtree query)."
+    },
+    {
+      "type": "quiz",
+      "question": "14) A document review tool where docs are draft, in-review, approved, or rejected. Only certain moves are allowed, and a rejected doc can be resubmitted to draft.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 0,
+      "explain": "State machine. Transition table with entries like (draft, submit) to in-review, (in-review, approve) to approved, (in-review, reject) to rejected, (rejected, resubmit) to draft. Anything else is rejected. The tell was the explicit state list plus 'only certain moves are allowed.'"
+    },
+    {
+      "type": "quiz",
+      "question": "15) From a log of session events (login, click, purchase, logout), build a per-user summary of click count and total spend.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 2,
+      "explain": "Fold events into a per-user summary: increment clicks on click, add the amount on purchase (default handling if the amount field is missing), ignore login/logout for the summary or use them to bound sessions. The tell was 'from a log of events, build a per-entity summary.'"
+    },
+    {
+      "type": "quiz",
+      "question": "16) A permissions checker: one object stores each role's allowed actions, another decides whether a given user (who may have several roles) can perform a given action.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 1,
+      "explain": "Composition: a policy object owns role-to-actions, and a checker aggregates across a user's roles (allowed if ANY of their roles permits the action). Keep them separate so the policy can change without touching the check logic. The tell was 'one stores the rules, another decides using them.'"
+    },
+    {
+      "type": "quiz",
+      "question": "17) A login system that locks a user out after 5 failed attempts within 15 minutes, and stays locked until an admin unlocks it.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 5,
+      "explain": "Two areas. The '5 failures in 15 minutes' part is windowed throttling (a per-user sliding window of failure timestamps), and 'locked until an admin unlocks' is a state machine (unlocked to locked to unlocked). Say both: 'a window counts recent failures, and crossing the threshold transitions the account into a locked state that only an unlock action clears.'"
+    },
+    {
+      "type": "quiz",
+      "question": "18) Given a list of tasks with dependency edges (task A must run before task B), produce a valid execution order or report that none exists.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 3,
+      "explain": "Graph problem: topological sort (Kahn's algorithm with in-degrees, or DFS). 'No valid order exists' means there is a cycle, so cycle detection is built in. This is the graph end of trees/graphs. The tell was 'X must come before Y' (a dependency edge) plus 'valid order or report impossible.'"
+    },
+    {
+      "type": "quiz",
+      "question": "19) Detect if a user has posted more than 10 comments in the last hour, and if so, flag them for review.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 4,
+      "explain": "Throttling: a per-user sliding window of comment timestamps over the last hour; if the count exceeds 10, flag. The 'flag' itself is trivial (a boolean or a set), so this is primarily a windowed-count problem. The tell was 'more than N in the last hour, per user.'"
+    },
+    {
+      "type": "quiz",
+      "question": "20) Given game events (goal, foul, substitution), reconstruct the current score per team and which players are currently on the field.",
+      "choices": ["State machine & invariants", "Composition", "Event/log replay", "Trees / graphs", "Time-based throttling", "Combination (two areas)"],
+      "answer": 2,
+      "explain": "Fold the event stream into per-team state: goal increments that team's score, substitution swaps a player out for one in (update the on-field set), foul maybe increments a counter. Edge cases: a substitution referencing a player not on the field, unknown event types. The tell was 'reconstruct the current state from a list of events.'"
+    },
+    {
+      "type": "text",
+      "md": "## How you did, and what to take away\n\nCount your instant-correct ones. The goal is not memorizing these 20 but internalizing the TELLS so any new prompt sorts itself in the first few seconds:\n\n- 'Moves through states / only certain transitions allowed' -> state machine (transition table).\n- 'One part owns rules, another applies/aggregates' -> composition (swappable rules object).\n- 'Given a stream/log/list of events, compute the current X' -> replay (fold into per-entity state).\n- 'Each has a parent / manager / dependency' -> tree or graph (build, traverse, detect cycles).\n- 'Per user, at most N per time window' -> throttling (per-key sliding window).\n- Two of those in one prompt -> combination; name the primary and the layered secondary.\n\nAnd the meta-move: once you have named the type, you have named your model, your core data structure, AND the edge cases the interviewer will probe, because each pattern carries its own. That is why the first thing to say out loud is 'this looks like a ___ problem, so I'll model it as ___ and watch for ___.' Then do the matching drill (r01 to r05) to turn recognition into working code."
+    }
+  ]
+}
