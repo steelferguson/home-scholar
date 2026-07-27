@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Fixing a Messy PyTorch Training Pipeline",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The messy training script\n\nSame exercise, ML flavor. This trains a classifier and reports test accuracy. It runs and the loss goes down, so it looks fine, which is exactly why the bugs are dangerous. Read it and find the issues first.\n\n```python\ndef train_and_eval(X, y):\n    scaler = StandardScaler().fit(X)\n    X = scaler.transform(X)\n    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2)\n\n    model = nn.Sequential(nn.Linear(X.shape[1], 32),\n                          nn.ReLU(), nn.Linear(32, 2))\n    opt = torch.optim.Adam(model.parameters(), lr=1e-3)\n    loss_fn = nn.CrossEntropyLoss()\n\n    for epoch in range(20):\n        logits = model(torch.tensor(X_tr).float())\n        loss = loss_fn(logits, torch.tensor(y_tr))\n        loss.backward()\n        opt.step()\n\n    preds = model(torch.tensor(X_te).float()).argmax(1)\n    acc = (preds == torch.tensor(y_te)).sum() / len(y_te)\n    return acc\n```\n\nAt least five issues span correctness, ML-correctness, and structure. Correctness first, and here 'correctness' includes silent ML bugs that inflate or corrupt your metric."
+    },
+    {
+      "type": "text",
+      "md": "## ML bug 1: data leakage (the serious one)\n\n```python\nscaler = StandardScaler().fit(X)   # fits on ALL data...\nX = scaler.transform(X)\nX_tr, X_te, ... = train_test_split(X, y)   # ...then splits\n```\n\nThe scaler learns the mean and standard deviation from the ENTIRE dataset, including the test rows, before the split. Test statistics leak into training, so your test accuracy is optimistically biased and doesn't reflect real generalization. Nothing errors; the number is just quietly wrong.\n\nFix: split FIRST, fit the scaler on train only, apply to test.\n\n```python\nX_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=0)\nscaler = StandardScaler().fit(X_tr)          # fit on TRAIN only\nX_tr = scaler.transform(X_tr)\nX_te = scaler.transform(X_te)                # apply, don't re-fit\n```\n\nThis is the highest-severity bug because it corrupts the thing the pipeline exists to report. Call it out first."
+    },
+    {
+      "type": "text",
+      "md": "## ML bug 2: the missing zero_grad\n\nThe training loop is `forward -> loss -> backward -> step`, missing `opt.zero_grad()`. PyTorch ACCUMULATES gradients, so without zeroing them each step adds to the previous step's gradients. The effective update grows every iteration; training is subtly wrong even though the loss may still fall.\n\nThe correct beat is forward, loss, zero, backward, step:\n\n```python\nfor epoch in range(20):\n    logits = model(X_tr_t)\n    loss = loss_fn(logits, y_tr_t)\n    opt.zero_grad()      # <- the missing line\n    loss.backward()\n    opt.step()\n```\n\nMissing zero_grad is the single most common PyTorch bug and it fails SILENTLY, which is why you check the training loop's four beats every time."
+    },
+    {
+      "type": "quiz",
+      "question": "The script fits StandardScaler on all of X before train_test_split. Loss decreases and test accuracy looks strong. What is wrong, and why is it dangerous?",
+      "choices": [
+        "Nothing; scaling before splitting is standard",
+        "Data leakage: the scaler learns mean/std from the test rows too, so test statistics inform the preprocessing the model trains on; test accuracy is optimistically biased and doesn't reflect real generalization, and nothing errors to warn you",
+        "The scaler should use min-max instead",
+        "The problem is only that it's slow"
+      ],
+      "answer": 1,
+      "explain": "Any preprocessing fit on data that includes the test set leaks information: the model effectively 'sees' test-set statistics during training, inflating the reported metric. The danger is that it's silent, the run succeeds and the number looks good, so it ships and then underperforms in the real world. The fix is always split first, fit preprocessing on train only, apply to test. This is the ML-pipeline version of 'validate at the boundary and don't let information flow backward.'"
+    },
+    {
+      "type": "text",
+      "md": "## ML bug 3: no eval mode, no no_grad, and a fragile metric\n\nEvaluation has three issues:\n\n- The model may contain dropout or batchnorm; evaluating without `model.eval()` leaves them in training mode, giving noisy, wrong test numbers.\n- Evaluating without `torch.no_grad()` builds the autograd graph needlessly, wasting memory (and on big models, a lot of it).\n- `(preds == y).sum() / len(y)` divides an integer tensor sum; convert to float or the accuracy can truncate.\n\n```python\nmodel.eval()\nwith torch.no_grad():\n    preds = model(X_te_t).argmax(dim=1)\n    acc = (preds == y_te_t).float().mean().item()\n```\n\n`model.eval()` and `torch.no_grad()` are independent switches (layer behavior vs graph recording) and evaluation needs both. `.float().mean().item()` is the correct accuracy idiom."
+    },
+    {
+      "type": "text",
+      "md": "## Structure: one function doing five jobs, and no reproducibility\n\nBeyond the bugs, `train_and_eval` mixes preprocessing, model construction, training, and evaluation in one blob (principle 1), and sets no seed, so every run gives a different number and you can't compare changes.\n\nSeparate the stages and seed:\n\n```python\ndef make_splits(X, y, seed=0): ...      # split + scale (train-fit only)\ndef build_model(in_dim): ...            # model + optimizer + loss\ndef train(model, opt, loss_fn, X, y, epochs=20): ...\ndef evaluate(model, X, y) -> float: ...\n\ndef run(X, y, seed=0):\n    torch.manual_seed(seed)             # reproducible\n    (X_tr, y_tr, X_te, y_te) = make_splits(X, y, seed)\n    model, opt, loss_fn = build_model(X_tr.shape[1])\n    train(model, opt, loss_fn, X_tr, y_tr)\n    return evaluate(model, X_te, y_te)\n```\n\nNow each stage is testable, the seed makes runs comparable, and swapping the model or the training loop touches one function."
+    },
+    {
+      "type": "text",
+      "md": "## The iterate step: scaling and reliability\n\nOnce it's correct and clean, the improvements you'd name out loud:\n\n- **Batching**: the loop trains on the full dataset in one tensor. For anything large, use a `DataLoader` with `batch_size` and `shuffle=True` so it fits in memory and the batches are shuffled (unshuffled data is its own silent bug on ordered datasets).\n- **A validation split**: currently there's only train/test, so you'd tune blind. Add a validation set (or k-fold) to pick epochs/hyperparameters without touching test.\n- **Device handling**: move model and batches to GPU if available.\n- **Checkpointing and metrics**: save the best model, log train/val loss per epoch so you can see overfitting.\n- **Overfit-a-tiny-batch sanity check** before a full run, to confirm the pipeline can learn at all.\n\nSame pattern as the data pipeline: get it correct and clean first, then name the production improvements. Next lesson: the review method that ties this all into how you run the interview hour."
+    },
+    {
+      "type": "quiz",
+      "question": "During review you spot the missing `opt.zero_grad()` AND that the whole dataset is trained in one un-batched tensor. In what order do you address them, and why?",
+      "choices": [
+        "Batching first, since performance matters most",
+        "The missing zero_grad first: it's a correctness bug that silently corrupts training, and correctness comes before performance; batching is a scaling improvement you note and do after the result is right",
+        "Both at once in a big rewrite",
+        "Neither; loss is decreasing so it's fine"
+      ],
+      "answer": 1,
+      "explain": "Correctness before performance, every time. The missing zero_grad makes the training itself wrong (accumulating gradients), so fixing it changes the RESULT; batching only changes how efficiently you reach the result. Fix the silent correctness bug and re-verify, then address batching as the scaling step, naming it out loud. Doing a big simultaneous rewrite risks introducing new bugs and muddies which change fixed what, the same one-thing-at-a-time discipline as debugging."
+    }
+  ]
+}

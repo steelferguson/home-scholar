@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "What Makes a Pipeline Good",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why this course\n\nA data pipeline takes messy input, moves it through stages, and produces trustworthy output. \"Review and improve this pipeline\" is a common interview (Trunk Tools runs exactly this), and it grades whether you think like a production engineer, not whether you know a trick.\n\nThis course teaches the principles of a good pipeline, then walks through fixing two messy ones (a records pipeline and a PyTorch training pipeline), then the review method for the interview itself. First, the principles: the lens you read any pipeline through."
+    },
+    {
+      "type": "text",
+      "md": "## Principle 1: stages with one job each\n\nA pipeline is a sequence of transformations. The single most common smell is one giant function that reads, parses, transforms, aggregates, and writes all at once. You cannot test it, reuse it, or reason about it.\n\nThe fix is stages, each with a single responsibility:\n\n```\nload -> parse -> validate -> transform -> aggregate -> output\n```\n\nEach stage takes a defined input and returns a defined output. This is the composition principle: one function owns parsing, another owns aggregation, and they compose. When you review a pipeline, the first improvement is almost always \"let me pull these responsibilities apart into named stages.\""
+    },
+    {
+      "type": "text",
+      "md": "## Principle 2: clear contracts between stages\n\nThe interface between stages is where pipelines quietly break. If stage 1 returns a loose tuple or a prose string and stage 2 has to guess its shape, drift creeps in.\n\nGive each stage a clear data contract: a typed structure (a dataclass, a Pydantic model, or at least a documented dict shape). Then stage 2 consumes a contract, not a guess.\n\n```python\n@dataclass\nclass ParsedRecord:\n    id: str\n    amount: float\n    date: datetime\n```\n\nThe payoff is the same as storing a dict instead of a bare value: a stable contract absorbs new fields without every downstream site changing. When one stage's output shape is obvious, the whole pipeline is debuggable."
+    },
+    {
+      "type": "quiz",
+      "question": "You are handed a 200-line function that reads a file, cleans rows, computes per-customer totals, and writes JSON. What is the highest-value first improvement?",
+      "choices": [
+        "Add type hints to the parameters",
+        "Split it into single-responsibility stages (load, parse, validate, aggregate, write) with a clear data structure passed between them, so each part can be tested and reasoned about independently",
+        "Rewrite it in pandas",
+        "Add a docstring"
+      ],
+      "answer": 1,
+      "explain": "The monolith is the core problem: it can't be tested in pieces, reused, or reasoned about, and every concern is tangled with every other. Decomposing into named stages with a contract between them is the structural fix that makes all the other improvements (types, tests, perf) possible. Type hints and docstrings are good but cosmetic until the structure is right; a pandas rewrite is a technique choice, not an architecture fix."
+    },
+    {
+      "type": "text",
+      "md": "## Principle 3: correctness first, then optimize\n\nThe interview instruction is explicit: get it correct, then iterate on performance. This is also just good engineering. A fast pipeline that produces wrong numbers is worthless, and optimizing code you haven't verified means optimizing a bug.\n\nSo the order is: make it right, prove it (run it, tiny test), THEN make it fast or robust. When you spot a performance issue during review, note it out loud (\"this is O(n squared), I'll come back to it\") but fix correctness first. Never let a cleverness distract you from a wrong result sitting in front of you."
+    },
+    {
+      "type": "text",
+      "md": "## Principle 4: validate at the boundaries\n\nData enters a pipeline untrusted: missing fields, wrong types (everything from a CSV is a string), malformed rows, duplicates, encoding surprises. The discipline is to validate and normalize at the ENTRY boundary, so that everything past parsing is clean and typed.\n\n```python\ndef parse_row(row: dict) -> ParsedRecord | None:\n    if not row.get(\"id\"):\n        return None                 # skip malformed, don't crash the run\n    return ParsedRecord(\n        id=row[\"id\"],\n        amount=float(row.get(\"amount\", 0)),   # coerce once, at the edge\n        date=datetime.fromisoformat(row[\"date\"]),\n    )\n```\n\nConvert types once, at the boundary, not repeatedly deep in the logic. Then the transform and aggregate stages can trust their inputs. Interior code that re-checks types everywhere is a sign validation happened too late."
+    },
+    {
+      "type": "text",
+      "md": "## Principle 5: handle partial failure deliberately\n\nReal input has bad rows. The question the interviewer wants you to answer out loud: when row 5,000 of 100,000 is malformed, do you abort the whole run, or skip it and keep going?\n\nUsually you skip-and-log: process the good rows, collect the bad ones with a reason, and report a summary. Aborting the whole job because one record is malformed is rarely what production wants.\n\n```python\ngood, errors = [], []\nfor row in rows:\n    rec = parse_row(row)\n    if rec is None:\n        errors.append(row)          # collect, don't crash\n    else:\n        good.append(rec)\n# ... process good; report len(errors) and why\n```\n\nThe anti-pattern is a bare `try/except: pass` that swallows failures silently, so bad data vanishes with no trace. Deliberate, visible failure handling is a production-maturity signal."
+    },
+    {
+      "type": "quiz",
+      "question": "A pipeline wraps its whole row-processing loop in `try: ... except: pass`. Why is that a red flag, and what is the fix?",
+      "choices": [
+        "It's fine; it prevents crashes",
+        "It silently swallows every failure, so malformed rows vanish with no record and real bugs are hidden; the fix is to catch specific exceptions per row, collect the failures with a reason, and report a summary (skip-and-log), aborting only when the failure is truly unrecoverable",
+        "The fix is to remove all error handling",
+        "It's only a problem if the data is large"
+      ],
+      "answer": 1,
+      "explain": "A blanket swallow turns every error into silent data loss and hides the exact bugs you need to see. Production pipelines fail LOUDLY or LOG deliberately: catch specific exceptions at the row level, record which rows failed and why, keep processing the good ones, and surface a count. The decision of skip-vs-abort should be conscious and stated, not defaulted to 'swallow everything.'"
+    },
+    {
+      "type": "text",
+      "md": "## Principle 6: do deterministic work in code, stream when big\n\nTwo more that come up constantly in review:\n\n**Deterministic work belongs in code, not in a fuzzy or expensive component.** Sorting, arithmetic, deduplication, reconciliation: these have provably correct answers, so compute them, don't approximate them. (In an LLM pipeline this is 'the model reads, code decides.' In a data pipeline it's 'don't recompute what you can compute once.')\n\n**Stream when the data is big.** Reading a 10 GB file with `open(f).read()` or `list(rows)` loads it all into memory. If the pipeline processes row by row, use a generator and process one record at a time, so memory stays flat regardless of input size.\n\n```python\ndef load(path):\n    with open(path) as f:\n        for line in f:              # streams; memory is O(1), not O(file)\n            yield line\n```\n\nWhen you review, ask: does this need the whole dataset in memory (a global sort, a join) or can it stream (a per-row transform, a running aggregate)? Stream where you can."
+    },
+    {
+      "type": "text",
+      "md": "## Principle 7: idempotency and observability\n\nThe last two, which mark production thinking:\n\n**Idempotent**: running the pipeline twice on the same input produces the same result and doesn't double-write or double-charge. Achieved with dedupe keys, upserts, and checkpoints, so a re-run after a crash is safe.\n\n**Observable**: it logs what it did (rows in, rows out, rows skipped, time taken), so when something looks wrong you can see where. A pipeline that produces a number with no trace of how is impossible to debug in production.\n\nYou will not build all of this in an hour, but NAMING them as improvements (\"next I'd make this idempotent with a dedupe key, and add row-count logging\") is exactly the engineering-judgment signal the interview rewards.\n\nNext lesson: a messy records pipeline, fixed stage by stage."
+    }
+  ]
+}

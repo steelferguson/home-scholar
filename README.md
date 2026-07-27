@@ -26,6 +26,9 @@ _Last updated: 2026-07-13_
   architecture gallery with walkthroughs, a classical recommender design, and
   a deep dive on designing the evaluator itself, and defending an eval platform
   from abuse)
+- Pipeline Craft: 4 visual lessons (~2h): reviewing and improving Python data
+  pipelines (principles + messy records and PyTorch examples fixed stage by
+  stage + the live-review method); pairs with pipeline_examples/ files
 - Reddit Coding Interview: 6 visual lessons (~1.5h): messy-requirements-to-
   clean-models coding prep (state machines, composition, event replay, trees,
   throttling, plus a 20-prompt pattern-recognition drill), each paired with a hands-on drill

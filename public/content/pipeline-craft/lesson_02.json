@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Fixing a Messy Records Pipeline",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The messy pipeline\n\nHere is a pipeline that reads sales rows and reports total spend per customer. It runs and mostly works, which is exactly the kind of code a review interview hands you. Read it and find the issues before advancing.\n\n```python\ndef process(path):\n    data = open(path).read().split(\"\\n\")\n    seen = []\n    totals = {}\n    for line in data:\n        try:\n            parts = line.split(\",\")\n            cust = parts[0]\n            amt = parts[2]\n            if cust in seen:\n                totals[cust] = totals[cust] + amt\n            else:\n                seen.append(cust)\n                totals[cust] = amt\n        except:\n            pass\n    return totals\n```\n\nThere are at least six problems across correctness, performance, and maintainability. We fix them in order: correctness first."
+    },
+    {
+      "type": "text",
+      "md": "## Correctness bug 1: strings, not numbers\n\n`amt = parts[2]` is a STRING (everything split from text is), so `totals[cust] + amt` concatenates strings instead of summing. `\"10\" + \"5\"` is `\"105\"`, not `15`. The pipeline returns nonsense totals while looking like it works.\n\nFix: coerce at the boundary (principle 4).\n\n```python\namt = float(parts[2])\n```\n\nThis is the single most common data-pipeline bug and the reason parsing should convert types once, at the edge. Say it out loud in the interview: 'everything from a split is a string, so I'll convert amount to a float at parse time.'"
+    },
+    {
+      "type": "text",
+      "md": "## Correctness bug 2: the blank last line and short rows\n\n`open(path).read().split(\"\\n\")` leaves a trailing empty string if the file ends with a newline (most do). That empty line splits to `[\"\"]`, `parts[2]` raises IndexError, and the bare `except: pass` swallows it, so you never know. A row with missing columns dies the same silent way.\n\nTwo fixes: skip blank and malformed rows deliberately, and stop swallowing errors.\n\n```python\nif not line.strip():\n    continue                # skip blanks\nparts = line.split(\",\")\nif len(parts) < 3:\n    errors.append(line)     # collect malformed, don't vanish them\n    continue\n```\n\nThe `except: pass` was hiding real failures (principle 5). Replace it with explicit, per-row skip-and-log."
+    },
+    {
+      "type": "quiz",
+      "question": "In the original, `open(path).read().split(\"\\n\")` on a file ending in a newline produces a trailing `\"\"`. What actually happens to it, and why is it dangerous?",
+      "choices": [
+        "It's ignored automatically",
+        "The empty string splits to [\"\"], so parts[2] raises IndexError, which the bare `except: pass` swallows silently, so the malformed row (and any real bug) disappears with no trace",
+        "It adds an empty customer with total 0",
+        "It crashes the whole program"
+      ],
+      "answer": 1,
+      "explain": "The trailing empty line is a classic parse-boundary bug, and the danger is the combination with `except: pass`: the IndexError is silently eaten, so you get no crash AND no record that a row was dropped. That's the worst failure mode, invisible data loss. The fix is two principles at once: skip blanks/malformed rows deliberately at the boundary, and log them instead of swallowing."
+    },
+    {
+      "type": "text",
+      "md": "## Performance bug: O(n squared) membership check\n\n`if cust in seen:` where `seen` is a LIST scans the whole list every row, so processing n rows is O(n squared). On a large file this is the difference between seconds and minutes.\n\nAnd it's redundant: the `totals` dict already tells you whether you've seen a customer. The entire `seen` list can go.\n\n```python\ntotals[cust] = totals.get(cust, 0) + amt   # get-with-default: no membership scan\n```\n\n`totals.get(cust, 0)` handles first-sight and repeat in one line, O(1) each, no separate tracking structure. Name it in the interview: 'membership on a list is O(n), so this loop is O(n squared); a dict default makes it O(n) total and removes the redundant set.'"
+    },
+    {
+      "type": "text",
+      "md": "## Maintainability: one function doing everything, and reading it all into memory\n\nThe function loads, parses, and aggregates in one blob, and `read()` pulls the whole file into memory. Both improve by separating stages and streaming (principles 1 and 6).\n\n```python\ndef load(path):\n    with open(path) as f:\n        for line in f:                 # stream, don't read() all\n            yield line\n\ndef parse(lines):\n    for line in lines:\n        line = line.strip()\n        if not line:\n            continue\n        parts = line.split(\",\")\n        if len(parts) < 3:\n            continue                   # (collect errors in the real version)\n        yield parts[0], float(parts[2])\n\ndef total_by_customer(records):\n    totals = {}\n    for cust, amt in records:\n        totals[cust] = totals.get(cust, 0) + amt\n    return totals\n```\n\nEach stage is a generator with one job; they compose and stream. `with open` also closes the file (the original leaked the handle)."
+    },
+    {
+      "type": "text",
+      "md": "## The cleaned pipeline\n\nComposed, the whole thing:\n\n```python\ndef process(path):\n    return total_by_customer(parse(load(path)))\n```\n\nOne readable line, backed by three testable stages, streaming, O(n), correct types, no silent failures. Compare to the original blob.\n\nWhat you'd say next (the iterate step): 'For production I'd have parse collect malformed rows with a reason and return a summary, add row-in/row-out logging, make the amount parsing tolerant of currency symbols, and if this feeds a warehouse, key the aggregation so a re-run is idempotent.' You do not have to build all that; naming it is the engineering-judgment signal."
+    },
+    {
+      "type": "quiz",
+      "question": "The original used a separate `seen` list to track known customers. Why was removing it both a performance AND a cleanliness win?",
+      "choices": [
+        "Lists are always slower than sets",
+        "The `totals` dict already encodes membership, so `seen` was redundant state that could drift out of sync AND its `in` check was O(n) per row; `totals.get(cust, 0)` gets first-sight-or-repeat in one O(1) call, removing both the quadratic cost and the duplicate tracking",
+        "It saved memory only",
+        "Sets would have been faster than the list"
+      ],
+      "answer": 1,
+      "explain": "Two wins from one deletion. Performance: list membership is O(n), making the loop O(n squared); the dict default is O(1). Cleanliness: `seen` was a second structure tracking the same fact `totals` already knew, so it was redundant state that could desync. Removing redundant state that duplicates what another structure already encodes is a core maintainability move, and here it happens to also erase the quadratic cost."
+    }
+  ]
+}

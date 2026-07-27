@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Review Method",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Turning principles into an hour\n\nYou know the principles and you've fixed two pipelines. This lesson is the method for a live review-and-improve interview (Trunk Tools: two engineers, an existing Python pipeline, no AI). They told you exactly what they grade: clarifying questions, thinking out loud, clean code, engineering judgment on perf/scaling/reliability, and correctness-first-then-iterate. The method below hits every one."
+    },
+    {
+      "type": "text",
+      "md": "## Step 1: clarify before you touch code (they grade this)\n\nSpend the first few minutes understanding the problem, out loud:\n\n- What does this pipeline DO, and who consumes the output?\n- What's the data volume and cadence: a few MB nightly, or a continuous firehose? (This decides streaming vs in-memory, batching, parallelism.)\n- How clean is the input? What should happen on a bad row?\n- What does 'improve' mean to you right now: correctness, speed, readability, reliability?\n- Can I run it? Are there tests or sample data?\n- What are the known pain points?\n\nThese aren't stalling; each answer changes what you do. 'How big is the data' alone decides half your performance choices. Two engineers in the room means treat it as a real review: ask them, confirm assumptions against how they actually use it."
+    },
+    {
+      "type": "text",
+      "md": "## Step 2: read the whole thing, narrating\n\nBefore changing anything, read top to bottom and say what each part does: 'this loads the file, this parses rows, this aggregates, this writes.' Build the mental model out loud.\n\nThis does three things: it surfaces half the issues just from reading, it shows the interviewer your comprehension process (which they weight), and it keeps you from fixing a symptom before you understand the system. Resist the urge to start editing in the first two minutes. The narration IS the deliverable as much as the code."
+    },
+    {
+      "type": "quiz",
+      "question": "The interviewer drops you into an unfamiliar 150-line pipeline. What do you do in the first five minutes?",
+      "choices": [
+        "Start refactoring the most obvious mess immediately to show momentum",
+        "Ask clarifying questions (what it does, data volume, what 'improve' means, can I run it), then read the whole thing top to bottom narrating what each part does, before changing anything",
+        "Rewrite it in your preferred style",
+        "Silently read it and start typing"
+      ],
+      "answer": 1,
+      "explain": "They explicitly reward clarifying up front and thinking out loud, and jumping straight to edits demonstrates neither. Clarify to make sure you're solving the right problem (their exact words), then read-and-narrate to build the model and surface issues. Silent reading loses the communication points; immediate refactoring risks solving the wrong problem and skips the reasoning they're there to evaluate. The first five minutes are talk and comprehension, not code."
+    },
+    {
+      "type": "text",
+      "md": "## Step 3: correctness first, and prove it\n\nFind and fix the bugs that make the output WRONG before anything else. Types (strings from parsing), off-by-ones, silent exception swallowing, data leakage in an ML pipeline, missing zero_grad. Fix one, re-run on a small input, confirm.\n\nWhen you spot a performance or style issue while hunting correctness, note it out loud and keep going: 'that membership check is O(n squared), I'll come back to it once the result is right.' Parking non-correctness improvements shows discipline and reassures them you saw it. Get a correct, verified result before you touch performance, exactly as they instructed."
+    },
+    {
+      "type": "text",
+      "md": "## Step 4: clean it, then talk scale and reliability\n\nWith a correct result, improve in this order, narrating the WHY and the tradeoff for each:\n\n- **Clean**: abstract repeated logic into helpers, split the monolith into single-responsibility stages, give stages clear contracts, name magic values, add type hints. This is the 'clean, maintainable, production-quality code' bullet.\n- **Then scale/reliability, mostly by discussion**: 'this loads the whole file; for the real volume I'd stream it. This is O(n squared); a set makes it O(n). For failures I'd skip-and-log bad rows and retry external calls with backoff. To re-run safely I'd make it idempotent with a dedupe key. I'd add row-count logging for observability.'\n\nYou don't have to implement every improvement. They said it directly: the focus is reasoning, not any specific technique. Naming the right improvements with their tradeoffs IS the answer."
+    },
+    {
+      "type": "text",
+      "md": "## The through-line, and the checklist to carry\n\nThe whole method in one breath: clarify to solve the right problem, read to understand it, fix correctness and prove it, then clean and discuss scale, narrating your reasoning and tradeoffs the entire time, and treating the two engineers as collaborators.\n\nYour scan checklist when reading any pipeline:\n\n- **Correctness**: types at the boundary, off-by-ones, silent `except: pass`, ML leakage / missing zero_grad / eval mode.\n- **Clean**: monolith to split into stages, repeated logic to a helper, clear contracts, magic values to constants.\n- **Performance**: O(n squared) membership, whole-file-in-memory vs streaming, redundant recomputation.\n- **Reliability**: partial-failure handling, idempotency, retries, logging.\n\nRehearse on the two example files (`good_pipeline_document_processor.py` and the second prompt) and, if you want a live rep, say 'run a pipeline review mock' and Claude plays the two engineers with a fresh messy pipeline. Correctness first, reason out loud, and you'll hit every line of their rubric."
+    }
+  ]
+}
