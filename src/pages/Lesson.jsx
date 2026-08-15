@@ -2,11 +2,13 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
+import { isNativeShell } from '../lib/nativeBridge'
 import ReactMarkdown from 'react-markdown'
 
 // Both players pull heavy deps (KaTeX, confetti) — keep them out of the main chunk
 const VisualLessonPlayer = lazy(() => import('../components/visual/VisualLessonPlayer'))
 const QuizGame = lazy(() => import('../components/game/QuizGame'))
+const NativeAudioPlayer = lazy(() => import('../components/audio/NativeAudioPlayer'))
 
 const loadingCard = (
   <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">
@@ -163,43 +165,57 @@ export default function Lesson({ user, onSignOut }) {
           </div>
         )}
 
-        {/* Audio Player */}
+        {/* Audio Player. In the native shell the shell owns playback (so it
+            survives the screen locking) and this is only the controls. */}
         {lesson.lesson_type !== 'visual' && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-          <audio
-            ref={audioRef}
-            src={lesson.audio_url}
-            controls
-            onTimeUpdate={handleTimeUpdate}
-            onPause={handlePause}
-            className="w-full mb-3"
-          />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Speed:</span>
-              {[0.75, 1, 1.25, 1.5].map(rate => (
-                <button
-                  key={rate}
-                  onClick={() => setPlaybackRate(rate)}
-                  className={`px-2 py-1 text-xs rounded ${
-                    playbackRate === rate
-                      ? 'bg-blue-100 text-blue-700 font-medium'
-                      : 'text-gray-500 hover:bg-gray-100'
-                  }`}
-                >
-                  {rate}x
-                </button>
-              ))}
-            </div>
-            {!isCompleted && (
+          {isNativeShell ? (
+            <Suspense fallback={<div className="py-6 text-center text-gray-400">Loading player...</div>}>
+              <NativeAudioPlayer
+                key={lesson.id}
+                lesson={lesson}
+                courseTitle={course?.title}
+                savedPosition={isCompleted ? 0 : (progress[lesson.id]?.last_position_seconds || 0)}
+              />
+            </Suspense>
+          ) : (
+            <>
+              <audio
+                ref={audioRef}
+                src={lesson.audio_url}
+                controls
+                onTimeUpdate={handleTimeUpdate}
+                onPause={handlePause}
+                className="w-full mb-3"
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Speed:</span>
+                {[0.75, 1, 1.25, 1.5].map(rate => (
+                  <button
+                    key={rate}
+                    onClick={() => setPlaybackRate(rate)}
+                    className={`px-2 py-1 text-xs rounded ${
+                      playbackRate === rate
+                        ? 'bg-blue-100 text-blue-700 font-medium'
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          {!isCompleted && (
+            <div className="flex justify-end mt-4">
               <button
                 onClick={handleMarkComplete}
                 className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
               >
                 Mark Complete
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         )}
 

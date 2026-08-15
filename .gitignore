@@ -26,6 +26,8 @@ dist-ssr
 # Environment
 .env
 .env.local
+R2_CREDENTIALS.md
+.vercel/
 
 # Python
 __pycache__/

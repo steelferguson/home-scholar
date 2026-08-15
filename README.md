@@ -4,13 +4,26 @@ A web app for self-paced audio learning — language courses, music theory, and 
 
 ## Status
 
-_Last updated: 2026-07-13_
+_Last updated: 2026-08-15_
 
 **Live** (database migrated + seeded on the production Supabase project):
+- **Native mobile shell** — `projects/home-scholar-mobile/` wraps this app in an
+  Expo iOS/Android shell so audio keeps playing with the screen locked, with
+  lock-screen controls. The shell's WebView loads the live Vercel URL, so
+  publishing content still means `vercel --prod` with no app rebuild. The web
+  half of the bridge is `src/lib/nativeBridge.js`,
+  `src/hooks/useNativeAudioSync.js` and `src/components/audio/NativeAudioPlayer.jsx`;
+  none of it activates in a normal browser. See that repo's README for the
+  bridge contract and gotchas
 - Hosted at https://home-scholar-app.vercel.app (Vercel; deploy via
   `vercel --prod` from the repo root, SPA rewrite in vercel.json,
   VITE_SUPABASE_* env vars set on the Vercel project)
 - 4 audio courses — Czech 2, Spanish 1, English Connect 1, Harmony
+- Audio Prep: System Design & Data Modeling — 6 audio lessons (~30 min):
+  running a design interview, a worked construction architecture, data
+  modeling method + worked examples, the RAG/agent pipeline, trustworthy AI
+  answers. Built from projects/interview_audio/ (Google TTS), audio-only so
+  no app redeploy needed
 - ML Interview — Visual Walkthroughs: 6 interactive lessons (tokenization,
   log loss, softmax, gradient descent, embeddings, attention)
 - MLE Coding Refresh: 9 visual lessons (~3.5h) rebuilding hands-on interview
@@ -43,6 +56,9 @@ _Last updated: 2026-07-13_
   coins, streaks, and the arcade platformer reward
 
 **Next up** (see CLAUDE.md for details):
+- Verify background audio on a physical device; iOS TestFlight build; create a
+  Play Console app record so Android can move from sideloaded APK to internal testing
+- Offline lesson downloads and Google sign-in in the shell (`expo-auth-session`)
 - Pre-generated Spanish TTS audio for kids' questions (replacing browser TTS)
 - Atomic coin-increment RPC + per-day earning caps
 - Kid profiles under a parent account

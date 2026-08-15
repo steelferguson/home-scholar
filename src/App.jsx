@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import { useNativeAudioSync } from './hooks/useNativeAudioSync'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Course from './pages/Course'
@@ -12,6 +13,9 @@ function ProtectedRoute({ user, children }) {
 
 export default function App() {
   const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut } = useAuth()
+
+  // Native shell only: audio outlives the lesson page, so progress is saved here
+  useNativeAudioSync(user?.id)
 
   if (loading) {
     return (
