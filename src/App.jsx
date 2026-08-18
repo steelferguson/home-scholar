@@ -1,10 +1,15 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useNativeAudioSync } from './hooks/useNativeAudioSync'
+import { isNativeShell } from './lib/nativeBridge'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Course from './pages/Course'
 import Lesson from './pages/Lesson'
+
+// Shell only: audio keeps playing after you leave the lesson page
+const MiniPlayer = lazy(() => import('./components/audio/MiniPlayer'))
 
 function ProtectedRoute({ user, children }) {
   if (!user) return <Navigate to="/login" />
@@ -64,6 +69,11 @@ export default function App() {
           }
         />
       </Routes>
+      {isNativeShell && user && (
+        <Suspense fallback={null}>
+          <MiniPlayer />
+        </Suspense>
+      )}
     </BrowserRouter>
   )
 }

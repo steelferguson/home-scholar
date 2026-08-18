@@ -175,6 +175,7 @@ export default function Lesson({ user, onSignOut }) {
                 key={lesson.id}
                 lesson={lesson}
                 courseTitle={course?.title}
+                courseSlug={slug}
                 savedPosition={isCompleted ? 0 : (progress[lesson.id]?.last_position_seconds || 0)}
               />
             </Suspense>
