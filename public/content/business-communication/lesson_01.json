@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Answer First: The Pyramid Principle",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The one habit that changes everything\n\nMost people communicate the way they *figured something out*: here's what I looked at, here's what I found, here's what it means, and finally... here's what I recommend.\n\nBusy listeners experience that as a mystery novel. They spend the whole time asking *\"where is this going?\"* — which means they aren't actually listening.\n\n**The fix: say the answer first, then support it.** This is the core of Barbara Minto's *Pyramid Principle*, the house style of McKinsey and most executive communication. Almost every lesson in this course builds on it."
+    },
+    {
+      "type": "text",
+      "md": "## Bottom-up thinking, top-down telling\n\nYou *think* bottom-up: gather facts → notice patterns → reach a conclusion. That's fine — that's how analysis works.\n\nThe mistake is *telling* it in the same order. Flip it before you open your mouth:\n\n1. **Governing thought** — the single sentence you'd keep if you could only say one. Your answer, recommendation, or key message.\n2. **Key points** — 2–4 reasons or components that support it.\n3. **Evidence** — the data, examples, and detail under each key point.\n\nThe listener gets the destination first, so every detail that follows has somewhere to attach."
+    },
+    {
+      "type": "text",
+      "md": "## Why answer-first works\n\n- **Working memory is tiny.** Without the conclusion, listeners must hold every detail in suspense. With it, details snap into a frame.\n- **Attention is front-loaded.** You get maximum attention in the first 30 seconds. Spend it on the message, not the backstory.\n- **It survives interruption.** If the meeting gets cut off two minutes in, the decision-maker still heard the thing that mattered.\n- **It signals confidence.** Burying the answer reads as hedging — even when your analysis is excellent."
+    },
+    {
+      "type": "widget",
+      "widget": "before-after",
+      "md": "### See the flip\n\nA project update to a VP, told chronologically vs. answer-first. Read the *before*, notice where your attention drifts, then reveal the rewrite:",
+      "props": {
+        "beforeLabel": "Chronological (mystery novel)",
+        "afterLabel": "Answer-first (pyramid)",
+        "before": "So, we kicked off the vendor evaluation three weeks ago. We started with a list of eight vendors and scored them on security, price, and support. Two dropped out during the security review, and three more came in way over budget. Of the remaining three, one had really strong references but their support is only in EU time zones. The other two were close on price, so we did reference calls last week, and one of them had two customers mention slow onboarding. So anyway, after all that, we're thinking VendorCo is probably the right choice, if that sounds okay?",
+        "after": "Recommendation: sign with VendorCo — they're the only finalist that passed security review, fits budget, and has US-hours support.\n\nHow we got there, briefly: eight vendors screened → three survived security and budget → VendorCo won on references and support coverage.\n\nHappy to walk through the scoring if useful. If you approve by Friday, we can start onboarding this quarter.",
+        "notes": [
+          "The answer is the first word, literally — 'Recommendation:'",
+          "The process survives, but compressed to one sentence as *support*, not narrative",
+          "Ends with a clear ask and a deadline instead of 'if that sounds okay?'"
+        ]
+      }
+    },
+    {
+      "type": "quiz",
+      "question": "Your CEO stops you in the hallway and asks how the migration is going. The pyramid-principle response starts with:",
+      "choices": [
+        "\"Well, first we had to audit the legacy system, which took longer than expected...\"",
+        "\"It's on track for the March cutover; the one risk is vendor API limits, and we have a workaround in test.\"",
+        "\"There's a lot going on — do you want the long version or the short version?\"",
+        "\"Let me set up 30 minutes to walk you through the details.\""
+      ],
+      "answer": 1,
+      "explain": "Answer first (on track, March), then the one thing worth knowing (the risk and its mitigation). The chronology, the meeting, and the long version are all available *if they ask* — but the hallway got the headline."
+    },
+    {
+      "type": "text",
+      "md": "## The \"so what?\" test\n\nEvery point in your pyramid must answer *so what?* for the level above it.\n\n- \"Server costs rose 40% last quarter\" — so what?\n- \"...which puts us $200k over the annual budget\" — so what?\n- \"...so we need to either renegotiate the contract or cut the batch workloads. **I recommend renegotiating; here's why.**\"\n\nKeep asking *so what?* until the answer is something your audience should **decide or do**. That final answer is your governing thought — the facts you started with become the evidence layer."
+    },
+    {
+      "type": "text",
+      "md": "## When NOT to lead with the answer\n\nAnswer-first is the default, not a law. Hold the conclusion back when:\n\n- **The conclusion is emotionally charged** and the audience will reject it without warming up — e.g., a decision that eliminates someone's project. Lead with shared context, land the answer early but not first.\n- **You're exploring, not recommending.** In a brainstorm or discovery interview, declaring an answer anchors everyone.\n- **The audience needs to feel the reasoning** — teaching, or persuading a skeptical expert who will distrust any conclusion they didn't help build.\n\nEven then, tell them where you're going: *\"I want to walk through three options before I share where I landed.\"* Structure announced is almost as good as answer-first."
+    },
+    {
+      "type": "quiz",
+      "question": "Which situation most justifies NOT stating your conclusion in the first sentence?",
+      "choices": [
+        "A weekly status email to your manager",
+        "A hallway update to an executive",
+        "Telling a proud team their two-year project should be shut down",
+        "A memo recommending one of three vendors"
+      ],
+      "answer": 2,
+      "explain": "Charged news delivered cold gets rejected before the reasoning is heard. You still get there quickly — but you lead with shared facts and acknowledgment, not the verdict. The other three are exactly where answer-first shines."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **Think bottom-up, tell top-down.** Answer → key points → evidence.\n2. **One governing thought.** If you can't say your message in one sentence, you don't have it yet.\n3. **Run the \"so what?\" test** until you reach something the audience should decide or do.\n4. Answer-first is the **default**; soften it only for charged news or genuine exploration.\n\n**Drill this week:** before every meeting or email, write one sentence starting with \"My main point is...\" — then open with that sentence (minus the scaffolding)."
+    }
+  ]
+}

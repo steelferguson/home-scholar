@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Structured Thinking: MECE, Grouping & Order",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Structure is thinking made visible\n\nLesson 1 said: answer first, then key points. This lesson is about making those key points *good* — because listeners can't follow a pile of seven overlapping thoughts, no matter how smart each one is.\n\nTwo tools do most of the work:\n\n1. **MECE** — a test for whether your groupings are clean\n2. **Deliberate order** — a rule for what comes first, second, third\n\nMaster these and people start describing you as \"clear\" — which, in business, is usually what \"smart\" looks like from the outside."
+    },
+    {
+      "type": "text",
+      "md": "## MECE: Mutually Exclusive, Collectively Exhaustive\n\nA set of points is **MECE** when:\n\n- **Mutually exclusive** — no overlap. Each idea lives in exactly one bucket, so you never say the same thing twice in different words.\n- **Collectively exhaustive** — no gaps. Together the buckets cover the whole question, so no one can blindside you with \"what about...?\"\n\n❌ *\"Our costs are too high because of salaries, the engineering team, and hiring.\"* — engineering salaries sit in all three buckets.\n\n✅ *\"Our costs break into people, infrastructure, and vendors.\"* — every dollar lands in exactly one bucket, and no dollar is missing."
+    },
+    {
+      "type": "text",
+      "md": "## You don't need perfect — you need useful\n\nReal-world MECE is a direction, not a proof. Handy ways to cut a problem cleanly:\n\n- **Formula splits:** Profit = Revenue − Cost. Revenue = Price × Volume. Airtight by definition.\n- **Process stages:** acquire → onboard → retain. Time makes the buckets exclusive.\n- **Segments:** by region, customer size, product line — as long as every case has exactly one home.\n- **Binary + rest:** \"issues we control vs. issues we don't\" — crude, but always exhaustive.\n\nSmell test: if while writing you think *\"this point could go in either bucket...\"* — your buckets overlap. Recut."
+    },
+    {
+      "type": "quiz",
+      "question": "Which breakdown of \"why is customer churn rising?\" is MECE?",
+      "choices": [
+        "Product problems, unhappy customers, and pricing",
+        "Customers who leave for a competitor, customers who stop needing the product, and customers pushed out by our own changes (price, quality, support)",
+        "Onboarding issues, support issues, product issues, and customer issues",
+        "Big customers, small customers, and enterprise customers"
+      ],
+      "answer": 1,
+      "explain": "Option B gives every churned customer exactly one home and covers all of them. A and C overlap ('unhappy customers' contains the others; 'customer issues' is a junk drawer), and D's 'big' vs 'enterprise' overlap while mid-size customers have no bucket."
+    },
+    {
+      "type": "text",
+      "md": "## The rule of three (± two)\n\nWorking memory holds roughly **3–5 chunks**. That's why key points come in threes, not sevens.\n\nIf you have seven points, you haven't finished thinking — some of them are sub-points of others. Group until you have 3 (occasionally 2 or 4) top-level ideas, and let the rest live underneath.\n\nBonus: saying *\"there are three reasons\"* up front does real work. It tells listeners the shape of what's coming, lets them track progress, and makes you sound like you've already organized your thoughts — because you have."
+    },
+    {
+      "type": "widget",
+      "widget": "before-after",
+      "md": "### Group the pile\n\nSame content, before and after grouping. The *before* is what a smart-but-unstructured update sounds like:",
+      "props": {
+        "beforeLabel": "Seven loose points",
+        "afterLabel": "Three groups",
+        "before": "Reasons the launch slipped: the API vendor was late on their part. QA found more bugs than expected. Two engineers were pulled onto the incident in March. The design review added a new requirement mid-sprint. The vendor also changed their auth scheme without notice. We underestimated the data migration. And the new requirement needed legal sign-off, which took two weeks.",
+        "after": "The launch slipped for three kinds of reasons:\n\n1. Vendor problems — their deliverable was late and they changed the auth scheme without notice.\n2. Scope growth — the design review added a requirement, which also triggered a two-week legal sign-off.\n3. Our own capacity — the March incident pulled two engineers, and we underestimated the migration and QA effort.",
+        "notes": [
+          "Seven items became three labeled buckets — nothing was cut, only organized",
+          "Each bucket name answers 'what kind of problem was this?' — the labels themselves carry meaning",
+          "Now a fix discussion can follow the same structure: vendor contract, scope control, capacity planning"
+        ]
+      }
+    },
+    {
+      "type": "text",
+      "md": "## Order is an argument\n\nOnce you have your groups, their *sequence* should follow a logic the listener can feel:\n\n- **By importance** — biggest impact first. The default for business audiences; if you get cut off, the top item landed.\n- **By time** — past → present → future, or process order. Best for narratives, post-mortems, plans.\n- **By structure** — walk a known map: regions, teams, funnel stages.\n- **Deductive** — premise → premise → conclusion. Powerful but fragile: the audience must accept every step. Use sparingly, mostly with skeptical experts.\n\nRandom order is the one unforgivable choice — it tells the listener you haven't decided what matters."
+    },
+    {
+      "type": "quiz",
+      "question": "You're presenting three findings to an exec team that is chronically short on time. Best ordering?",
+      "choices": [
+        "Chronological — the order you discovered them, for authenticity",
+        "Save the most important for last, as a strong close",
+        "Most important first, in case the meeting gets cut short",
+        "Alphabetical, to appear neutral"
+      ],
+      "answer": 2,
+      "explain": "With executives, assume every meeting might end early. Importance-first means whatever they hear before the interruption was, provably, the thing that mattered most. 'Strong close' thinking belongs to speeches, not exec updates."
+    },
+    {
+      "type": "quiz",
+      "question": "You've drafted six key points for a memo. What does this lesson say you should do?",
+      "choices": [
+        "Keep all six — completeness beats simplicity",
+        "Cut to the best three and delete the rest",
+        "Look for parent themes: group the six into 2–3 buckets and make the rest sub-points",
+        "Split the memo into six separate memos"
+      ],
+      "answer": 2,
+      "explain": "Six points usually means grouping isn't finished — several are siblings under an unnamed parent. Group, don't delete: the detail survives as support one level down, and the reader only has to hold 2–3 chunks."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **MECE**: no overlaps, no gaps. If a point could live in two buckets, recut the buckets.\n2. **Three-ish top-level points.** More than five means grouping isn't done.\n3. **Name your buckets** — good labels carry half the message.\n4. **Choose an order on purpose**: importance (default), time, structure, or deductive.\n\n**Drill this week:** next time you're about to list more than four things — in a doc, an email, or out loud — stop and force them into 2–3 named groups first."
+    }
+  ]
+}

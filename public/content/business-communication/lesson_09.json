@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Persuasion: Winning the Room Before You Enter It",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Being right is not a strategy\n\nYou can build a flawless pyramid, deliver it with perfect pacing... and still lose the decision. Persuasion is a different layer than clarity: clarity makes your case *understandable*; persuasion makes it *adoptable* by specific humans with their own incentives, fears, and history.\n\nThe classical frame still maps cleanly onto business:\n\n- **Ethos** — do they trust *you*? (track record, calibration, who else backs this)\n- **Logos** — does the *case* hold? (your Lessons 1–2 structure)\n- **Pathos** — does anyone *care*? (stakes, story, what it means for them)\n\nMost analytical people over-invest in logos and treat the other two as beneath them. The room disagrees."
+    },
+    {
+      "type": "text",
+      "md": "## Map the room before you make the case\n\nBefore any significant pitch, answer three questions *per person* who matters:\n\n1. **What do they optimize for?** The CFO hears \"innovative\" as \"expensive.\" The support lead hears \"ship fast\" as \"my queue explodes.\" Same proposal, different translations needed.\n2. **What's their stake in the status quo?** If your idea implies someone's past decision was wrong, they will defend the past decision — unless you give them a face-saving bridge: \"That was the right call with what we knew then; two things have changed.\"\n3. **Who do they listen to?** Sometimes the persuasion path isn't you → decision-maker; it's you → the person the decision-maker already trusts."
+    },
+    {
+      "type": "text",
+      "md": "## Pre-wiring: the meeting before the meeting\n\nThe highest-leverage persuasion move in corporate life: **never let a decision-maker meet your idea for the first time in the decision meeting.**\n\nWalk key stakeholders through the idea 1:1 beforehand. This works for three reasons:\n\n- **Objections surface privately**, where they're information, instead of publicly, where they're positions to defend.\n- **People amend what they'll later support.** A stakeholder who added a caveat to your plan is now a co-author, not a judge.\n- **Surprise triggers resistance** in senior people almost reflexively — being blindsided in front of peers is the thing they hate most.\n\nBy the time the real meeting starts, it should be a *confirmation*, not a *pitch*."
+    },
+    {
+      "type": "quiz",
+      "question": "Your proposal needs sign-off from five directors next Thursday. One of them, Dana, killed a similar idea two years ago. The best use of this week is:",
+      "choices": [
+        "Polish the deck — a strong enough case speaks for itself",
+        "Meet Dana 1:1 first, ask what would have to be true for this to work, and fold her concerns into the proposal",
+        "Avoid Dana until Thursday so she can't organize opposition",
+        "Ask the other four directors to outvote her"
+      ],
+      "answer": 1,
+      "explain": "Dana's objection will show up either way — the only choice is whether it arrives privately as input or publicly as a stand. Asking 'what would have to be true' converts a critic into a co-designer, and her prior 'no' means she has the most face to lose from being steamrolled."
+    },
+    {
+      "type": "text",
+      "md": "## Framing: the same facts, told for the listener\n\n- **Features vs. stakes.** \"This refactor improves modularity\" is a feature. \"This refactor is what lets us ship the two integrations Sales promised for Q4\" is a stake. Translate every technical point into the listener's currency: money, time, risk, reputation.\n- **Loss framing is stronger than gain framing.** \"We save $200k\" moves people less than \"we're currently losing $200k a year to this.\" Use it honestly — the loss must be real.\n- **Anchor with options.** A single proposal invites yes/no. Three options — do nothing, the recommendation, the ambitious version — invites *choosing*, and makes your recommendation the reasonable middle. Always include the honest cost of 'do nothing'; the status quo should have to defend itself too.\n- **Inoculate.** Raise the strongest objection yourself, before they do: \"The obvious concern is migration risk — here's how we've bounded it.\" An objection you raised is rigor; the same objection raised against you is a hole."
+    },
+    {
+      "type": "widget",
+      "widget": "before-after",
+      "md": "### Feature-speak vs. stakes-speak\n\nAn engineer pitching the same infrastructure project to a business-side VP:",
+      "props": {
+        "beforeLabel": "Features (the builder's view)",
+        "afterLabel": "Stakes (the listener's view)",
+        "before": "We want to spend next quarter migrating to the new queueing system. The current one is on a deprecated version, the architecture has a lot of tech debt, and the new system supports horizontal scaling and better observability. It's something the team has wanted to do for a while and it would really improve our infrastructure quality.",
+        "after": "I'm asking for one quarter to replace the queueing system before it replaces itself at the worst possible time.\n\nThe stakes: it caused two of our four outages this year — including the one during the client demo — and it hard-caps us at roughly 2× current traffic, which we'll hit around March at current growth.\n\nOptions: do nothing (we accept outage risk and a March ceiling), migrate next quarter (my recommendation — one quarter, two engineers), or migrate now (faster, but it slips the analytics launch).\n\nThe obvious objection is migration risk itself — we've bounded it by running both systems in parallel for a month before cutover.",
+        "notes": [
+          "Tech debt became outages, a client-demo incident, and a dated growth ceiling — the VP's currency",
+          "Three options with 'do nothing' priced honestly, so the status quo has to defend itself",
+          "The strongest objection is raised and answered by the asker — inoculation"
+        ]
+      }
+    },
+    {
+      "type": "quiz",
+      "question": "Why does raising the strongest objection yourself ('inoculation') help rather than hurt your case?",
+      "choices": [
+        "It fills airtime so there's less room for questions",
+        "It signals you've already stress-tested the idea, and it lets you frame the objection's answer instead of defending against an attack",
+        "It lowers expectations so any outcome looks good",
+        "It doesn't — you should never volunteer weaknesses"
+      ],
+      "answer": 1,
+      "explain": "An objection you raise arrives pre-paired with its mitigation and reads as rigor. The same objection raised by a skeptic arrives as a challenge to your credibility, and now you're answering it on the defensive. You choose which version the room gets."
+    },
+    {
+      "type": "text",
+      "md": "## Negotiating the ask itself\n\nMost internal persuasion ends in a negotiation — over scope, headcount, timing. Three portable ideas from negotiation theory:\n\n- **Interests, not positions.** Their *position* is \"no new headcount.\" Their *interest* might be \"I can't defend a bigger budget this cycle.\" Positions collide; interests often have solutions positions can't see (a borrowed engineer, a phased start in the next cycle).\n- **Know your BATNA** — your best alternative if they say no. If you have a real one (\"we'll keep patching, and I'll re-raise after the next outage with the incident data\"), you negotiate calmly. If you don't, find one before the meeting, not during.\n- **Anchor first when you have the information advantage.** The first number said out loud pulls the whole conversation toward it. Ask for what the project actually needs — not what you guess they'll approve; pre-shrunk asks get shrunk again anyway."
+    },
+    {
+      "type": "quiz",
+      "question": "You ask for two engineers; the VP says 'headcount is frozen, so no.' The interests-based move is:",
+      "choices": [
+        "Repeat the request with more supporting data",
+        "Accept the no and revisit next year",
+        "Ask what's driving the freeze, then propose paths that serve the project without breaching it — a loaned engineer, contractor budget, or a phased start next cycle",
+        "Escalate above the VP immediately"
+      ],
+      "answer": 2,
+      "explain": "'No new headcount' is a position; the interest behind it (budget optics, a hiring pause, a promise upward) usually admits solutions the position forbids. You can only find them by asking. More data attacks the position harder — which wasn't the obstacle."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **Persuasion = ethos + logos + pathos.** Trust and stakes carry as much weight as the argument.\n2. **Map the room:** each person's currency, their stake in the status quo, and who they actually listen to.\n3. **Pre-wire.** The decision meeting confirms; the 1:1s persuade. Never blindside a senior stakeholder.\n4. **Frame in their currency**, give options with an honestly-priced 'do nothing', and **inoculate** against the top objection.\n5. **Negotiate interests, not positions**, with a real BATNA in your pocket.\n\n**Drill this week:** before your next ask, write one sentence per stakeholder: \"___ cares about ___, so I'll frame this as ___.\" Two minutes of audience mapping beats an hour of deck polish."
+    }
+  ]
+}
