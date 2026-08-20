@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Memory and State",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Three kinds of state, three lifetimes\n\n\"Does the agent remember me?\" hides three different design problems. Separate them first, then design each:\n\n1. **Turn state**: what the loop needs THIS turn (tool results, scratchpad). Lives in the context window. Lesson 4's territory.\n2. **Session state**: the current conversation: history, compacted summaries, task progress. Lives in a session store; dies (or archives) when the conversation ends.\n3. **Persistent memory**: what survives across conversations: who the user is, their preferences, past issues, standing facts. Lives in a database, retrieved into context at session start or on demand.\n\nMost \"memory\" confusion in interviews comes from blending these. Name the three lifetimes early and the rest of the discussion organizes itself."
+    },
+    {
+      "type": "text",
+      "md": "## Persistent memory: structured beats transcript\n\nThe tempting design: store every past conversation, RAG over them at session start. It sort of works and slowly rots: transcripts are long, contradictory (preferences change), and full of noise.\n\nThe design that holds up: **extract facts, store structure.**\n\n```\nuser_memory (per user)\n  - profile:   name, plan, timezone, language\n  - preferences: \"prefers email\", \"terse answers\"\n  - history_facts: \"had billing issue 2026-05, resolved with credit\"\n  - each fact: value, source (conversation id), updated_at\n```\n\nAn extraction pass (small model, end of conversation) writes NEW facts and UPDATES changed ones, with provenance. At session start you load a compact, current profile: hundreds of tokens, not fifty transcripts.\n\nThe transcripts still get archived (audit, replay, re-extraction when your schema improves), but they're the source material, not the working memory."
+    },
+    {
+      "type": "quiz",
+      "question": "A user told the agent in March \"contact me by phone\" and in June \"actually, email only.\" With raw-transcript-RAG memory, what happens in July, and what's the structural fix?",
+      "choices": [
+        "Nothing; retrieval will prefer the newer transcript",
+        "Both instructions can retrieve as similar matches and the model may follow either; the fix is structured memory where preferences are single-slot values with updated_at, so June OVERWROTE March",
+        "The March transcript should be deleted",
+        "Fine-tune per user"
+      ],
+      "answer": 1,
+      "explain": "Embedding similarity has no concept of \"superseded\": both passages match \"how should I contact them\" equally well. Structured memory makes recency a WRITE-time rule (the June extraction updates the contact_preference slot) instead of a read-time hope. Deleting transcripts loses audit history; the fix is separating the working profile from the archive."
+    },
+    {
+      "type": "text",
+      "md": "## Session state and the multi-channel problem\n\nSession state looks mundane (a keyed store of history + summary + scratchpad) until the product spans channels: the user starts on web chat, continues by SMS, then a human agent picks up. Design points interviewers probe:\n\n- **Session identity**: key by USER (with device/channel as attributes), not by connection, or every channel is an amnesiac stranger.\n- **The handoff package**: when a human takes over, they need the compacted summary + open task state + recent turns, not a 60-turn raw scroll. Design the handoff artifact explicitly; it's a product surface, not an export.\n- **Resumption**: \"welcome back, we were mid-refund\" requires the task scratchpad to persist with the session, and an expiry policy for when resuming would be weirder than restarting.\n- **Concurrency**: two tabs, or user + human agent simultaneously: last-writer-wins on a session blob loses turns; append-only event logs (then derive state) don't."
+    },
+    {
+      "type": "text",
+      "md": "## Privacy: memory is PII with a retention policy\n\nThe moment you persist user facts, you've built a PII system, and the interview expects you to notice:\n\n- **Scoping**: memory is per-user and per-tenant, enforced at the QUERY level (the same metadata-filter machinery as multi-tenant RAG). A prompt that says \"only discuss this user\" is not a boundary; a WHERE clause is.\n- **Retention and deletion**: user deletes their account: memory, transcripts, and derived facts all go. Design the delete path day one; retrofitting deletion across derived stores is misery.\n- **Sensitivity tiers**: \"prefers email\" and \"mentioned a medical condition\" are not the same class of fact. Extraction should classify, and high-sensitivity facts either don't persist or persist under stricter access.\n- **Don't leak memory into the wrong context**: the agent knowing the user's history is good; the agent VOLUNTEERING it in a shared/screen-shared setting is a product decision to make consciously.\n\nOne sentence covers it in an interview: \"memory is a per-tenant PII store with provenance, TTLs, and a delete path, retrieved by scope-filtered queries, never by prompt discipline.\"\n\nNext lesson: evals, guardrails, and the machinery that lets you ship changes without fear."
+    }
+  ]
+}

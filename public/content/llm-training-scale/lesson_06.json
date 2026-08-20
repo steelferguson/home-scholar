@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "ZeRO, FSDP, and the Frameworks",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The insight behind ZeRO\n\nPlain data parallelism wastes memory: every GPU stores a full copy of the parameters, gradients, AND optimizer states, even though they are identical across GPUs. ZeRO (Zero Redundancy Optimizer) asks: why replicate what is identical? SHARD it instead, so each GPU holds only a slice, and gather what you need just in time.\n\nThe payoff is that you get data-parallel simplicity (split the batch, no manual model surgery) with memory that scales down as you add GPUs. It is the technique most teams actually reach for, because it is far simpler to use than manual tensor/pipeline parallelism."
+    },
+    {
+      "type": "text",
+      "md": "## The three ZeRO stages\n\nThey shard progressively more, trading a bit more communication for a lot more memory savings:\n\n- **Stage 1**: shard the OPTIMIZER STATES across GPUs. Since optimizer states are the biggest consumer (~12 bytes/param), this alone is a huge win, for almost no extra communication.\n- **Stage 2**: also shard the GRADIENTS. Each GPU only keeps the gradients for its slice.\n- **Stage 3**: also shard the PARAMETERS themselves. Now no GPU holds the full model at rest; each holds a slice and gathers the layers it needs for the forward and backward pass, then releases them.\n\nStage 3 is what lets you train a model far larger than any single GPU while still writing what looks like data-parallel code. The cost climbs with the stage: stage 3 adds parameter gather/scatter communication on top, but modern interconnects and overlap hide much of it."
+    },
+    {
+      "type": "quiz",
+      "question": "ZeRO stage 1 shards only optimizer states and gives a large memory saving for very little added communication. Why is the saving so large relative to the cost?",
+      "choices": [
+        "Optimizer states are rarely used",
+        "Optimizer states are the single biggest memory consumer in Adam training (~12 bytes/param: fp32 master weights, momentum, variance), so sharding them across N GPUs cuts that dominant term by ~N, while they are only touched once per step at the update, so the added communication is small",
+        "It compresses the gradients",
+        "It reduces the parameter count"
+      ],
+      "answer": 1,
+      "explain": "The economics come from the memory accounting in lesson 4: Adam's optimizer states are roughly 6x the fp16 weight size and dwarf everything else. Sharding the biggest term by the number of GPUs is a massive win, and because optimizer states are only read/written during the once-per-step update (not throughout forward/backward), the communication to gather them is minimal. Best-return-first: stage 1 is the highest saving-per-communication-cost, which is why it is the default starting point."
+    },
+    {
+      "type": "text",
+      "md": "## FSDP: the same idea in PyTorch\n\n**Fully Sharded Data Parallel (FSDP)** is PyTorch's native implementation of the ZeRO-stage-3 idea: shard parameters, gradients, and optimizer states across data-parallel workers, and all-gather each layer's parameters just before it runs, then free them.\n\nWhat to know for an interview:\n\n- FSDP is the built-in PyTorch path; DeepSpeed ZeRO is the other major implementation (Microsoft), with a broader feature set. They solve the same problem.\n- You wrap your model in FSDP and it handles the sharding and communication; you still write a mostly-normal training loop.\n- The knobs that matter: the sharding strategy (full shard vs shard-grad-op vs no-shard, which correspond roughly to ZeRO stages), and how you group layers into FSDP units (wrapping policy), which trades communication frequency against peak memory.\n\nIf asked 'how would you train a model that does not fit on one GPU in PyTorch,' FSDP (or DeepSpeed ZeRO-3) plus activation checkpointing and bf16 is the clean, current answer."
+    },
+    {
+      "type": "text",
+      "md": "## The framework landscape\n\nWhat each tool is for, so you can name the right one:\n\n- **PyTorch DDP**: plain data parallelism (full replica per GPU). The baseline for models that fit.\n- **PyTorch FSDP**: sharded data parallelism for models that do not fit. Native, current default for many teams.\n- **DeepSpeed**: ZeRO stages, plus offload (push optimizer states to CPU/NVMe when even sharding is not enough), plus pipeline. Feature-rich.\n- **Megatron-LM**: the reference for tensor and pipeline parallelism, used for the very largest models, often combined with the above.\n- **Ray Train**: an orchestration layer that runs distributed PyTorch/Lightning/etc. across a cluster, handling scheduling, fault tolerance, and scaling. It wraps the training rather than replacing the parallelism strategy. (The JD names Ray Training and PyTorch Distributed specifically, so know that Ray is the cluster orchestrator and FSDP/DDP is the in-framework parallelism, and they compose.)\n\nThe honest framing: you rarely implement parallelism by hand. The skill is choosing the strategy, configuring the framework, and diagnosing when it is slow, which is the next lesson."
+    },
+    {
+      "type": "text",
+      "md": "## CPU/NVMe offload, the last resort\n\nWhen even ZeRO-3 sharding does not fit, you can OFFLOAD optimizer states (and even parameters) to CPU RAM or NVMe disk, pulling them back to the GPU when needed. DeepSpeed ZeRO-Infinity is the well-known implementation.\n\nThe tradeoff to state plainly: offload lets you train models that otherwise would not fit at all, but CPU/disk bandwidth is far slower than GPU memory, so it can dramatically slow training. It is a 'fit it at all' tool, not a 'make it fast' tool.\n\nThat framing, cheap in-GPU memory tricks first, sharding next, offload only when you must, and knowing offload buys capacity at the price of speed, is exactly the resource-efficiency judgment the role wants. Next lesson: making the whole thing actually fast, not just fitting."
+    }
+  ]
+}

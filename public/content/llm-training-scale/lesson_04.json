@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Memory Wall: Why One GPU Is Not Enough",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Start from the constraint\n\nDistributed training exists to solve two problems: the model does not fit on one GPU, or it fits but training would take too long. To reason about either, you need to know where GPU memory actually goes during training. This lesson is that accounting, because every distributed-training technique in the next lessons is a way to relieve one of these memory pressures.\n\nThe headline: for training, the model weights are often the SMALLEST part of the memory bill."
+    },
+    {
+      "type": "text",
+      "md": "## The four consumers of training memory\n\nFor a model with P parameters, trained in mixed precision with Adam:\n\n1. **Parameters**: P weights. In fp16/bf16, 2 bytes each.\n2. **Gradients**: one per parameter, another 2 bytes each.\n3. **Optimizer states**: Adam keeps a momentum and a variance term per parameter, plus a master fp32 copy of the weights. This is the big one, roughly 12 bytes per parameter (fp32 weights 4, momentum 4, variance 4).\n4. **Activations**: the intermediate outputs saved during the forward pass so backprop can use them. This scales with batch size and sequence length, NOT just parameter count, and for long sequences it can dominate everything else.\n\nRough rule for weights+grads+optimizer alone: about 16 bytes per parameter. A 7B model is thus ~112 GB just for those three, already past a single 80 GB GPU, before a single activation."
+    },
+    {
+      "type": "quiz",
+      "question": "A colleague says 'the model is 7B params at 2 bytes each, so it needs ~14 GB, which fits on one GPU.' Why is that wrong for TRAINING?",
+      "choices": [
+        "The parameter count is wrong",
+        "14 GB is only the fp16 weights; training also needs gradients (another ~14 GB) and Adam optimizer states (~fp32 master weights + momentum + variance, roughly 12 bytes/param, ~84 GB), plus activations, so real training memory is ~16+ bytes/param (~112 GB+), far past one GPU",
+        "fp16 is not used in training",
+        "7B models cannot be trained"
+      ],
+      "answer": 1,
+      "explain": "The 14 GB figure is the INFERENCE weight footprint, and conflating it with training memory is a classic mistake. Training carries gradients and optimizer states that dwarf the weights (Adam alone is ~6x the fp16 weight size), plus activations that scale with batch and sequence. This gap between inference memory and training memory is exactly why a model you can serve on one GPU still needs a cluster to train, and stating the ~16 bytes/param heuristic shows you actually know the accounting."
+    },
+    {
+      "type": "text",
+      "md": "## Activations and the checkpointing trade\n\nActivations are the sleeper. Every layer's forward outputs are kept for the backward pass, so activation memory grows with the number of layers times batch size times sequence length. For long sequences (a real thing when modeling threaded Reddit conversations), activations can exceed all the parameter-related memory combined.\n\nThe standard relief is **gradient (activation) checkpointing**: instead of storing every layer's activations, store only a few checkpoints and RECOMPUTE the rest during the backward pass. It trades compute for memory, typically around 30% more compute for a large drop in activation memory. It is one of the first knobs you reach for when you are memory-bound, and naming it as a compute-for-memory trade is the right framing."
+    },
+    {
+      "type": "text",
+      "md": "## Precision: the other big lever\n\nHow many bytes each number takes is a first-class decision:\n\n- **fp32**: 4 bytes, the old default, rarely needed in full anymore.\n- **fp16**: 2 bytes, but a narrow range that can overflow/underflow, so it needs loss scaling.\n- **bf16**: 2 bytes, same exponent range as fp32 (so far more stable) with less precision. The modern default for training on hardware that supports it.\n- **fp8**: 1 byte, emerging for the biggest runs, needs care.\n\n**Mixed precision** is the standard recipe: compute in bf16/fp16 for speed and memory, but keep a master fp32 copy of the weights and do the optimizer update in fp32 so tiny updates are not lost. This is why the optimizer memory accounting above includes an fp32 master copy. Mixed precision roughly halves memory and speeds up compute on tensor-core hardware, for almost no quality loss, so it is essentially always on."
+    },
+    {
+      "type": "text",
+      "md": "## The knobs, in the order you reach for them\n\nWhen you are memory-bound on a training run, the practitioner's ladder:\n\n1. **Mixed precision (bf16)**: essentially free, always on.\n2. **Gradient accumulation**: run several small micro-batches and sum their gradients before stepping, to get a large effective batch without the memory of a large actual batch. Costs nothing but time.\n3. **Activation checkpointing**: recompute activations, trade ~30% compute for a big memory win.\n4. **Optimizer-state sharding (ZeRO)**: stop replicating optimizer states across GPUs, split them. Next lesson.\n5. **Model sharding (tensor/pipeline parallelism)**: split the model itself across GPUs when it truly does not fit. Two lessons out.\n\nThe skill is reaching for them in cost order: cheap memory wins first, expensive architectural sharding only when the cheap knobs are exhausted. Next lesson: the parallelism strategies that split work across GPUs."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Verification: Trust Is Earned by Tests",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Reading is necessary, not sufficient\n\nReview catches a lot, but reading code, even carefully, misses things that running it exposes: the edge case you did not imagine, the integration mismatch, the assumption that was wrong. So the rule is absolute: **never trust unverified AI code**, no matter how good it looks or how carefully you read it.\n\nVerification is how trust gets earned, chunk by chunk. This lesson is how to get real signal that the code works, not just a feeling that it should."
+    },
+    {
+      "type": "text",
+      "md": "## The fastest signal: a tiny hand-checkable case\n\nBefore anything elaborate, run the chunk on the smallest input whose correct answer you can compute in your head.\n\n```\nrate limiter, limit 2 per 10s:\n  allow(u) -> True   (1st)\n  allow(u) -> True   (2nd)\n  allow(u) -> False  (3rd, over limit)\n```\n\nThree calls, an answer you know by hand, seconds to check. This catches gross errors immediately and is worth doing before you write a full test suite. In an interview it is also the visible act of verification the interviewer is watching for. The habit: the moment a chunk exists, feed it a case you can verify by hand and confirm the obvious behavior before trusting anything subtle."
+    },
+    {
+      "type": "text",
+      "md": "## Then the edge cases you already listed\n\nYou surfaced the edge cases back in lesson 2 and put them in the spec in lesson 4. Now they become tests. Empty input, the limit boundary, ties, concurrent access, huge values, malformed data. Each one you decided deliberately, so each one has a known-correct answer to assert.\n\nThis is why the upfront thinking pays off: verification is not a creative act at this point, it is running down a list you already made. Teams that skip the edge-case thinking earlier end up here with no idea what to test, so they test the happy path (which already works) and ship the edge bugs."
+    },
+    {
+      "type": "quiz",
+      "question": "You ask the AI to write both the implementation AND the tests for a function. What is the specific risk, and the mitigation?",
+      "choices": [
+        "No risk; AI tests are reliable",
+        "The tests tend to be tautological (they test what the AI built, including its wrong assumptions, so a buggy impl and its matching buggy test both pass): review the tests harder than the code, and add cases from YOUR spec that the AI did not write",
+        "AI tests are always too strict",
+        "You should never write tests for AI code"
+      ],
+      "answer": 1,
+      "explain": "AI-written tests share the AI's misunderstandings: if it built ties-by-value and wrote a test expecting ties-by-value, both agree and both are wrong versus your spec. Green tests then give false confidence. The fix is to review generated tests even more skeptically than the code, and to add assertions from your own edge-case list, especially the cases the implementation might have gotten wrong."
+    },
+    {
+      "type": "text",
+      "md": "## Property checks and running the real thing\n\nBeyond specific cases, two stronger forms of verification:\n\n- **Property checks**: things that must ALWAYS hold, regardless of input. A sliding-window limiter must never allow more than N in any window. A sort output must be ordered and a permutation of the input. Asserting invariants catches whole classes of bugs that example-based tests miss.\n- **Run the real thing**: for anything user-facing or integrated, actually execute the full path, not just the unit. Start the server, hit the endpoint, look at the response. Integration bugs (the chunk works alone but not wired in) only appear when you run the assembled system, which is another reason the vertical-slice skeleton from lesson 3 matters.\n\nThe mindset: ask \"what would PROVE this works?\" and go get that signal, rather than \"does this look right?\" and moving on."
+    },
+    {
+      "type": "text",
+      "md": "## Verification is continuous, not a phase\n\nThe failure pattern: build everything with AI, then test at the end. By then bugs have compounded and integrated, and you are debugging a large surface with no idea which chunk introduced the problem.\n\nInstead, verify each chunk as it lands, and re-run the whole thing after each integration. This is the same discipline as the debugging procedure and the eval flywheel elsewhere: catch problems small and local, when they are cheap, rather than large and tangled, when they are expensive.\n\nThe payoff compounds with AI specifically: a verified chunk becomes trustworthy foundation for the next chunk's prompt and the next verification. Unverified chunks are quicksand you keep building on. Next lesson: what to do when verification fails, iterating and debugging with AI without losing the thread."
+    }
+  ]
+}

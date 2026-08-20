@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Tying It to Safety ML at Reddit Scale",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The role, decoded\n\nThe job is building LLM-based safety systems that enforce the rules at Reddit scale (100k+ communities, 100M+ daily visitors). The technical asks were distributed training, hardware efficiency, tokenization, embeddings, and language modeling, which the previous seven lessons covered. This lesson connects that machinery to the actual problem, because the strongest interview answers apply the fundamentals to THEIR domain rather than reciting them.\n\nThe governing constraint: safety enforcement runs on enormous volume with real consequences and adversaries who adapt. Every design choice is shaped by scale, cost, and an opponent trying to evade you."
+    },
+    {
+      "type": "text",
+      "md": "## The enforcement tiering (the core architecture)\n\nYou cannot run a large LLM on every one of billions of pieces of content. The scalable shape, which reuses the whole systems course, is a funnel:\n\n1. **Cheap first pass on everything**: fast classifiers (fine-tuned encoders) or embedding-plus-nearest-neighbor against known-violating content. Handles the vast, obvious majority at low cost.\n2. **Mid-tier for the uncertain**: a stronger fine-tuned model on the items the cheap pass is unsure about.\n3. **Large LLM for the hard tail**: nuanced, novel, or high-stakes cases (context-dependent harassment, coordinated behavior, new policy) where reasoning is worth the cost.\n\nThis is cheap-recall-then-expensive-precision applied to enforcement. Being able to sketch it and say 'the point is to spend the big model's cost only where it changes a decision' is the resource-efficiency instinct the JD names, applied to their exact problem."
+    },
+    {
+      "type": "text",
+      "md": "## Where the training techniques land\n\nMapping each area to the safety job:\n\n- **Tokenization**: adversaries obfuscate to evade (zero-width characters, homoglyphs, creative spelling). Robust normalization and byte-level tokenization keep the signal from being destroyed before the model sees it. Tokenizer robustness IS a safety surface here.\n- **Embeddings**: embed once, reuse across many downstream safety signals (toxicity, spam, specific policy areas) and for clustering emerging harms. The cheap representation that makes tiering affordable.\n- **Fine-tuning / LoRA**: many specialized behaviors (per policy area, per language, per surface) from one base model, cheaply, with swappable adapters. This is how a small team ships many models.\n- **Distributed training + efficiency**: you retrain and iterate these models constantly as policy and adversaries shift, so training throughput and cost directly set how fast the safety system can adapt. Efficiency is not a nicety; it is the iteration speed of the defense."
+    },
+    {
+      "type": "quiz",
+      "question": "Why is training and iteration EFFICIENCY especially important for a safety team specifically, beyond the general 'save money' reason?",
+      "choices": [
+        "Safety models are larger than other models",
+        "Adversaries adapt continuously, so the defense must retrain and redeploy frequently to keep up; training throughput directly sets how fast you can respond to new evasion tactics, making efficiency the iteration speed of the defense, not just a cost line",
+        "Safety teams have smaller budgets",
+        "It is not more important for safety"
+      ],
+      "answer": 1,
+      "explain": "In a static problem, slow training just costs money. In an adversarial one, slow training means you are behind the attacker: a new evasion pattern appears, and if retraining and redeploying your classifier takes weeks, the harm runs unchecked in the meantime. Efficient distributed training compresses that loop, so it is a safety property, not just an ops metric. Connecting efficiency to adversarial adaptation is the kind of domain-aware answer that stands out."
+    },
+    {
+      "type": "text",
+      "md": "## Evaluation and bias, which they explicitly named\n\nThe JD calls out model evaluation, reducing bias, and responsible AI. For safety these are load-bearing, not box-checking:\n\n- **Asymmetric costs**: a false negative (missed harm) and a false positive (wrongly actioned user) have very different costs and different victims, so you evaluate per-class with the asymmetry explicit, never a single accuracy number. This is the per-dimension gating idea from the evals lesson.\n- **Bias and fairness**: enforcement that fires unevenly across dialects, communities, or languages is both an ethical failure and a product failure. You measure error rates ACROSS groups, not just in aggregate, because an aggregate that looks fine can hide a subgroup being over-actioned.\n- **Human-in-the-loop**: high-stakes actions get human review, and those decisions become training and eval data. The corrections flywheel, in a safety costume.\n- **Calibration and appeal**: confidence should mean something, and there must be a path to reverse a wrong action.\n\nSpeaking to fairness across communities and the false-positive cost to real users shows you take the 'responsible AI' line seriously rather than as a slogan."
+    },
+    {
+      "type": "text",
+      "md": "## The interview through-lines\n\nSentences to have ready, each fusing a fundamental with their domain:\n\n- On architecture: 'I would tier it, cheap encoders and embedding lookups on the bulk, the large LLM only on the ambiguous, high-stakes tail, so the expensive model's cost is spent only where it changes a decision.'\n- On training: 'To train models that do not fit on one GPU I would use FSDP or DeepSpeed ZeRO-3 with bf16 and activation checkpointing, then profile for the real bottleneck rather than assume it.'\n- On efficiency-as-safety: 'Training throughput is the iteration speed of the defense, because adversaries adapt, so I treat MFU and retraining latency as safety metrics.'\n- On evaluation: 'I would never report a single accuracy number for enforcement; the false-negative and false-positive costs are asymmetric and I care about error rates across communities and languages, not just in aggregate.'\n- On models: 'For a fixed policy taxonomy at Reddit volume, a fine-tuned encoder usually beats prompting a big decoder; I reserve the generative model for the reasoning-heavy tail.'\n\nEach one lands a fundamental and its application in a breath. That pairing is what makes a technically-strong candidate also sound like a fit for THIS team."
+    },
+    {
+      "type": "text",
+      "md": "## Final synthesis\n\nThe whole course, compressed:\n\n- Text becomes tokens (sub-word, byte-level BPE for robustness), tokens become embeddings (context-free lookup, then contextual hidden states), and a transformer trained on next-token or masked prediction learns from unlimited unlabeled text.\n- Training does not fit on one GPU because optimizer states and activations dwarf the weights, so you relieve memory in cost order (mixed precision, gradient accumulation, activation checkpointing, then sharding).\n- You split work across GPUs by data, tensor, or pipeline parallelism, each matched to the interconnect its communication pattern can afford, with ZeRO/FSDP giving most of the memory win at data-parallel simplicity.\n- Efficiency means keeping expensive GPUs fed: profile, find whether you are compute-, memory-, communication-, or input-bound, and fix that specific bound.\n- And for Reddit Safety: tier enforcement for scale, reuse embeddings, adapt cheaply with LoRA, treat training speed as the defense's reaction time, and evaluate with asymmetric costs and cross-community fairness front and center.\n\nGo in able to move fluidly between the low-level (why optimizer states dominate memory) and the systems level (why efficiency is a safety property), because that range is exactly what a senior MLE role is testing. Good luck tomorrow."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+<svg viewBox="0 0 960 470" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+    <marker id="ar" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/></marker>
+  </defs>
+
+  <rect x="40" y="190" width="140" height="60" rx="6" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="110" y="216" font-size="17" fill="#1e3a8a" text-anchor="middle">Application</text>
+  <text x="110" y="237" font-size="13" fill="#3b82f6" text-anchor="middle">agent / pipeline</text>
+
+  <rect x="260" y="190" width="160" height="60" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+  <text x="340" y="216" font-size="17" fill="#1e293b" text-anchor="middle">Model router</text>
+  <text x="340" y="237" font-size="13" fill="#64748b" text-anchor="middle">by task + difficulty</text>
+
+  <line x1="180" y1="220" x2="258" y2="220" stroke="#64748b" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <rect x="540" y="50" width="200" height="70" rx="6" fill="#f0fdfa" stroke="#0d9488"/>
+  <text x="640" y="76" font-size="16" fill="#134e4a" text-anchor="middle">Small model</text>
+  <text x="640" y="96" font-size="13" fill="#0f766e" text-anchor="middle">triage, rewrite, extract</text>
+  <text x="640" y="111" font-size="13" fill="#0f766e" text-anchor="middle">10-100x cheaper</text>
+
+  <rect x="540" y="190" width="200" height="70" rx="6" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="640" y="216" font-size="16" fill="#1e3a8a" text-anchor="middle">Frontier model</text>
+  <text x="640" y="236" font-size="13" fill="#3b82f6" text-anchor="middle">user-facing answers</text>
+  <text x="640" y="251" font-size="13" fill="#3b82f6" text-anchor="middle">quality-critical only</text>
+
+  <rect x="540" y="330" width="200" height="70" rx="6" fill="#fffbeb" stroke="#d97706"/>
+  <text x="640" y="356" font-size="16" fill="#92400e" text-anchor="middle">Distilled model</text>
+  <text x="640" y="376" font-size="13" fill="#b45309" text-anchor="middle">routine traffic, trained</text>
+  <text x="640" y="391" font-size="13" fill="#b45309" text-anchor="middle">on frontier transcripts</text>
+
+  <line x1="420" y1="205" x2="538" y2="95" stroke="#64748b" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="420" y1="220" x2="538" y2="222" stroke="#64748b" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="420" y1="235" x2="538" y2="355" stroke="#64748b" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <rect x="790" y="190" width="150" height="70" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="5 3"/>
+  <text x="865" y="216" font-size="15" fill="#991b1b" text-anchor="middle">Fallback chain</text>
+  <text x="865" y="235" font-size="12" fill="#b91c1c" text-anchor="middle">alt provider, then</text>
+  <text x="865" y="250" font-size="12" fill="#b91c1c" text-anchor="middle">degrade gracefully</text>
+  <line x1="740" y1="225" x2="788" y2="225" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ar)"/>
+  <text x="763" y="215" font-size="12" fill="#b91c1c" text-anchor="middle">on failure</text>
+
+  <rect x="260" y="320" width="160" height="80" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-dasharray="5 3"/>
+  <text x="340" y="346" font-size="15" fill="#134e4a" text-anchor="middle">Prefix cache</text>
+  <text x="340" y="366" font-size="12" fill="#0f766e" text-anchor="middle">stable prompt head:</text>
+  <text x="340" y="381" font-size="12" fill="#0f766e" text-anchor="middle">system, tools, profile</text>
+  <line x1="340" y1="318" x2="340" y2="252" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#a)"/>
+
+  <text x="110" y="80" font-size="14" fill="#64748b">Latency posture:</text>
+  <text x="110" y="100" font-size="13" fill="#94a3b8">stream everything,</text>
+  <text x="110" y="116" font-size="13" fill="#94a3b8">first token &lt; 1s,</text>
+  <text x="110" y="132" font-size="13" fill="#94a3b8">volatile tokens last</text>
+</svg>

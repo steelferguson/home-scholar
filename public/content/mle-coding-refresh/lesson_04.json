@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "KNN and K-Means By Hand",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The two most-implemented models in interviews\n\nKNN and k-means are the classic \"implement a model from scratch\" asks: short enough for 20 minutes, rich enough to expose whether you handle degenerate cases. Both are distance-based, so they share one micro-optimization worth saying out loud."
+    },
+    {
+      "type": "text",
+      "md": "## KNN: no training, all inference\n\n```python\ndef knn_predict(X_train, y_train, x, k):\n    dists = sorted(\n        (sum((a - b) ** 2 for a, b in zip(pt, x)), lbl)\n        for pt, lbl in zip(X_train, y_train)\n    )\n    top = dists[:min(k, len(dists))]   # k > n: use all points\n    votes = Counter(lbl for _, lbl in top)\n    best = max(votes.values())\n    tied = {lbl for lbl, c in votes.items() if c == best}\n    for _, lbl in top:                 # nearest tied class wins\n        if lbl in tied:\n            return lbl\n```\n\nThree decisions worth narrating: squared distance (no sqrt), k > n fallback, and an explicit tie rule."
+    },
+    {
+      "type": "quiz",
+      "question": "Why is skipping the square root in the distance safe for KNN and k-means?",
+      "choices": [
+        "sqrt is numerically unstable",
+        "sqrt is monotonic, so it never changes which distances are SMALLER; only the ordering matters here",
+        "The distances are already normalized",
+        "It isn't safe; it changes the neighbors"
+      ],
+      "answer": 1,
+      "explain": "Both algorithms only compare distances (nearest neighbor, nearest centroid). A monotonic function preserves order, so sqrt is wasted work. Saying \"sqrt is monotonic so I'll skip it\" is a standard fluency signal. (If you ever need the actual distance VALUE, e.g. a radius threshold, then you need the sqrt.)"
+    },
+    {
+      "type": "quiz",
+      "question": "k=4 and the vote comes back 2 vs 2 between class A and class B. What should your implementation do?",
+      "choices": [
+        "Return whichever class Python's max() happens to pick",
+        "Raise an exception",
+        "Apply a rule you stated up front, e.g. the tied class owning the single nearest neighbor wins",
+        "Always return class A for determinism"
+      ],
+      "answer": 2,
+      "explain": "Any reasonable rule works; what's graded is that you DEFINED one before it happened rather than letting dict ordering decide silently. \"Nearest neighbor breaks ties\" is natural and easy to implement: walk the neighbors in distance order, return the first whose class is tied for the lead."
+    },
+    {
+      "type": "text",
+      "md": "## K-means: Lloyd's algorithm\n\n```python\ndef kmeans(X, k, max_iter=100):\n    centroids = X[:k].copy()              # COPY. See trap 2.\n    assignments = np.zeros(len(X), dtype=int)\n    for _ in range(max_iter):\n        new = np.array([\n            np.argmin([np.sum((x - c) ** 2) for c in centroids])\n            for x in X\n        ])\n        if np.array_equal(new, assignments):\n            break                          # compare assignments, not floats\n        assignments = new\n        for j in range(k):\n            pts = X[assignments == j]\n            if len(pts):                   # empty cluster keeps old centroid\n                centroids[j] = pts.mean(axis=0)\n    return assignments, centroids\n```"
+    },
+    {
+      "type": "text",
+      "md": "## The three k-means traps\n\n**1. Empty cluster.** A centroid can end up with zero points; the mean of nothing is NaN. Convention: keep the old centroid (or re-seed it). Name the choice before it happens.\n\n**2. Views vs copies.** `X[:k]` in numpy is a VIEW of X. Update centroids in place without `.copy()` and you are silently overwriting your training data. This is the nastiest planted bug in debugging rounds because everything still runs.\n\n**3. Convergence check.** Comparing centroids with `==` is float equality. Compare the assignment vector instead: when no point changed cluster, you're done."
+    },
+    {
+      "type": "quiz",
+      "question": "centroids = X[:2], then inside the loop: centroids[0] = pts.mean(axis=0). What actually happens?",
+      "choices": [
+        "Works fine; centroids is its own array",
+        "Raises a read-only error",
+        "Row 0 of the ORIGINAL X is overwritten, because the slice is a view and the assignment writes through it",
+        "numpy detects the alias and copies on write"
+      ],
+      "answer": 2,
+      "explain": "numpy slices are views; writing through them mutates the source. Your dataset now contains a centroid instead of a data point, results drift, nothing crashes. The one-character-class fix: X[:2].copy(). Python lists behave differently (list slices DO copy), which is why this bites."
+    },
+    {
+      "type": "quiz",
+      "question": "Good one-sentence answer to \"what are k-means' limitations?\"",
+      "choices": [
+        "It's O(n³) so it doesn't scale",
+        "It finds local optima sensitive to initialization, assumes roughly spherical equal-size clusters, and you must pick k",
+        "It only works on 2D data",
+        "It requires labeled data"
+      ],
+      "answer": 1,
+      "explain": "That sentence, plus \"k-means++ improves initialization, and people pick k with the elbow method or silhouette score,\" is the complete follow-up answer. It's unsupervised (no labels), works in any dimension, and each Lloyd iteration is O(n·k·d)."
+    },
+    {
+      "type": "text",
+      "md": "## Prove-it-works, the interview way\n\nDon't just eyeball your model code. Feed it a tiny dataset where the answer is obvious:\n\n- KNN: three points around (0,0) labeled A, three around (10,10) labeled B; a query near each blob must return that blob's label.\n- k-means with k=2 on the same data: the two blobs must come out as pure clusters with centroids near the blob means.\n\nSaying \"let me sanity-check on two obvious blobs\" and doing it in 60 seconds is one of the strongest signals you can send.\n\n**Next lesson:** logistic regression and the gradient descent loop."
+    }
+  ]
+}

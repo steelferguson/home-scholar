@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The LLM Serving Layer",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The layer everything sits on\n\nEvery AI system has a serving layer between your application and the model(s). Its job: get completions back fast enough, cheap enough, and reliably enough. This lesson is the anatomy of that layer, the part of the design where cost and latency live.\n\nStart with what a single request physically is: you send a prompt (system instructions + context + history + the user's message), the model processes ALL of it, then generates output one token at a time. Two phases, two different costs."
+    },
+    {
+      "type": "text",
+      "md": "## Latency anatomy: TTFT and tokens/sec\n\nTwo numbers describe response speed, and they're controlled by different things:\n\n- **Time to first token (TTFT)**: how long before ANYTHING appears. Dominated by processing the input prompt (plus queueing). Grows with prompt length: a 50K-token context takes visibly longer to start than a 2K one.\n- **Generation speed (tokens/sec)**: how fast output streams once started. Roughly constant per model; smaller models stream faster.\n\nDesign consequences:\n\n1. **Stream everything user-facing.** A response that takes 6 seconds total but starts in 400ms feels fine; the same response delivered as one blocking blob feels broken. Streaming is UX, not optimization.\n2. **Prompt bloat taxes every single turn.** Context you don't need is TTFT you pay anyway. This is why context management (lesson 4) is a design topic and not housekeeping."
+    },
+    {
+      "type": "text",
+      "md": "## Prefix caching: why prompt STRUCTURE matters\n\nServing infrastructure can cache the processed form (the KV cache) of a prompt PREFIX it has seen before. If your next request starts with the exact same bytes, that prefix is nearly free and TTFT drops sharply.\n\nThe design rule that falls out: **order your prompt from stable to volatile**:\n\n```\n[system prompt: fixed]           <- cached across ALL users\n[tool definitions: fixed]         <- cached\n[user profile / memory: per-user] <- cached across this user's turns\n[conversation history: grows]     <- cached up to the newest turn\n[current message: new]            <- the only genuinely new tokens\n```\n\nPut a timestamp or a random id at the TOP of the prompt and you've broken the cache for every request in the fleet. This one detail routinely halves serving cost and TTFT, and mentioning it unprompted is a strong practitioner signal."
+    },
+    {
+      "type": "quiz",
+      "question": "A team puts the current date-time and a request UUID at the very top of their system prompt. What did that cost them?",
+      "choices": [
+        "Nothing; prompt order is stylistic",
+        "Prefix caching: every request's cache breaks at token one, so the full prompt is reprocessed every time: higher TTFT and cost across the fleet",
+        "The model becomes nondeterministic",
+        "Token limits are exceeded"
+      ],
+      "answer": 1,
+      "explain": "Caching works on exact prefixes. Volatile bytes at the top invalidate everything after them, so the stable 4K-token system prompt gets reprocessed on every single call. Move volatile values to the END (or into the user turn) and the stable prefix caches. Cheap fix, large win, classic real-world miss."
+    },
+    {
+      "type": "text",
+      "md": "## Model routing: the biggest cost lever\n\nOne model for everything is the expensive default. Production systems route:\n\n- **By task**: classification, extraction, and summarization go to a small cheap model; complex reasoning and final user-facing answers go to the big one. An agent turn often makes 3-5 model calls and only ONE needs to be smart.\n- **By difficulty (escalation)**: try the small model, detect low confidence or a failed check, escalate to the big model. The trick is the detector: an explicit confidence output, a cheap judge, or task-specific heuristics.\n- **By distillation**: once the big model has produced enough good transcripts, fine-tune a small model on them and move the routine traffic there. (You shipped exactly this: the Qwen 4B distillation. Say so in the interview; a real >$4M example beats theory.)\n\nRouting is where \"dollars per conversation\" becomes \"cents per conversation,\" which at contact-center volume is the difference between a viable product and a dead one."
+    },
+    {
+      "type": "quiz",
+      "question": "Your agent pipeline makes 4 LLM calls per turn: intent classification, retrieval query rewriting, the main answer, and a safety check. Where does routing save the most?",
+      "choices": [
+        "Use the frontier model for all 4: quality first",
+        "Small model for classification, rewriting, and the safety check; frontier model only for the main answer: roughly 3 of 4 calls at 10-100x lower cost with negligible quality loss",
+        "Small model for the main answer since it's the longest",
+        "Cache the main answer instead"
+      ],
+      "answer": 1,
+      "explain": "The auxiliary calls are narrow, well-specified tasks where small models match big ones; the user-facing answer is where capability shows. Routing them down cuts most of the cost while the quality-critical call keeps the best model. Putting the SMALL model on the main answer is backwards: that's where quality is visible."
+    },
+    {
+      "type": "text",
+      "md": "## Reliability: designing for a flaky dependency\n\nThe model API is a remote dependency with rate limits, latency spikes, and occasional outages. Standard playbook, AI edition:\n\n- **Timeouts + retries with backoff**, but idempotency-aware: retrying a completed tool-calling turn can double-execute actions (lesson 4 handles this at the tool level).\n- **Fallback chain**: primary model → same-tier alternate provider → smaller self-hosted model → graceful degradation (\"I'm having trouble; connecting you to a person\"). Each hop trades quality for availability.\n- **Rate-limit budgeting**: per-user and per-tenant caps so one noisy customer can't starve the fleet; queue non-interactive work.\n- **Circuit breaking**: when the provider degrades, fail fast to the fallback instead of stacking timeouts.\n\nSay the phrase \"the LLM is just another unreliable upstream; the difference is the fallback degrades QUALITY, not just availability,\" and you've said something most candidates don't."
+    },
+    {
+      "type": "text",
+      "md": "## Self-hosted vs API: the other big fork\n\nWhen the interviewer asks \"would you host the model yourself?\":\n\n- **API (default)**: zero infra, best models, pay per token. Right answer until volume, latency, or data constraints say otherwise.\n- **Self-hosted open weights**: fixed GPU cost regardless of traffic, full data control, customizable (fine-tunes), but you now operate GPU infra and serve a weaker model tier.\n\nThe crossover argument is utilization: API pricing is linear in tokens; GPUs are a step function. High, steady volume of ROUTINE traffic (exactly what distillation creates) makes self-hosting the cheap lane, while spiky or capability-hungry traffic stays on APIs. Hybrid (self-hosted small + API frontier) is the grown-up answer for most large deployments.\n\nNext lesson: RAG, the retrieval half of most AI products."
+    }
+  ]
+}

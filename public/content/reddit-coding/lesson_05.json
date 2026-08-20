@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Trees and Comment Threads",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The pattern\n\nBuild a navigable structure from a flat list of relationships, find the roots, traverse and render, and detect bad inputs. The guide is explicit that bad-input handling is part of the task, not an afterthought.\n\nReddit-flavored example, from the drill: comment threads. A flat list of comments, each with a parent id (or None for top-level), that you assemble into a tree and render as an indented thread. This is about as on-brand as a Reddit interview question gets."
+    },
+    {
+      "type": "text",
+      "md": "## The clean model: two passes\n\nBuild an adjacency (children lists) and collect roots, then depth-first render:\n\n```python\ndef build_thread(comments):\n    ids = [c[\"id\"] for c in comments]\n    if len(ids) != len(set(ids)):\n        raise ValueError(\"duplicate id\")\n    idset = set(ids)\n    children = {cid: [] for cid in ids}\n    text = {c[\"id\"]: c[\"text\"] for c in comments}\n    roots = []\n    for c in comments:\n        p = c[\"parent\"]\n        if p is None:\n            roots.append(c[\"id\"])\n        elif p not in idset:\n            raise ValueError(\"missing parent\")\n        else:\n            children[p].append(c[\"id\"])\n\n    out, reached = [], []\n    def dfs(cid, depth):\n        reached.append(cid)\n        out.append(\"  \" * depth + text[cid])\n        for ch in children[cid]:\n            dfs(ch, depth + 1)\n    for r in roots:\n        dfs(r, 0)\n    if len(reached) != len(ids):\n        raise ValueError(\"cycle\")     # see next step\n    return out\n```\n\nBuilding children in input order preserves ordering for free, which the tests check."
+    },
+    {
+      "type": "text",
+      "md": "## The cycle-detection trick\n\nCycle detection sounds like it needs visited-sets and colors, but with these inputs there is a shortcut worth knowing.\n\nEach comment has AT MOST ONE parent, and you already verified every parent exists. So any node that is NOT in a cycle traces upward through existing parents and eventually reaches a root. A node that IS in a cycle (a points to b points to a) has no root above it, so the depth-first walk from the roots never reaches it.\n\nTherefore: after DFS from all roots, if you visited fewer nodes than exist, the unreached ones form a cycle. One comparison, `len(reached) != len(ids)`, and you are done. A self-parent (a points to a) is the degenerate case: no roots at all, nothing reached, so it raises. Explaining this reasoning is more impressive than a generic cycle-detection algorithm, because it uses the structure of the problem."
+    },
+    {
+      "type": "quiz",
+      "question": "Given every comment has at most one parent and all named parents exist, why does 'visited fewer nodes than exist, after DFS from the roots' correctly detect a cycle?",
+      "choices": [
+        "Because DFS is always incomplete",
+        "A node not in a cycle traces up through existing parents to a root and so is reachable; a node in a cycle has no root above it and is never reached from the roots, so any unvisited node must be in (or hang off) a cycle",
+        "Because duplicate ids cause skips",
+        "Because roots are visited twice"
+      ],
+      "answer": 1,
+      "explain": "The single-parent structure is what makes this work. Follow parents upward from any node: since each has at most one parent and all parents exist, you either hit a None (a root) or loop forever (a cycle). Non-cycle nodes therefore descend from some root and get visited; cycle nodes have no root ancestor and stay unvisited. Counting reached vs total is a clean, structure-aware cycle check, and articulating WHY it holds beats reciting a generic algorithm."
+    },
+    {
+      "type": "text",
+      "md": "## Edge cases, layering, and one caution\n\n**Edge cases the tests hit**: empty list returns empty, duplicate ids raise, a parent that does not exist raises, cycles raise (including the self-parent), and input order is preserved for both roots and each node's children.\n\n**One caution to mention**: deep threads mean deep recursion, and adversarial input could blow the recursion limit, so on a very deep or hostile tree an iterative stack-based DFS is safer. Naming this shows you think about failure modes on real (Reddit-scale, adversarial) data.\n\n**Layering they might add**: sort children by score instead of input order, collapse threads below a depth, or count total descendants per node (a second fold over the tree). All slot onto the same children-map structure. The drill: r04_comment_tree.py, timed at 30 minutes."
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Trust and Abuse: Defending an Eval Platform",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why this is its own lesson\n\nLesson 12 asked how you make an evaluator trustworthy. This lesson asks the adversarial version: how do you DEFEND an eval's trustworthiness against people trying to break it. For a public evaluation platform (an Arena-style crowd-voted leaderboard, but also any benchmark others rely on), this is not a side function. It is the product.\n\nThe running example is a model-comparison arena: users see two anonymous model outputs, vote which is better, and the aggregate becomes a public leaderboard. Everything generalizes to any eval whose results carry weight."
+    },
+    {
+      "type": "text",
+      "md": "## The meta-insight to lead with\n\nSay this first, because the framing matters as much as the threat list:\n\n> The product IS the trustworthiness of the ranking. The leaderboard has become economically load-bearing: labs cite it in launches, marketing, and fundraising. That creates enormous incentive to manipulate it. **If the eval is gameable, the eval is worthless.**\n\nSo anti-abuse here is existential, not defensive hygiene. This is why a company would make it a founding hire. Leading with this shows you understand the stakes before you list a single attack. Every specific threat below is a way the ranking could become dishonest, and dishonest ranking is company death."
+    },
+    {
+      "type": "text",
+      "md": "## Threat 1: vote and leaderboard manipulation (the crown jewel)\n\nThe direct attack: make the aggregate say what you want.\n\n- **Coordinated / Sybil voting**: fake accounts, bot farms, click farms, or coordinated humans voting to boost a target model or sink a competitor. This is a behavioral-clustering problem: catching coordinated automated behavior across users and sessions is nearly identical to detecting scripted friending or fake-engagement rings at a social platform.\n- **Lab self-promotion**: a provider, its employees, or its fan community brigading votes for their own model.\n- **Vote-buying / incentivized voting**: paying real humans to vote a direction, which defeats naive bot detection because the votes come from real people.\n\nThis is the highest-value threat because it attacks the core output directly."
+    },
+    {
+      "type": "quiz",
+      "question": "Which vote-manipulation variant is HARDEST to catch with classic bot-detection signals, and why does that matter?",
+      "choices": [
+        "Sybil bot farms, because they use many accounts",
+        "Vote-buying with real humans: the votes come from genuine, diverse accounts and devices, so bot heuristics (automation fingerprints, velocity) do not fire; you have to detect the COORDINATION and incentive pattern, not the automation",
+        "Self-promotion, because employees are easy to identify",
+        "None; all are equally easy"
+      ],
+      "answer": 1,
+      "explain": "Bot farms leave automation tells; paid humans do not. Real accounts, real devices, human-plausible timing. The signal shifts from 'is this automated' to 'is this coordinated toward a target beyond what organic behavior explains,' which is population-scale behavioral clustering (voting rings that correlate on targets, timing, or recruitment source). Naming this distinction shows you understand the hard case, not just the easy one."
+    },
+    {
+      "type": "text",
+      "md": "## Threat 2: breaking the blind assumption (de-anonymization)\n\nThe whole eval depends on voters not knowing which model is which. Break that and votes become strategic, which quietly poisons the signal without any fake accounts.\n\nModels have TELLS: stylistic quirks, formatting habits, refusal patterns, self-identification (\"As an AI made by X...\"), even watermarks. A voter or a script that fingerprints which output is which can vote for their preferred lab regardless of quality.\n\nThis is subtle and high-value: no rule was broken, no fake account created, yet the blindness the entire eval rests on is gone. Defending it means detecting fingerprinting behavior and reducing the tells (normalizing formatting, stripping self-identification), a problem right at the intersection of integrity work and eval design."
+    },
+    {
+      "type": "text",
+      "md": "## Threat 3: eval gaming and contamination (validity threats)\n\nThese do not break rules so much as make the ranking dishonest about real quality:\n\n- **Over-fishing the leaderboard**: a lab submits many private checkpoints or variants, fishes for the highest score by chance, and only publicizes the winner. A real controversy for public arenas. It is multiple-comparisons abuse: enough draws and something scores high on noise alone.\n- **Training on eval data**: labs overfit to the arena's prompts and votes (test-set leakage), so the model looks better than it is. The contamination problem: once your eval set is in someone's training data, it stops measuring generalization.\n- **Style and length hacking**: models tuned to win HUMAN PREFERENCE (longer, more formatted, more confident, sycophantic) rather than to be better. Not fraud, but a validity threat, and part of 'is the ranking honest.'\n\nDefending validity blends anti-abuse with eval methodology: detect suspicious submission patterns, rotate and hold out prompts, control for style/length confounds."
+    },
+    {
+      "type": "quiz",
+      "question": "A lab submits 40 private checkpoints in a month; one lands at #1 and they announce it. No rule explicitly forbids this. Why is it still an integrity problem, and what is the statistical name for the underlying issue?",
+      "choices": [
+        "It is not a problem; more submissions is more data",
+        "Multiple comparisons / fishing: with enough draws, one variant scores high on NOISE alone, so the announced #1 overstates true quality; the fix is submission limits, correcting for the number of attempts, and holding out fresh prompts they could not have fished against",
+        "The problem is only that it costs compute",
+        "It is fine as long as the winner is real"
+      ],
+      "answer": 1,
+      "explain": "This is the multiple-comparisons problem wearing a leaderboard costume, the same family as p-hacking. Forty draws against a noisy metric will produce a lucky high score even from equal models. The announced rank reflects selection, not quality. Mitigations: rate-limit private submissions, adjust scores for attempt count, and evaluate the announced model on fresh held-out prompts. Recognizing the statistics is what separates an eval-literate defender from a generic one."
+    },
+    {
+      "type": "text",
+      "md": "## Threat 4: platform abuse (you are serving real frontier models)\n\nAn arena serves live frontier models to the public, which invites classic platform abuse:\n\n- **Free-API farming**: using the arena as a free proxy to extract frontier-model outputs at scale, to scrape, resell, or distill a competitor model from. A cost and IP-abuse problem.\n- **Content-safety and jailbreaks**: real models means real attempts to generate harmful content (CSAM, malware, targeted harassment). A trust-and-safety obligation made sharper because the model providers are your customers and their outputs carry their brand.\n- **Bulk bot traffic**: scraping, credential stuffing, and denial-of-service at the scale of millions of visitors.\n\nThese are the familiar platform-integrity problems, but with the twist that your 'inventory' is expensive model inference and your liability is shared with the labs."
+    },
+    {
+      "type": "text",
+      "md": "## Threat 5: paid and enterprise abuse\n\nIf the platform also sells private and enterprise evaluations (the revenue side), the surface widens to standard SaaS security with an eval twist:\n\n- **Tenant isolation**: one customer must never see another's prompts, outputs, or results. Enforced at the query layer, not by convention (the same WHERE-clause discipline from the memory and RAG lessons).\n- **Account and API-key abuse**: credential sharing, key leakage, usage beyond entitlement.\n- **Payment fraud** and **data exfiltration** of proprietary eval sets.\n- **Gaming private eval results**: a customer manipulating their own private benchmark to look good to their stakeholders, or to game a procurement decision.\n\nThe through-line: the public side defends a shared public good (the leaderboard); the paid side defends per-customer confidentiality and integrity. Ask whether these are one team's problem or two."
+    },
+    {
+      "type": "text",
+      "md": "## Threat 6: data poisoning\n\nThe subtle long-game threat. If the platform publishes or sells its human-preference dataset (a valuable asset others train and evaluate on), then corrupting that dataset corrupts everyone downstream.\n\nCoordinated bad votes, or votes crafted to inject a specific bias, poison the signal not just for today's leaderboard but for every model trained or evaluated on the released data later. It is the supply-chain version of vote manipulation: the damage propagates beyond your platform.\n\nDefending it connects vote-integrity (upstream) to dataset hygiene (downstream): the same coordinated-behavior detection protects both the live ranking and the released corpus, which is a clean way to argue that anti-abuse here is one coherent function, not scattered fixes."
+    },
+    {
+      "type": "text",
+      "md": "## How to think about mitigations (the loop, not a list)\n\nDo not just enumerate defenses; show the operating loop, which is the same threat-modeling discipline used anywhere adversaries adapt:\n\n1. **Model the attacker**: who benefits, what is their budget, what signal do they leave. A lab boosting its own model behaves differently from a random troll.\n2. **Detect**: build signals for the behavior, not just the identity. Coordination, anomalous submission patterns, fingerprinting attempts, statistical outliers in vote distributions.\n3. **Ship the mitigation**: rate limits, account friction, prompt rotation, output normalization, score adjustments, hard capability boundaries (tenant isolation).\n4. **Measure it held**: confirm the attack actually dropped, because adversaries adapt and a defense that worked last quarter may be routed around now. This is the eval-your-own-defense mindset from lesson 12 applied to security.\n\nReal-time detection (block the vote as it happens) versus offline forensics (find the ring after the fact and reverse its votes) is a real design axis worth asking about: most mature systems run both."
+    },
+    {
+      "type": "quiz",
+      "question": "Why is 'measure that the mitigation held' a non-optional step specifically in an adversarial eval-integrity setting?",
+      "choices": [
+        "For quarterly reporting",
+        "Because adversaries adapt: a defense that worked when shipped can be routed around later, and unlike a static bug, the attack surface actively evolves against you, so integrity is a moving equilibrium you must continuously re-measure, not a fix you deploy once",
+        "Because the model changes",
+        "It is optional if the first fix looked good"
+      ],
+      "answer": 1,
+      "explain": "Anti-abuse is not bug-fixing; it is a live contest against a thinking opponent with strong incentives (the leaderboard is worth real money to game). A mitigation is a hypothesis that the attack dropped, and the opponent's next move can invalidate it. Continuous measurement (did coordinated voting actually fall, and stay fallen) is the only way to know you are still ahead. This mirrors re-scoring frozen samples to catch judge drift, adversarial version."
+    },
+    {
+      "type": "text",
+      "md": "## The interview framing\n\nHow to carry this into the room. Smart questions that show you already think like the defender:\n\n- \"What is your biggest known abuse vector today: vote manipulation, de-anonymization, or platform abuse?\"\n- \"How do you hold the tension between openness (anyone can vote) and integrity (votes must be trustworthy)?\"\n- \"Is leaderboard integrity and paid-eval-product security one team's problem or two?\"\n- \"How much is real-time detection versus offline forensics today?\"\n- \"What would 'the anti-abuse function' own end to end, and what signal and tooling exist now?\"\n\nAnd the through-line sentence that makes them lean in, adapt it to your own background: \"You are defending the credibility of an evaluation. Detecting coordinated adversarial behavior and understanding how evals break are the two halves of that, and they are the two things I have spent my career doing. Protecting a leaderboard from gaming is those two skills fused.\""
+    },
+    {
+      "type": "text",
+      "md": "## The synthesis\n\nSix threat families, one product to protect:\n\n1. Vote manipulation (Sybil, coordinated, bought)\n2. De-anonymization (breaking the blind)\n3. Eval gaming and contamination (fishing, leakage, style-hacking)\n4. Platform abuse (API farming, jailbreaks, bot traffic)\n5. Enterprise abuse (tenant isolation, exfiltration, fraud)\n6. Data poisoning (corrupting the released preference set)\n\nAll six are ways the ranking becomes dishonest, and a dishonest ranking is worthless. The defender's job is one coherent thing: keep the number trustworthy against people with strong incentives to make it lie. Threat-model the attacker, detect the behavior not the identity, ship the mitigation, and keep measuring that it held, because the opponent is adapting. That framing, plus the specific taxonomy, is a founding-hire-level answer."
+    }
+  ]
+}

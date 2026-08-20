@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Gotchas and the Attention Capstone",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The gotcha catalog\n\nThe bugs PyTorch interviews plant, in the order to check for them:\n\n1. **Missing zero_grad**: gradients accumulate, updates balloon. Trains weird, no error.\n2. **Softmax before CrossEntropyLoss**: double-softmax, quietly undertrains. No error.\n3. **Wrong label dtype/shape**: CrossEntropyLoss wants int64 indices of shape [batch]; handing it floats or one-hots errors loudly (the friendly kind of bug).\n4. **Layer not registered**: stashed in a plain list instead of self.attr / nn.ModuleList: runs fine, those weights never train.\n5. **eval/train mode**: dropout or batchnorm active during evaluation, or eval mode left on when training resumes.\n6. **Shape mismatch into Linear**: `mat1 and mat2 shapes cannot be multiplied (32x784 vs 28x128)`: read the error, it names the shapes; someone forgot to flatten.\n7. **Missing .item()**: appending live tensors to a Python list keeps entire graphs alive: the slow memory leak.\n\nNotice which ones error and which don't: 3 and 6 announce themselves; 1, 2, 4, 5, 7 are silent. The silent ones are the interview material."
+    },
+    {
+      "type": "quiz",
+      "question": "A model 'trains' with healthy-looking falling loss, but one of its layers, stored as self.layers = [nn.Linear(4,8), nn.Linear(8,2)] (a plain Python list), never improves anything. What's happening?",
+      "choices": [
+        "Lists can't hold layers; it crashes",
+        "The layers work in forward() but were never REGISTERED, so model.parameters() doesn't include them and the optimizer never updates their weights",
+        "Only the first list element trains",
+        "The learning rate is shared incorrectly"
+      ],
+      "answer": 1,
+      "explain": "A plain list bypasses nn.Module's attribute hook: forward() happily uses the layers (so no crash and the loss can even fall via OTHER registered layers), but their weights sit at initialization forever. The fix: nn.ModuleList([...]) or individual self.fc1-style attributes. Diagnostic: len(list(model.parameters())) is smaller than you expect."
+    },
+    {
+      "type": "text",
+      "md": "## Devices, in four lines\n\nYou'll rarely need GPU code in a screen, but the pattern should be recognizable:\n\n```python\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\nmodel = model.to(device)          # move the model once\nX, y = X.to(device), y.to(device)  # move EVERY batch\n```\n\nThe rule: model and data must be on the SAME device, or you get `Expected all tensors to be on the same device`. The error names both devices; whichever tensor is on the wrong one forgot its `.to(device)`. Results come back to CPU-land with `.cpu()` before `.numpy()`."
+    },
+    {
+      "type": "text",
+      "md": "## Saving and loading (the two-liner they sometimes ask)\n\n```python\ntorch.save(model.state_dict(), \"model.pt\")     # save WEIGHTS, not the object\n\nmodel = MLP(4, 16, 2)                           # rebuild the architecture\nmodel.load_state_dict(torch.load(\"model.pt\"))\nmodel.eval()                                    # inference mode after loading\n```\n\nThe convention worth stating: save the `state_dict` (a dict of weight tensors), not the pickled model object; it's portable across code changes. And loading is a three-step: construct, load, eval."
+    },
+    {
+      "type": "text",
+      "md": "## Capstone: attention in torch\n\nYou wrote this in numpy in the MLE course; here's how directly it transfers:\n\n```python\ndef attention(Q, K, V, causal=False):\n    d = Q.shape[-1]\n    scores = Q @ K.transpose(-2, -1) / d ** 0.5    # [T, T]\n    if causal:\n        T = scores.shape[-1]\n        mask = torch.triu(torch.ones(T, T, dtype=torch.bool), diagonal=1)\n        scores = scores.masked_fill(mask, float(\"-inf\"))\n    weights = torch.softmax(scores, dim=-1)\n    return weights @ V\n```\n\nLine by line versus numpy: `K.transpose(-2, -1)` instead of `K.T` (explicit about WHICH dims swap, which is what lets the same code handle batched [B, T, d] inputs), `masked_fill` instead of `np.where`, `torch.softmax(dim=-1)` instead of hand-rolling. The math is identical; the sanity check transfers too: Q=K=0 makes attention uniform, so causal row i is the mean of V[0..i]."
+    },
+    {
+      "type": "quiz",
+      "question": "In the attention code, why K.transpose(-2, -1) rather than K.T?",
+      "choices": [
+        "K.T doesn't exist in PyTorch",
+        "Negative dims swap the LAST two axes specifically, so the same line works for [T, d] AND batched [B, T, d] inputs; .T on a 3D tensor would scramble the batch dim (and PyTorch deprecated it there)",
+        "It's faster",
+        "transpose is required before matmul"
+      ],
+      "answer": 1,
+      "explain": "transpose(-2, -1) says 'swap the last two dimensions, whatever else exists', which is exactly what attention means for batched input: [B, T, d] -> [B, d, T], batch untouched. Writing dims from the RIGHT is the general habit that makes tensor code batch-proof: dim=-1 for softmax over classes, shape[-1] for feature size."
+    },
+    {
+      "type": "text",
+      "md": "## Done. Now type it.\n\nReading rebuilds recognition; typing rebuilds recall. The drill (p15 in the handcoding folder) is the training loop from memory with asserts: build the MLP as an nn.Module, train it, prove the ln(2) starting point, overfit to 100%, evaluate with both switches.\n\nThe five things to be able to produce cold, as a final checklist:\n\n1. The nn.Module skeleton (super().__init__, self.layers, forward)\n2. The loop beat: forward, loss, zero, backward, step\n3. CrossEntropyLoss's contract: raw logits + int64 indices\n4. The eval pair: model.eval() + torch.no_grad()\n5. The accuracy chain: (preds == y).float().mean().item()\n\nIf you can type those five without reference, you're PyTorch-ready for any screen that allows it."
+    }
+  ]
+}

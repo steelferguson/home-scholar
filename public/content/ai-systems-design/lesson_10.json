@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Architecture Gallery: Operations and Scale",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The second half of the gallery\n\nLesson 9 drew the request path. This lesson draws the systems AROUND it: the back-office task pipeline (the Humanity-style work-queue architecture), the eval-and-deploy flywheel, and the two-planes map that ties runtime and quality machinery into one picture.\n\nSame drill: study each diagram and trace it yourself before reading the walkthrough."
+    },
+    {
+      "type": "text",
+      "md": "## Diagram 4: the back-office task pipeline\n\nNo chat here: documents and work orders in, verified actions out. Before looking: what are the six stages between a document arriving and its task completing, and where do humans plug in?"
+    },
+    {
+      "type": "image",
+      "src": "/content/ai-systems-design/diagrams/d4_backoffice_pipeline.svg",
+      "caption": "The work-item pipeline: a straight-through path, confidence-routed review queues, and an audit floor"
+    },
+    {
+      "type": "text",
+      "md": "## Walking diagram 4\n\nThe top row is the **straight-through path**: intake → classify → extract (per-field confidence) → validate (reconciliation + business rules) → execute (idempotent) → QA sample. Zero human touches when everything is confident and checks pass: the STP rate this row achieves IS the product's economics.\n\nThe amber drops are the exception routing: **any stage can eject a work item to the human review queues** on low confidence or failed checks. Approved items rejoin the path (the teal arrow back into execute). Every human correction feeds the **corrections flywheel** box: labels that improve extraction, tune thresholds, and grow the eval suite.\n\nThe two horizontal strips at the bottom are what make this a REGULATED-industry drawing: the **audit trail** floor (every fact needed to reconstruct any decision, retained for years) and the **autonomy ratchet** caption (shadow mode first, measured accuracy, thresholds raised per task type).\n\nWhiteboard order: straight-through row, review queues below with routing arrows, flywheel, audit floor last, saying \"and everything above writes to this.\""
+    },
+    {
+      "type": "quiz",
+      "question": "In diagram 4, why does the reviewed-and-approved arrow rejoin the pipeline at EXECUTE rather than going back through validate?",
+      "choices": [
+        "To save latency",
+        "The human review IS the resolution of what validation flagged: the reviewer saw the source doc, corrected or confirmed the fields, so their approval supersedes the failed automated check: re-validating would just re-flag the same exception and loop forever",
+        "Validation only runs once per day",
+        "It's a drawing error"
+      ],
+      "answer": 1,
+      "explain": "The review queue exists BECAUSE validation (or low confidence) flagged the item; the human is the higher authority resolving it. Sending approved items back through the same automated check would re-eject them: an infinite loop. The design point worth saying: human approval is itself recorded in the audit trail (who, what, when), which is exactly the maker-checker pattern regulators expect."
+    },
+    {
+      "type": "text",
+      "md": "## Diagram 5: the eval-and-deploy flywheel\n\nThe machinery that lets you change an AI system without fear. Before looking: what stands between an edited prompt and 100% of production traffic?"
+    },
+    {
+      "type": "image",
+      "src": "/content/ai-systems-design/diagrams/d5_eval_deploy_flywheel.svg",
+      "caption": "Change to canary to ramp, with two feedback loops: rollback (red) and the failure-to-suite flywheel (blue)"
+    },
+    {
+      "type": "text",
+      "md": "## Walking diagram 5\n\nThe forward path: **change → offline eval suite (calibrated, pinned judge) → per-dimension gates → canary at 5% → online monitoring → ramp to 100%**. Note what the boxes say quietly: the old config stays hot at canary time, so rollback is a config flip, not a rebuild.\n\nThe two feedback loops are the actual lesson:\n\n- **Red loop**: monitoring detects a regression → rollback, diagnose, new change. Fast, reactive, protects today.\n- **Blue loop**: production failures become PERMANENT suite cases. Slow, cumulative, protects forever: this is why the suite grows more representative every quarter and why next quarter's change can't re-ship last quarter's bug.\n\nIn an interview, draw the forward path first, then add the loops while saying \"and these two arrows are what make shipping boring.\" This diagram applies unchanged to chat agents, task agents, and RAG systems: it's the most reusable drawing in the gallery."
+    },
+    {
+      "type": "text",
+      "md": "## Diagram 6: the two-planes map\n\nThe zoom-out that ties the whole course together. Every AI product is two planes: the runtime plane that serves requests, and the control plane that decides what's allowed to ship. Before looking: which three arrows cross between the planes?"
+    },
+    {
+      "type": "image",
+      "src": "/content/ai-systems-design/diagrams/d6_two_planes.svg",
+      "caption": "Runtime plane on top, control plane below: traces and corrections flow down, approved config flows up"
+    },
+    {
+      "type": "text",
+      "md": "## Walking diagram 6\n\n**Runtime plane** (top): channels → session service → guardrails → agent core (the whole of lesson 9's detail compressed into one box) → human console, with the extraction job writing memory asynchronously.\n\n**Control plane** (bottom): trace store → eval suite + judge → gates → canary + ramp: lesson 10's detail compressed.\n\nThe three crossing arrows are the point of the drawing:\n\n1. **Traces flow down**: every runtime turn becomes control-plane raw material.\n2. **Human corrections flow down**: the console's labels feed the suite.\n3. **Approved config flows up**: the ONLY way changes reach runtime is through the control plane's gates.\n\nThat third arrow is the governance story in one line: nothing ships to the runtime plane except through evals. Draw this map when an interviewer asks a broad \"how would you structure the whole system\" question, or as your closing summary: it compresses forty-five minutes of discussion into one picture.\n\n**Gallery rehearsal**: redraw all six from memory on paper, in whiteboard order, narrating. Any diagram you can't reconstruct, reread its walkthrough. Then bring the drawings to the live mock."
+    },
+    {
+      "type": "quiz",
+      "question": "In the two-planes map, what makes \"approved config flows up\" the load-bearing arrow?",
+      "choices": [
+        "It's the fastest path in the system",
+        "It asserts that the control plane is the ONLY route by which changes reach production: prompts, models, and thresholds all ship through evals and gates, never by direct edit: which is the entire governance and quality story in one arrow",
+        "It carries the most data volume",
+        "It's required by GDPR"
+      ],
+      "answer": 1,
+      "explain": "The other two crossing arrows describe data flowing down for learning; this one is a CONSTRAINT: there is no side door where someone hot-edits a prompt in production. Everything user-facing passed the suite, the gates, and a canary. For regulated deployments this arrow is also the model-governance evidence. If you say one sentence about the map, make it this one."
+    }
+  ]
+}

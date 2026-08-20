@@ -4,12 +4,54 @@ A web app for self-paced audio learning — language courses, music theory, and 
 
 ## Status
 
-_Last updated: 2026-07-10_
+_Last updated: 2026-08-20_
 
 **Live** (database migrated + seeded on the production Supabase project):
+- **Native mobile shell** — `projects/home-scholar-mobile/` wraps this app in an
+  Expo iOS/Android shell so audio keeps playing with the screen locked, with
+  lock-screen controls. The shell's WebView loads the live Vercel URL, so
+  publishing content still means `vercel --prod` with no app rebuild. The web
+  half of the bridge is `src/lib/nativeBridge.js`,
+  `src/hooks/useNativeAudioSync.js` and `src/components/audio/NativeAudioPlayer.jsx`;
+  none of it activates in a normal browser. See that repo's README for the
+  bridge contract and gotchas
+- Hosted at https://home-scholar-app.vercel.app (Vercel; deploy via
+  `vercel --prod` from the repo root, SPA rewrite in vercel.json,
+  VITE_SUPABASE_* env vars set on the Vercel project)
 - 4 audio courses — Czech 2, Spanish 1, English Connect 1, Harmony
+- Audio Prep: System Design & Data Modeling — 6 audio lessons (~30 min):
+  running a design interview, a worked construction architecture, data
+  modeling method + worked examples, the RAG/agent pipeline, trustworthy AI
+  answers. Built from projects/interview_audio/ (Google TTS), audio-only so
+  no app redeploy needed
 - ML Interview — Visual Walkthroughs: 6 interactive lessons (tokenization,
   log loss, softmax, gradient descent, embeddings, attention)
+- MLE Coding Refresh: 9 visual lessons (~3.5h) rebuilding hands-on interview
+  coding: Python fluency, metrics/models from scratch, beam search, GBMs +
+  sklearn workflow, debugging, AI-assisted coding
+- Practical Python Speed-Run: 6 visual lessons (~2.5h) of raw Python syntax
+  recall for timed CodeSignal-style practical screens
+- PyTorch Speed-Run: 5 visual lessons (~1.5h): tensors, autograd, nn.Module,
+  the training loop from memory, silent-bug catalog
+- AI Systems Design: 10 visual lessons (~3.5h): designing AI agents and AI
+  systems for interviews (serving, RAG, agent loops, memory, evals,
+  contact-center capstone, back-office task agents, a 7-diagram
+  architecture gallery with walkthroughs, a classical recommender design, and
+  a deep dive on designing the evaluator itself, and defending an eval platform
+  from abuse)
+- Pipeline Craft: 4 visual lessons (~2h): reviewing and improving Python data
+  pipelines (principles + messy records and PyTorch examples fixed stage by
+  stage + the live-review method); pairs with pipeline_examples/ files
+- Reddit Coding Interview: 6 visual lessons (~1.5h): messy-requirements-to-
+  clean-models coding prep (state machines, composition, event replay, trees,
+  throttling, plus a 20-prompt pattern-recognition drill), each paired with a hands-on drill
+- LLM Training at Scale: 8 visual lessons (~3h): tokenization, embeddings,
+  transformer LMs + LoRA, the memory wall, data/tensor/pipeline parallelism,
+  ZeRO/FSDP, GPU efficiency (MFU, FlashAttention), tied to safety ML at scale
+- Coding With AI: 13 visual lessons (~4h): a thinking framework for driving
+  AI to build software (decompose, spec, review, verify, iterate) plus the
+  live multi-LLM build interview (pattern library, layering, driving the
+  agent live, back-office document tailoring, five practice scenarios), with two worked examples
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 
@@ -18,17 +60,19 @@ _Last updated: 2026-07-10_
   impromptu speaking, vocal delivery, SCQA presentations, business writing,
   meetings/feedback, Q&A, persuasion, data storytelling, remote presence)
   + 3 new widgets (before-after, word-hunt, practice-timer). Content is in
-  the repo; run `scripts/seed_communication_course.sql` on production to
-  register it
-- No hosted deployment yet — the app runs locally via `npm run dev`; local
-  copies must be updated to latest `main` to get the visual-lesson players
+  the repo; to go live: `vercel --prod`, then run
+  `scripts/seed_communication_course.sql` in the Supabase SQL editor
+
 
 **Next up** (see CLAUDE.md for details):
+- Verify background audio on a physical device; iOS TestFlight build; create a
+  Play Console app record so Android can move from sideloaded APK to internal testing
+- Offline lesson downloads and Google sign-in in the shell (`expo-auth-session`)
 - Pre-generated Spanish TTS audio for kids' questions (replacing browser TTS)
 - Atomic coin-increment RPC + per-day earning caps
 - Kid profiles under a parent account
 - More ML lessons/widgets (backprop, eval metrics, transformer end-to-end)
-- Host the app (e.g. Vercel auto-deploy from `main`)
+- Vercel auto-deploy on push to `main` (currently manual `vercel --prod`)
 
 ## Features
 

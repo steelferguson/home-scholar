@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "RAG: The Retrieval Half",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Why RAG exists (the one-paragraph version)\n\nModels know what they were trained on; your product needs them to answer from YOUR docs, current and correct, with citations. Retrieval-augmented generation bolts a search system onto the model: retrieve the relevant passages, put them in the prompt, instruct the model to answer from them.\n\nBefore designing it, defend choosing it. The three ways to get knowledge into a model:\n\n- **RAG**: knowledge changes often, needs citations, per-tenant isolation. Cost: an index to operate + retrieval latency.\n- **Fine-tuning**: teaches BEHAVIOR (style, format, task skill), not fresh facts. Wrong tool for \"our docs changed.\"\n- **Long context (stuff everything in)**: viable for small corpora (tens of pages); dies on cost, TTFT, and the model's attention as the corpus grows.\n\nThe interview sentence: \"docs change weekly and answers need citations, so RAG; fine-tuning would bake in stale knowledge, and the corpus is too big to stuff into context every turn.\""
+    },
+    {
+      "type": "text",
+      "md": "## The pipeline: two halves\n\n**Ingestion (offline):** documents → chunking → embed each chunk → store vectors + text + metadata in an index. Runs on every doc change.\n\n**Query (online):** user question → (optionally rewrite it) → embed → search the index → take top-k chunks → rerank → stuff the winners into the prompt → generate with citations.\n\nDraw those as two separate flows in the interview; they have different scaling, freshness, and failure properties. Ingestion is a data pipeline (batch, retryable, eventually consistent). Query is on the latency path (every millisecond shows)."
+    },
+    {
+      "type": "text",
+      "md": "## Chunking: the unglamorous decision that matters most\n\nThe index stores chunks, not documents, and chunk quality bounds answer quality:\n\n- **Size**: a few hundred tokens is the working range. Too small = fragments with no context; too big = diluted embeddings and wasted prompt budget.\n- **Boundaries**: split on structure (sections, headings, paragraphs), never mid-sentence at a fixed byte count. Overlap adjacent chunks slightly so answers spanning a boundary survive.\n- **Attach metadata**: doc title, section header, URL, updated_at on every chunk. The model cites from these, and filters (tenant, product line, date) run on them.\n- **Prepend context**: a chunk that starts \"you can cancel anytime\" embeds and reads better as \"Refund policy > Subscriptions: you can cancel anytime.\"\n\nWhen a RAG system disappoints, the fix is more often chunking and metadata than a fancier vector database."
+    },
+    {
+      "type": "quiz",
+      "question": "Your RAG bot answers \"what's the refund window?\" with a passage from the WRONG product's policy. Both products' docs are in the index. Cheapest robust fix?",
+      "choices": [
+        "A bigger embedding model",
+        "Metadata filtering: tag chunks with product/tenant at ingestion and filter the search to the user's product before ranking",
+        "Increase top-k so the right passage is probably in there too",
+        "Fine-tune the model on the docs"
+      ],
+      "answer": 1,
+      "explain": "This is a filtering problem, not a similarity problem: the two passages are legitimately near-identical in embedding space. Scope the search with metadata (product, tenant, locale) and the confusion is structurally impossible. Raising top-k just hands the model both policies and hopes: hope is not isolation, especially across TENANTS, where this same mechanism is a security boundary."
+    },
+    {
+      "type": "text",
+      "md": "## Search: dense, sparse, hybrid, rerank\n\n- **Dense (embeddings)**: catches meaning (\"can I get my money back\" matches \"refund policy\"). Misses exact identifiers.\n- **Sparse (BM25 keyword)**: catches exact strings (error codes, SKUs, names). Misses paraphrase.\n- **Hybrid**: run both, merge (reciprocal rank fusion). The production default; say it by name.\n- **Rerank**: over-retrieve (top 25-50 cheap), then a cross-encoder or small LLM scores each candidate against the query and you keep the best 3-5. Big precision win for one extra hop on the latency path.\n\nAnd the trick with outsized returns: **query rewriting**. Users ask \"what about the other one?\": a small model rewrites it into a self-contained query (\"refund window for the Pro plan\") using conversation context, BEFORE retrieval. Conversational products without query rewriting retrieve garbage on every follow-up question."
+    },
+    {
+      "type": "quiz",
+      "question": "Turn 1: \"What's the refund window for Pro?\" (answered correctly). Turn 2: \"and for Enterprise?\" retrieves nothing useful. What broke?",
+      "choices": [
+        "The embedding model is too small",
+        "The raw follow-up (\"and for Enterprise?\") was embedded as-is: without query rewriting from conversation context, the query carries almost no signal",
+        "The index is stale",
+        "top-k is too low"
+      ],
+      "answer": 1,
+      "explain": "\"and for Enterprise?\" embeds as a nearly meaningless fragment. The fix is a cheap LLM pass that rewrites follow-ups into standalone queries (\"Enterprise plan refund window\") before embedding. This is among the most common real-world RAG failures and among the cheapest to fix: a routed small-model call (lesson 2 pattern)."
+    },
+    {
+      "type": "text",
+      "md": "## Freshness, grounding, and the abstain path\n\n**Freshness**: docs change; the index must follow. Event-driven re-ingestion (on doc save) beats nightly batch when staleness has a cost. Track updated_at per chunk and expose it: \"per the policy updated May 3...\" both builds trust and surfaces staleness bugs.\n\n**Grounding**: instruct the model to answer ONLY from the retrieved passages and cite them. Then verify: a cheap post-hoc check that each claim maps to a cited chunk (a small-model judge works) catches the confident-fabrication failure mode.\n\n**The abstain path is a feature**: when retrieval comes back weak (low scores, no reranked survivors), the right answer is \"I don't have that information,\" or a handoff, not a guess. Systems without an explicit abstain path hallucinate exactly when retrieval fails, which is exactly when it's most dangerous."
+    },
+    {
+      "type": "text",
+      "md": "## Evaluating RAG: two components, two evals\n\nEvaluate the halves separately or you can't debug:\n\n- **Retrieval eval**: for a set of real questions with known source passages, measure recall@k (is the right chunk in the top k?). No LLM involved, fast, cheap, run on every index/chunking change.\n- **End-to-end eval**: judge the final answers for faithfulness (only claims supported by retrieved text), correctness, and citation accuracy: LLM-as-judge with a rubric, spot-checked by humans.\n\nThe diagnostic logic in an interview: **bad answer + right chunk retrieved = generation problem; bad answer + wrong chunks = retrieval problem.** Chunking changes move recall@k; prompt changes move faithfulness. Saying \"I'd instrument the halves separately\" is a senior sentence.\n\nNext lesson: the agent loop: tools, autonomy, and the failure modes that come with giving the model hands."
+    }
+  ]
+}

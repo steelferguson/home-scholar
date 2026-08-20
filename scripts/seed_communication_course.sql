@@ -5,7 +5,7 @@
 INSERT INTO courses (slug, title, description, language_from, language_to, lesson_count, sort_order, audience) VALUES
   ('business-communication', 'Business Communication — Speak & Write with Structure',
    'Structured thinking and communication for work: the Pyramid Principle, MECE, impromptu-speaking frameworks, vocal delivery (pace, pauses, fillers), SCQA presentations, business writing, meetings & feedback, Q&A under pressure, persuasion, data storytelling, and remote presence. Interactive drills throughout.',
-   'English', 'English', 11, 6, 'adult')
+   'English', 'English', 11, 13, 'adult')
 ON CONFLICT (slug) DO UPDATE
   SET title = EXCLUDED.title, description = EXCLUDED.description, lesson_count = EXCLUDED.lesson_count;
 

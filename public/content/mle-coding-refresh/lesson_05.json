@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Logistic Regression, Trained By You",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The most-asked from-scratch model\n\n\"Implement logistic regression with gradient descent\" is the single most common ML coding question. It tests the full loop: model, loss, gradients, update, and proof that it learned. Everything here transfers to neural nets; this is the one to know cold."
+    },
+    {
+      "type": "math",
+      "md": "### The model\n\nA linear score squashed to a probability:",
+      "tex": "p = \\sigma(Xw + b), \\qquad \\sigma(z) = \\frac{1}{1 + e^{-z}}"
+    },
+    {
+      "type": "math",
+      "md": "### The loss: binary cross-entropy (mean over n samples)\n\nConfidently wrong predictions are punished without bound, which is exactly the training signal you want:",
+      "tex": "\\mathcal{L} = -\\frac{1}{n} \\sum_i \\left[ y_i \\log p_i + (1 - y_i) \\log(1 - p_i) \\right]"
+    },
+    {
+      "type": "math",
+      "md": "### The gradients: memorize these two\n\nFor the mean loss, they collapse to something beautifully simple (the σ terms cancel):",
+      "tex": "\\frac{\\partial \\mathcal{L}}{\\partial w} = \\frac{1}{n} X^\\top (p - y), \\qquad \\frac{\\partial \\mathcal{L}}{\\partial b} = \\frac{1}{n} \\sum_i (p_i - y_i)"
+    },
+    {
+      "type": "text",
+      "md": "## The whole thing in numpy\n\n```python\ndef train_logreg(X, y, lr=0.5, epochs=300):\n    n, d = X.shape\n    w, b = np.zeros(d), 0.0\n    losses = []\n    for _ in range(epochs):\n        z = np.clip(X @ w + b, -500, 500)     # exp overflow guard\n        p = 1 / (1 + np.exp(-z))\n        p = np.clip(p, 1e-12, 1 - 1e-12)      # log(0) guard\n        losses.append(-np.mean(y*np.log(p) + (1-y)*np.log(1-p)))\n        dw = X.T @ (p - y) / n\n        db = np.mean(p - y)\n        w -= lr * dw                           # MINUS: descent\n        b -= lr * db                           # don't forget b!\n    return w, b, losses\n```\n\nNarrate the shapes as you write: X.T is (d, n), (p - y) is (n,), so dw is (d,), matching w."
+    },
+    {
+      "type": "widget",
+      "widget": "gradient-descent-ball",
+      "md": "### What the update rule is doing\n\nEach step moves the weights a little way downhill on the loss surface. Play with the learning rate: too small crawls, too large overshoots and oscillates."
+    },
+    {
+      "type": "quiz",
+      "question": "You typo the update as w = w + lr * dw. What do you observe when you train?",
+      "choices": [
+        "Nothing changes; the sign convention is arbitrary",
+        "Loss INCREASES every epoch: you're doing gradient ASCENT on the loss",
+        "Loss decreases but more slowly",
+        "NaN on the first epoch"
+      ],
+      "answer": 1,
+      "explain": "The gradient points uphill; descent subtracts it. With + you maximize the loss, so it climbs steadily. That symptom (loss rising smoothly from epoch 0) means CHECK THE SIGN first. It's the #1 planted bug in ML debugging rounds."
+    },
+    {
+      "type": "quiz",
+      "question": "Binary problem, balanced classes, weights initialized to zero. What should the loss be at epoch 0?",
+      "choices": [
+        "0",
+        "About 0.69 (that's ln 2): the model predicts p=0.5 for everything",
+        "About 1.0",
+        "Depends on the features"
+      ],
+      "answer": 1,
+      "explain": "Zero weights make z=0, so sigmoid gives p=0.5 everywhere, and -log(0.5) = ln 2 ≈ 0.693. Knowing this number cold lets you sanity-check a training loop at a glance: multi-class version is log(C). If epoch-0 loss isn't ~0.69, the bug is in your loss code, not your training."
+    },
+    {
+      "type": "quiz",
+      "question": "Someone feeds your implementation features scaled up 1000x and the loss goes NaN. Which guard was missing?",
+      "choices": [
+        "Clipping z before exp (or standardizing the features): exp(-z) overflows for large |z|",
+        "More epochs",
+        "A smaller batch size",
+        "Regularization"
+      ],
+      "answer": 0,
+      "explain": "Huge features make |z| huge; exp overflows to inf and produces NaNs. np.clip(z, -500, 500) fixes the symptom; standardizing features fixes the cause (and speeds convergence). Mentioning BOTH is the strong answer."
+    },
+    {
+      "type": "text",
+      "md": "## Prove it learned\n\nThe standard interview closing move, in three asserts:\n\n```python\nw, b, losses = train_logreg(X_toy, y_toy)   # tiny separable data\nassert losses[-1] < losses[0]               # loss went down\nassert losses[0] - np.log(2) < 1e-6         # started where theory says\nassert (predict(X_toy, w, b) == y_toy).all()  # overfit toy data: 100%\n```\n\n\"Overfit a tiny dataset on purpose\" is the universal sanity check for ANY training loop, from logreg to transformers. Name it, do it, move on.\n\n**Next lesson:** decoding: greedy vs beam search, the reported real Cresta question."
+    }
+  ]
+}

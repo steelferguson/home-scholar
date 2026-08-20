@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Live Multi-LLM Build",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The format\n\nA growing interview format, especially at AI companies:\n\n> \"We'll spend about an hour building an application where multiple LLM inferences work together to accomplish a task. We'll start simple and layer on complexity. We won't be writing much code by hand; it's about the quality of your ideas and how you prompt the coding agent.\"\n\nRead that carefully, because it tells you exactly what is and is not being tested. Not syntax recall. Not algorithms. They are testing whether you can DESIGN a compound AI system and DIRECT an agent to build it, live, under time pressure, while thinking out loud.\n\nThese next modules are that skill: the pattern vocabulary, the layering judgment, the live prompting craft, and a worked hour."
+    },
+    {
+      "type": "text",
+      "md": "## What is actually graded\n\nFour things, roughly in order of weight:\n\n1. **Quality of ideas**: do you know the multi-inference patterns, do you pick appropriate ones for THIS problem, and can you articulate the tradeoffs. This is the headline and the next module is entirely about it.\n2. **Prompting the agent**: can you specify work clearly enough that the agent builds the right thing fast, and iterate efficiently when it does not.\n3. **Judgment under time**: what you build first, what you deliberately skip, when you stop polishing and move to the next layer.\n4. **Verification instinct**: do you actually check that each layer works, or do you assume.\n\nNotice what is absent: typing speed, memorized APIs, clever one-liners. If you find yourself competing on those, you have misread the room."
+    },
+    {
+      "type": "quiz",
+      "question": "In this format, the interviewer says 'we won't write much code by hand.' What does that most change about how you should spend the hour?",
+      "choices": [
+        "Spend it typing prompts as fast as possible to maximize output",
+        "Spend it on design and direction: choosing the architecture, deciding which patterns fit, narrating tradeoffs, and verifying each layer, because the code production is no longer the bottleneck or the signal",
+        "Spend it explaining your resume",
+        "Spend it reading the agent's code line by line for style"
+      ],
+      "answer": 1,
+      "explain": "Removing hand-typing removes the bottleneck that used to consume interview time, which means the hour is now available for the thing they actually want to see: your design thinking. Candidates who treat it as a speed-typing contest produce a lot of unexamined code and demonstrate none of the judgment being graded. The code is a byproduct; the reasoning is the artifact."
+    },
+    {
+      "type": "text",
+      "md": "## The hour, budgeted\n\nA shape that works, adapt to their pacing:\n\n- **0-8 min, scope and design.** Clarify the task, state assumptions, propose the v1 architecture out loud, and say what layers you expect to add later. This is where you plant your best ideas early, before any code exists.\n- **8-20 min, v1 end to end.** The simplest thing that runs: usually a single chain, hardcoded input, printed output. The goal is a working spine, not a good product.\n- **20-45 min, layering.** Add complexity one layer at a time, driven by observed weakness. This is the heart of the interview and the next-next module.\n- **45-55 min, robustness or scale.** Whichever the problem calls for: validation between stages, retries, budget caps, parallelism, caching.\n- **55-60 min, close.** Summarize what you built, what you would add next, and the top risks. A crisp close leaves them with your reasoning, not your last bug.\n\nThe most common time bug is over-building v1 and never reaching the layers, which is where the interesting judgment lives."
+    },
+    {
+      "type": "text",
+      "md": "## How to open\n\nThe first three minutes set the tone. Do these in order:\n\n1. **Clarify the task and success criteria**: what does the app take in, what does it produce, and what makes an output GOOD. If quality is fuzzy (\"a good summary\"), say how you will judge it, because that decision drives whether you need a verifier layer later.\n2. **State constraints and assumptions**: latency expectations, cost sensitivity, how big the inputs get, whether you may use a real API or should stub it. Do not wait to discover these.\n3. **Propose the architecture out loud, before touching the agent**: \"I'll start with a single chain: extract, then generate. Once that runs, I want to add a verifier stage, because the failure mode I expect is unsupported claims. If we have time I'd add fan-out for long inputs.\"\n\nThat third move is the single highest-value thing you can do. You have just shown your pattern vocabulary, your failure-mode intuition, and your layering plan, all before writing a line. Everything after is executing a plan they already know is sound."
+    },
+    {
+      "type": "text",
+      "md": "## The failure modes to avoid\n\nFive ways candidates lose this interview:\n\n- **Over-building v1**: forty minutes on a beautiful single-stage app, no layering, no compound system. You answered a different question than the one asked.\n- **Letting the agent architect**: prompting \"build me an app that does X\" and accepting its structure. You outsourced the graded part. YOU decide the architecture; the agent types it.\n- **Silence**: working heads-down while the interviewer watches a progress bar. Your ideas are the product; unspoken ideas do not count.\n- **No verification**: layering complexity on top of a stage you never confirmed works, then debugging a tangle at minute 50.\n- **Fanciness without reason**: adding a debate ensemble because it sounds sophisticated, when the actual weakness was unvalidated JSON. Every layer should answer an observed problem.\n\nNext module: the pattern library, which is the vocabulary that makes the design conversation possible."
+    }
+  ]
+}

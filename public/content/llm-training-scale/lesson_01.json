@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Tokenization, Deeply",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## What this course is\n\nThe engineering half of an LLM role: how text becomes tokens becomes embeddings, how language models are trained, and how you train them across many GPUs efficiently. It maps directly to a job that calls for distributed training, hardware efficiency, tokenization, embeddings, and language-modeling techniques, with a Safety-ML slant where it helps.\n\nEach lesson is one area, explained before shown, with quizzes as checkpoints. This is denser than the interview-format courses because the material is technical; read it as a refresher you can talk fluently about, not a reference to memorize."
+    },
+    {
+      "type": "text",
+      "md": "## Why tokenization exists\n\nA model operates on a fixed vocabulary of integer IDs, not raw text. Tokenization is the bridge, and the design tension is a three-way tradeoff:\n\n- **Word-level**: intuitive, but the vocabulary explodes (every typo, name, and inflection is a new word) and anything unseen becomes a single unknown token, losing information.\n- **Character-level**: tiny vocabulary, nothing is ever out-of-vocabulary, but sequences get very long and each token carries almost no meaning, so the model works harder to learn.\n- **Sub-word**: the compromise every modern LLM uses. Common strings stay whole, rare words shatter into reusable pieces. No out-of-vocabulary, and sequence lengths stay reasonable.\n\nThe one-sentence answer to \"why sub-word\": it makes the out-of-vocabulary problem disappear while keeping sequences short enough to model."
+    },
+    {
+      "type": "text",
+      "md": "## BPE: the algorithm\n\nByte-pair encoding is the most common sub-word method. Training it:\n\n1. Start with every word as a sequence of characters (or bytes).\n2. Count all adjacent symbol pairs across the corpus.\n3. Merge the most frequent pair into one new symbol everywhere.\n4. Repeat for a fixed number of merges (which sets the vocabulary size).\n\nTokenizing new text replays the learned merges in order. The vocabulary is the base characters plus every merged symbol.\n\nThe modern refinement worth naming: **byte-level BPE** (GPT-2 onward) starts from raw bytes rather than Unicode characters, so the base vocabulary is exactly 256 and literally any input, any language, emoji, garbage bytes, is representable with zero true unknowns. For a platform like Reddit with wildly diverse and adversarial text, byte-level is the right default."
+    },
+    {
+      "type": "quiz",
+      "question": "Why does byte-level BPE matter more for a platform like Reddit than for a curated English corpus?",
+      "choices": [
+        "It produces shorter sequences on English text",
+        "Reddit text is adversarial and multilingual (many languages, emoji, code, deliberate obfuscation, novel slang), and byte-level BPE guarantees ANY input is representable with no true unknown tokens, so obfuscated or foreign content never collapses to a lossy <UNK>",
+        "It uses a smaller model",
+        "It removes the need for a vocabulary"
+      ],
+      "answer": 1,
+      "explain": "On clean English almost anything is well-covered either way. The win shows up on the messy tail: an emoji-laden comment, transliterated text, zero-width characters used to evade filters, a code block. Byte-level BPE represents all of it losslessly because every byte is in the base vocab. For safety work specifically, adversaries obfuscate to dodge detection, and you do not want your tokenizer throwing away the very signal you are trying to catch."
+    },
+    {
+      "type": "text",
+      "md": "## The other tokenizers, briefly\n\n- **WordPiece** (BERT): like BPE but merges the pair that most increases corpus likelihood rather than the most frequent pair. Marks sub-word continuations with `##`.\n- **Unigram / SentencePiece** (T5, LLaMA): starts from a large vocabulary and prunes down, keeping tokens by a probabilistic model; SentencePiece treats the input as a raw stream (spaces become a real token, often the underscore-like character), so it is language-agnostic and reversible.\n\nWhat matters for an interview is not reciting these but knowing the axis they vary on: how the vocabulary is chosen (frequency vs likelihood vs pruning) and whether they operate on characters, bytes, or a raw stream. You can then reason about any tokenizer you meet."
+    },
+    {
+      "type": "text",
+      "md": "## Where tokenization bites in practice\n\nThe consequences a practitioner has to hold:\n\n- **Token count is cost and latency.** Prompt length is measured in tokens, and inefficient tokenization (a domain the tokenizer was not trained on) inflates every call. Code, non-English, and heavy punctuation often tokenize badly on a general tokenizer.\n- **The tokenizer must match the model.** Feeding a model text tokenized by a different tokenizer produces garbage, because the IDs mean different things. Tokenizer and model weights ship together.\n- **Special tokens carry structure.** BOS, EOS, PAD, and chat-format tokens (system/user/assistant delimiters) are part of the vocabulary and the model was trained to respect them. Getting the chat template wrong is a very common silent bug.\n- **Numbers and rare strings fragment.** '2026' might be one token or four, which is why raw arithmetic is hard for LLMs and why exact-string tasks can surprise you.\n\nFor safety: adversaries exploit tokenization (splitting a slur with zero-width joiners so it tokenizes differently), so robust preprocessing and normalization sit right next to the tokenizer. Next lesson: what the token IDs turn into, embeddings."
+    }
+  ]
+}

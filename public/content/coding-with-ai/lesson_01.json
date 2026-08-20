@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "From Author to Director",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## What this course is\n\nCoding with AI is not \"typing prompts instead of code.\" It is a different job, and doing it well is a learnable skill with its own failure modes. This course is the thinking framework: how to take a coding assignment (a take-home, a feature, a whole project) and drive AI to build it correctly and fast.\n\nEvery lesson is one idea, explained before shown, with quizzes that ask you to commit to an answer. The goal is a repeatable process you run without thinking, so that under time pressure or on a hard problem, your judgment stays in charge."
+    },
+    {
+      "type": "text",
+      "md": "## The core shift\n\nWithout AI, your value was largely in TRANSLATION: turning a clear intent in your head into correct syntax. That is the part AI now does in seconds.\n\nSo your value moves up a level, to the two things AI cannot do for you:\n\n1. **Deciding what should exist**: the problem definition, the architecture, the interfaces, the tradeoffs.\n2. **Judging whether what came back is right**: correctness, quality, whether it actually solved the real problem.\n\nYou go from author to director. The AI is a fast, capable, literal-minded implementer who will build exactly what you describe, including your mistakes, with total confidence. Your job is to describe the right thing and to catch it when it is wrong."
+    },
+    {
+      "type": "text",
+      "md": "## What stays irreducibly yours\n\nFour things do not delegate, and naming them keeps you from drifting into autopilot:\n\n- **The problem**: what are we actually solving, for whom, and what does done mean. AI will happily solve the wrong problem beautifully.\n- **The architecture**: how the pieces fit, where the seams are, what the interfaces look like. This is the load-bearing judgment.\n- **The correctness bar**: what would prove this works, and whether the output clears it.\n- **The taste**: is this the simple solution or an over-built one, does it fit the codebase, will the next person understand it.\n\nDelegate the mechanical middle. Own the ends."
+    },
+    {
+      "type": "quiz",
+      "question": "A colleague says AI-assisted coding made them 'just a prompt typist.' What did they most likely get wrong about the role?",
+      "choices": [
+        "They should type prompts faster",
+        "They abdicated the director's work (problem definition, architecture, correctness judgment) and kept only the translation step, which is exactly the part AI absorbs: the value moved up a level and they stayed at the old one",
+        "They should use a better AI model",
+        "Prompt typing is the whole job now"
+      ],
+      "answer": 1,
+      "explain": "If the job feels like 'just typing prompts,' you are operating at the translation layer AI took over, not the direction layer it opened up. The skill is not prompting faster; it is deciding what to build and judging what came back. Those who feel replaced skipped the level the tool actually elevated them to."
+    },
+    {
+      "type": "text",
+      "md": "## The two failure modes\n\nEvery bad AI-coding session sits at one of two extremes. Learn to feel which way you are drifting:\n\n- **Micromanaging**: you dictate every line through the AI, correcting syntax, never trusting a chunk. You get no speedup, just a slower keyboard. Usually a trust problem, or tasks too small to delegate.\n- **Abdicating**: you accept whatever appears, run it, and hope. Fast until it is wrong, and then you are debugging code you never understood, which is slower than writing it yourself would have been. Usually a laziness problem, or tasks too big to verify.\n\nThe skill lives in the middle: delegate chunks big enough to save real time, small enough that you can verify each one in a single careful read. The rest of this course is how to find and hold that middle."
+    },
+    {
+      "type": "text",
+      "md": "## The one principle under all of it\n\nEverything downstream reduces to a single sentence, worth memorizing:\n\n> **AI makes you faster, not braver.** Apply the same rigor you would to your own code, at higher speed.\n\nThe temptation is to relax standards because the code came from a capable model and looks polished. That is precisely backwards: output you did not write needs MORE scrutiny, not less, because you lack the understanding that comes from having built it.\n\nNext lesson: it starts before any prompt, with reading the assignment like an engineer."
+    }
+  ]
+}

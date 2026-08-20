@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Language Modeling and the Transformer",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The objective that trains everything\n\nA language model is trained to predict tokens. Two flavors, and the difference shapes what the model is good at:\n\n- **Causal / autoregressive** (GPT, LLaMA): predict the NEXT token given all previous tokens. The model only attends backward (causal mask). This is what generative LLMs use.\n- **Masked** (BERT): hide some tokens and predict them from BOTH sides (bidirectional). Great for understanding and classification, not for generation.\n\nBoth are self-supervised: the label is just the text itself, so you can train on unlimited unlabeled data. That is the whole reason LLMs scale, no human labeling bottleneck for pretraining. The loss is cross-entropy over the vocabulary at each position, the same loss from the metrics lesson."
+    },
+    {
+      "type": "text",
+      "md": "## Encoder, decoder, or both\n\nThe architecture follows the objective:\n\n- **Encoder-only** (BERT): bidirectional, masked objective. Best for classification, extraction, retrieval, exactly the understanding tasks a safety team runs at volume. Do not sleep on these: for scoring billions of comments, a fine-tuned encoder is often faster, cheaper, and more accurate than a generative LLM.\n- **Decoder-only** (GPT, LLaMA): causal, next-token. Best for generation and few-shot. The dominant form for general LLMs.\n- **Encoder-decoder** (T5, original transformer): encode an input, decode an output. Natural for translation and structured seq-to-seq.\n\nFor a Safety-ML role the encoder-vs-decoder judgment is a real one to voice: if the task is 'classify this comment,' a fine-tuned encoder beats prompting a big decoder on cost and latency at Reddit scale, and you should say when you would reach for which."
+    },
+    {
+      "type": "quiz",
+      "question": "For classifying billions of Reddit comments against a fixed policy taxonomy, why might a fine-tuned encoder (BERT-style) beat prompting a large decoder LLM?",
+      "choices": [
+        "Encoders are always more accurate",
+        "At that volume, cost and latency dominate: a small fine-tuned encoder runs far cheaper and faster per item, is bidirectional (good for classification), and gives calibrated class probabilities, whereas a large decoder LLM is expensive per call and overkill for a fixed-label task; reserve the big model for the hard, ambiguous tail",
+        "Decoders cannot classify",
+        "Encoders do not need training data"
+      ],
+      "answer": 1,
+      "explain": "The engineering instinct being tested: match model class to task and scale. A fixed taxonomy over enormous volume is the encoder's home turf, cheap, fast, bidirectional, well-calibrated. The generative LLM earns its cost only where the task is open-ended, few-shot, or needs reasoning over novel policy, which is the ambiguous minority. Saying 'I would tier it, encoder for the bulk, LLM for the hard cases' shows you think about resources, which this JD explicitly wants."
+    },
+    {
+      "type": "text",
+      "md": "## Inside the transformer block\n\nEach layer is two sub-blocks, each wrapped with a residual connection and normalization:\n\n1. **Self-attention**: every position looks at every other (masked to backward-only for causal models). softmax(QK^T / sqrt(d)) V. This is where tokens exchange information. Multi-head means several attention computations in parallel, each on a slice of the dimensions, capturing different relationships.\n2. **Feed-forward (MLP)**: a per-position two-layer network, usually 4x the model width, where most of the parameters and much of the stored knowledge live.\n\nGlue that makes deep stacks trainable:\n\n- **Residual connections**: add the input back to each sub-block's output, so gradients flow through even very deep stacks.\n- **Layer norm**: stabilizes activations. Modern models use pre-norm (norm before the sub-block) and often RMSNorm for efficiency.\n- The /sqrt(d) in attention keeps dot products from growing with dimension and saturating the softmax."
+    },
+    {
+      "type": "text",
+      "md": "## The training stages of a modern LLM\n\nWorth knowing as a pipeline, because interviews probe where a change belongs:\n\n1. **Pretraining**: next-token prediction on a huge corpus. Builds raw capability. Enormously expensive, the distributed-training problem the rest of this course is about.\n2. **Supervised fine-tuning (SFT)**: train on curated instruction/response pairs so the model follows instructions and adopts a format.\n3. **Preference tuning (RLHF / DPO)**: align to human preferences using comparison data. RLHF uses a reward model plus RL; DPO optimizes the preference objective directly and is simpler.\n\nFor a safety team, most work lives in the fine-tuning and adaptation layers, plus training specialized classifiers, rather than pretraining from scratch. Knowing that 'fresh facts and policy go in via fine-tuning or retrieval, not by pretraining again' is the practical framing."
+    },
+    {
+      "type": "text",
+      "md": "## Efficient adaptation: LoRA and friends\n\nFull fine-tuning updates all weights, which is expensive to train and store. Parameter-efficient methods update a tiny fraction:\n\n- **LoRA**: freeze the model, inject small low-rank matrices into each weight, train only those. A LoRA adapter is often under 1% of the model size, so you can train many task-specific adapters cheaply and swap them at serve time.\n- **QLoRA**: LoRA on top of a quantized (4-bit) base model, so you can fine-tune a large model on a single GPU. The base is frozen and quantized; only the small adapters are trained in higher precision.\n\nWhy this matters for the role: a safety team needs many specialized models (per policy area, per language, per surface) and cannot afford a full fine-tune each. LoRA adapters are how you get many tuned behaviors from one base model without exploding storage or training cost. Next lesson: the memory and compute reality that forces distributed training in the first place."
+    }
+  ]
+}

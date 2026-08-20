@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isNativeShell } from '../lib/nativeBridge'
 
 export default function Login({ onEmailSignIn, onEmailSignUp, onGoogleSignIn }) {
   const [email, setEmail] = useState('')
@@ -57,22 +58,28 @@ export default function Login({ onEmailSignIn, onEmailSignUp, onGoogleSignIn }) 
             {loading ? '...' : isSignUp ? 'Sign Up' : 'Sign In'}
           </button>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-400">or</span>
-            </div>
-          </div>
+          {/* Google refuses OAuth from an embedded webview
+              (disallowed_useragent), so the shell is email/password only */}
+          {!isNativeShell && (
+            <>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-400">or</span>
+                </div>
+              </div>
 
-          <button
-            type="button"
-            onClick={onGoogleSignIn}
-            className="w-full py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
-          >
-            Continue with Google
-          </button>
+              <button
+                type="button"
+                onClick={onGoogleSignIn}
+                className="w-full py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
+              >
+                Continue with Google
+              </button>
+            </>
+          )}
 
           <p className="text-center text-sm text-gray-500">
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}

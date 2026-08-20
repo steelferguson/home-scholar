@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Splits, Folds, and Leakage",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Eval hygiene is an interview topic\n\n\"Write k-fold cross-validation\" tests index manipulation. \"Spot what's wrong with this pipeline\" tests whether you understand leakage. Both show up in ML coding rounds, and both are cheap points if you've rehearsed them.\n\nRule one: **don't move data around, move indices.**"
+    },
+    {
+      "type": "text",
+      "md": "## k-fold is index arithmetic\n\nSplit n samples into k folds whose sizes differ by at most 1: the first `n % k` folds get one extra.\n\n```python\ndef kfold_indices(n, k):\n    sizes = [n // k + (1 if i < n % k else 0) for i in range(k)]\n    folds, start = [], 0\n    for size in sizes:\n        val = list(range(start, start + size))\n        train = list(range(0, start)) + list(range(start + size, n))\n        folds.append((train, val))\n        start += size\n    return folds\n```\n\nSelf-check to narrate: folds are disjoint, their union covers all n, and train is always the complement of val."
+    },
+    {
+      "type": "quiz",
+      "question": "kfold_indices(10, 3): what are the validation fold sizes?",
+      "choices": [
+        "[3, 3, 3] and one sample is dropped",
+        "[4, 3, 3]",
+        "[3, 3, 4]",
+        "[5, 3, 2]"
+      ],
+      "answer": 1,
+      "explain": "10 // 3 = 3 with remainder 1, so the FIRST fold gets the extra: [4, 3, 3]. The naive fold_size = n // k with range slicing silently drops the remainder samples; that exact bug is a classic planted-bug exercise."
+    },
+    {
+      "type": "text",
+      "md": "## Standardization and its NaN trap\n\n```python\nmu = X.mean(axis=0)          # column means; axis=0 collapses rows\nsd = X.std(axis=0)\nsd_safe = np.where(sd == 0, 1.0, sd)\nXs = (X - mu) / sd_safe\n```\n\nA constant column has std 0, and dividing by it silently fills your matrix with NaNs that surface three steps later in the loss. Guard it and say why.\n\nnumpy axis rule worth saying out loud: **the axis you pass is the one that disappears**. `X.mean(axis=0)` collapses the rows, leaving one value per column."
+    },
+    {
+      "type": "quiz",
+      "question": "Your training loss is NaN from epoch 0. Which of these is the LEAST likely cause?",
+      "choices": [
+        "A constant feature column divided by std=0 during standardization",
+        "log(0) in the loss because a probability hit exactly 0 or 1",
+        "Too small a learning rate",
+        "exp() overflow on large logits"
+      ],
+      "answer": 2,
+      "explain": "A too-small learning rate makes training SLOW, never NaN. The other three are the classic NaN generators, and all three have the same shape of fix: guard the degenerate value (clip probabilities, shift logits, protect the zero std)."
+    },
+    {
+      "type": "text",
+      "md": "## Leakage: the conceptual bug tests can't catch\n\n```python\n# WRONG: statistics computed on ALL data, including future test folds\nX = (X - X.mean(axis=0)) / X.std(axis=0)\nfor train_idx, val_idx in kfold_indices(len(X), k):\n    model.fit(X[train_idx], y[train_idx])\n    evaluate(X[val_idx], y[val_idx])\n```\n\nThe validation folds contributed their mean and variance to the scaling that the model trained on. Every fold's score is now optimistically biased, all asserts pass, and nothing crashes. **You find leakage by reading, not by running.**\n\nThe fix: fit the scaler on the training fold only, apply it to the validation fold."
+    },
+    {
+      "type": "quiz",
+      "question": "Which of these is NOT data leakage?",
+      "choices": [
+        "Standardizing with mean/std computed over train+test before splitting",
+        "Selecting the top features by correlation with the label using the full dataset, then cross-validating",
+        "Oversampling the minority class before splitting, putting copies of the same row in both train and test",
+        "Tuning hyperparameters on a validation fold, then reporting the final score on a held-out test set"
+      ],
+      "answer": 3,
+      "explain": "Option D is the CORRECT workflow: tune on validation, report on untouched test. The others all let information from evaluation data influence training: scaling stats, feature selection, or literal duplicate rows. The oversampling one is the sneakiest and a favorite interview trap."
+    },
+    {
+      "type": "text",
+      "md": "## The checklist to narrate\n\nWhen handed any eval pipeline, scan in this order:\n\n1. Does every sample land in exactly one validation fold? (remainder bug)\n2. Is any preprocessing fit BEFORE the split? (leakage)\n3. Is the split random when the data is ordered by class or time? (an interleaved or shuffled split, and time-series data must split by time)\n4. Are metrics computed with float division? (`//` returns 0 quietly)\n\n**Next lesson:** the models themselves: KNN and k-means by hand."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Agent Architecture: Giving the Model Hands",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## What an agent actually is\n\nStrip the buzz: an agent is a loop.\n\n```\nwhile not done:\n    response = llm(system_prompt + context + history + tool_results)\n    if response contains tool calls:\n        results = execute(tool_calls)\n        append results to history\n    else:\n        return response          # final answer to the user\n```\n\nThe model decides; your code executes; results feed back; repeat. Everything in agent design is about making this loop capable (good tools, good context), safe (permissions, limits), and debuggable (traces). You've run this loop in production; the interview skill is narrating its parts as deliberate choices."
+    },
+    {
+      "type": "text",
+      "md": "## Tool design: the API surface IS the product\n\nThe agent is exactly as good as its tools. Design rules:\n\n- **Few, well-described tools beat many vague ones.** Every tool's description spends prompt tokens and adds a wrong-choice opportunity. Consolidate: one `search_orders(query, filters)` beats five overlapping lookups.\n- **Schemas with constraints**: typed parameters, enums for closed sets, required vs optional. The model fills schemas surprisingly well when they're precise, and validation catches it when it doesn't.\n- **Errors return as information, not exceptions**: \"order not found; the id format is ORD-XXXXX\" lets the loop self-correct; a stack trace or silent failure kills the turn.\n- **Idempotency for anything that writes**: the loop WILL retry (timeouts, crashes). `issue_refund(order_id, idempotency_key)` makes double-execution harmless. This is the classic distributed-systems discipline arriving in the agent world unchanged.\n- **Read/write split**: reads are free to call liberally; writes get confirmation gates (next step)."
+    },
+    {
+      "type": "quiz",
+      "question": "Your refund tool occasionally executes twice for one user request (timeout, retry, both eventually landed). The durable fix is:",
+      "choices": [
+        "A prompt line: \"never call issue_refund twice\"",
+        "Lower the temperature",
+        "Idempotency keys on the tool: same key, same effect, so retries and duplicate calls collapse into one refund at the SYSTEM level",
+        "Remove retries entirely"
+      ],
+      "answer": 2,
+      "explain": "Prompt instructions are probabilistic; money movement needs guarantees. An idempotency key (derived from conversation + request) makes the operation safe to repeat no matter why it repeated: model confusion, network retry, crash recovery. Removing retries trades a correctness bug for an availability bug. The principle generalizes: never enforce with the prompt what the system can enforce with a mechanism."
+    },
+    {
+      "type": "text",
+      "md": "## Autonomy tiers and confirmation gates\n\nDesign every action into a tier, and say the tiers in the interview:\n\n1. **Free**: reads, searches, drafts. The agent just does them.\n2. **Confirm**: consequential but reversible (send an email, update an address). Agent proposes, user clicks yes. The confirmation must contain the ACTUAL payload (\"refund $43.10 to card ending 4242?\"), not a vague \"proceed?\".\n3. **Human-approval**: high-stakes or policy-bounded (refund above $X, account closure). Queued to a human with full context; the agent drafts, a person owns it.\n4. **Never**: things the agent cannot reach at all: not \"instructed not to,\" but no tool exists and the credential scope doesn't allow it.\n\nTier 4 is the one candidates forget: capability boundaries beat behavioral instructions. If the agent must never delete accounts, the deletion permission shouldn't be in its credential, full stop. Prompt injection (lesson 6) is exactly the attack that turns \"instructed not to\" into \"did.\""
+    },
+    {
+      "type": "text",
+      "md": "## Context management: the loop's memory budget\n\nEvery iteration re-sends the growing history, so context is a budget you manage deliberately. What competes for the window:\n\n```\n[system prompt + tool schemas]   stable (cache-friendly, lesson 2)\n[user memory/profile]            small, curated\n[retrieved knowledge]            per-turn, top-k only\n[conversation history]           GROWS: the thing to manage\n[current turn + tool results]    the working set\n```\n\nThe standard moves:\n\n- **Compaction**: when history passes a threshold, summarize the oldest turns into a paragraph and drop the raw text. Keep recent turns verbatim (they carry the active task state).\n- **Tool-result pruning**: a 200-row query result was useful THIS turn; next turn it's dead weight. Truncate or summarize results before they enter history.\n- **Structured state over transcript**: for long tasks, maintain an explicit scratchpad (\"customer: X, issue: Y, tried: A, B\") the agent updates, instead of hoping the model re-reads 40 turns.\n\nLong-conversation degradation is usually context bloat, not model weakness: the signal drowns."
+    },
+    {
+      "type": "quiz",
+      "question": "Your support agent is sharp for 10 turns, then gets forgetful and repetitive in long conversations, and cost per turn keeps climbing. First fix?",
+      "choices": [
+        "Upgrade to the bigger model",
+        "History compaction: summarize old turns, prune stale tool results, keep a structured scratchpad: the context has bloated past usefulness and every turn re-pays for it",
+        "Raise temperature for variety",
+        "Restart the conversation every 10 turns"
+      ],
+      "answer": 1,
+      "explain": "Climbing per-turn cost plus degrading coherence is the signature of unbounded history: you're re-sending (and the model is re-attending to) an ever-growing transcript full of dead tool output. Compaction + pruning + a scratchpad fixes quality AND cost together. A bigger model raises the ceiling but keeps the same failure curve at higher cost; hard restarts throw away legitimate state."
+    },
+    {
+      "type": "text",
+      "md": "## Single agent vs multi-agent (and orchestration)\n\nThe honest default: **one agent with good tools.** Reach for more only with a reason:\n\n- **Specialist handoff**: routing between genuinely different domains (billing vs technical support) where one prompt can't hold both well. An explicit router + specialist agents, each simpler than the monolith.\n- **Parallel fan-out**: independent subtasks (research five topics) where wall-clock matters; a coordinator merges results.\n- **Separation of powers**: a checker agent that reviews/approves the actor agent's plan: useful when the actor has write-capable tools.\n\nThe costs are real: inter-agent context transfer is lossy, debugging crosses boundaries, latency stacks. The interview move is naming the tradeoff: \"I'd start single-agent; if the prompt turns into three products in a trenchcoat, split along domain lines.\"\n\nFor long-running work (multi-step jobs, waiting on humans or webhooks): **durable execution**: persist the loop's state after each step so a crash resumes instead of restarting, exactly like any workflow engine. Agents are workflows with a probabilistic step in the middle."
+    },
+    {
+      "type": "text",
+      "md": "## Observability: traces or it didn't happen\n\nAn agent turn is a tree: model call → tool calls → results → another model call. When (not if) something goes weird, you need the whole tree:\n\n- **Log every step**: prompts (or their hashes + versions), tool calls with arguments, results, token counts, latencies, model versions. One trace id per conversation turn.\n- **Make replay possible**: with logged inputs you can re-run a bad turn against a new prompt or model and see if it's fixed: that's how prompt changes get validated against real failures.\n- **Aggregate the loop metrics**: turns per conversation, tool-error rates, escalation/handoff rates, loop-abort counts (hit max iterations). These are your early-warning gauges; a spike in tool errors usually means an upstream API changed shape.\n\nThe closing line for this section of an interview: \"agent debugging is distributed-systems debugging where one component is stochastic: same discipline, plus versioned prompts and replay.\"\n\nNext lesson: memory: what persists BETWEEN conversations."
+    }
+  ]
+}

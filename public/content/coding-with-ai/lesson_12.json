@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Driving the Coding Agent Live",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Different from everyday AI coding\n\nLessons 1 through 8 covered the craft of building with AI in general. A live interview adds three constraints that change the tactics:\n\n- **The clock**: you cannot afford long review passes on every chunk, so you spend review attention only where correctness matters.\n- **The audience**: someone is watching and grading your reasoning, so silent efficiency is worth less than narrated decisions.\n- **The stakes are the design, not the code**: shipping slightly rough code that demonstrates the right architecture beats polished code with a weak architecture.\n\nThis module is how the general framework compresses under those constraints."
+    },
+    {
+      "type": "text",
+      "md": "## Prompt the stage, not the app\n\nThe single biggest tactical mistake is prompting at app scale (\"build an app that summarizes documents with verification\"). The agent will happily produce 200 lines with an architecture it chose, and you have handed away the graded part while inheriting code you have to read to understand.\n\nInstead, prompt one stage at a time against interfaces you define:\n\n```\nWrite verify_claims(summary: str, source: str) -> list[dict].\nFor each factual claim in the summary, return\n  {\"claim\": str, \"supported\": bool, \"evidence\": str | None}\nwhere evidence is the exact sentence from source that supports it.\nUse one model call. Return parsed JSON. No other behavior.\n```\n\nYou decided the decomposition, the signature, and the contract. The agent does the typing. That is the division the format is testing."
+    },
+    {
+      "type": "quiz",
+      "question": "Why is 'build an app that summarizes documents with claim verification' a weak prompt in this interview specifically?",
+      "choices": [
+        "It is too long",
+        "It delegates the architecture, which is exactly what is being evaluated, and returns a large block of agent-chosen structure you must then read to understand; prompting stage by stage against interfaces you define keeps the design decisions yours",
+        "Agents cannot build whole apps",
+        "It will produce code that does not run"
+      ],
+      "answer": 1,
+      "explain": "The agent can absolutely build it, and that is the problem: the resulting architecture is its judgment, not yours, and the interviewer cannot see your thinking in it. You also lose time reverse-engineering what it chose. Stage-level prompting against your own interfaces keeps the design visible and yours, and it produces smaller diffs you can verify as you go."
+    },
+    {
+      "type": "text",
+      "md": "## Get to running fast, then iterate in small diffs\n\nTwo habits that keep the hour moving:\n\n- **Prioritize a running spine.** Stub what you must (hardcode the input, fake a stage's output) to get end to end executing early. A running system is a platform for every later decision; a non-running one is a debugging session waiting to happen.\n- **Ask for small, targeted changes.** \"Add a validation check after stage 2 that retries once if the JSON does not parse\" beats \"update the code to be more robust.\" Small diffs are fast to review, easy to verify, and do not silently rewrite parts you already confirmed.\n\nWhen the agent produces something large, that is a signal you asked too broadly. Narrow the next ask rather than reading 150 lines under time pressure."
+    },
+    {
+      "type": "text",
+      "md": "## Verify at interview speed\n\nYou cannot do a full review pass on everything. Triage:\n\n- **Run it on a real example after every meaningful change.** This is non-negotiable and it is fast. The output tells you more than reading would.\n- **Read closely only where correctness is subtle**: the verifier's logic, the merge step, anything with a loop cap or a retry. Skim the plumbing.\n- **Check the seams**: print the intermediate structures between stages once. Most compound-system bugs live in the handoff, not inside a stage.\n\nSaying \"let me run it on a real doc and look at the intermediate output before we go further\" is itself a strong signal, and it takes fifteen seconds. Candidates who layer three stages without ever printing an intermediate are building on sand and the interviewer can see it."
+    },
+    {
+      "type": "text",
+      "md": "## Narrate, because your ideas are the deliverable\n\nSilent work produces no evidence of thinking. Keep a running commentary at three moments:\n\n- **Before a prompt**: what you are about to build and why. \"Next I want a verifier stage, independent from the generator, with a claim-level rubric.\"\n- **When output comes back**: what you notice. \"It's checking claims but it's paraphrasing the evidence rather than quoting; I want exact sentences so we can trust the check.\"\n- **At decision points**: the tradeoff. \"I could ensemble here, but the errors look systematic rather than random, so a verifier is the better spend.\"\n\nThis is not performance. It is the actual content of the interview. A candidate who builds a good system silently and one who builds the same system while narrating these three moments do not score the same, and the gap is large."
+    },
+    {
+      "type": "text",
+      "md": "## When the agent goes sideways\n\nUnder time pressure the recovery discipline matters even more than usual:\n\n- **Diagnose before redirecting.** \"That is wrong, try again\" burns a minute and returns a different wrong thing. \"The verifier is marking claims unsupported because it is comparing against the summary instead of the source; fix the argument order\" gets it in one.\n- **Prefer surgical fixes.** Regeneration un-verifies work you already checked, which is expensive when you have three stages standing on each other.\n- **Take over for one-liners.** If the fix is a single line you can see, just type it. A round trip costs more than the keystrokes.\n- **Cut losses on a stuck stage.** If a stage has resisted two attempts, simplify the requirement or stub it and move on. Say so: \"I'll stub the ranking for now and come back if we have time.\" Deliberate stubbing reads as prioritization; silent thrashing reads as being stuck.\n\nNext module: all of it applied to one worked hour."
+    }
+  ]
+}

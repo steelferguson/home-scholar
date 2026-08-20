@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Practical Workflow: GBMs and sklearn",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The other flavor of ML coding question\n\nNot everything is \"implement it in numpy.\" Just as common: **\"here's a dataset, train a model and evaluate it properly.\"** That's sklearn fluency: imports, API names, and the right evaluation moves, from memory. It's pure recall, which makes it exactly what rusts when an AI fills in the boilerplate for you.\n\nThe model of choice for these questions is almost always a **gradient boosted machine**: strong default performance on tabular data, no scaling fuss, built-in feature importance."
+    },
+    {
+      "type": "text",
+      "md": "## The canonical ten lines (burn these in)\n\n```python\nfrom sklearn.model_selection import train_test_split, cross_val_score\nfrom sklearn.ensemble import GradientBoostingClassifier\nfrom sklearn.metrics import accuracy_score, roc_auc_score\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, stratify=y, random_state=42)\n\nmodel = GradientBoostingClassifier(\n    n_estimators=100, learning_rate=0.1, max_depth=3, random_state=0)\nmodel.fit(X_train, y_train)\n\nacc = accuracy_score(y_test, model.predict(X_test))\nauc = roc_auc_score(y_test, model.predict_proba(X_test)[:, 1])\n```\n\nThe import paths are the part people blank on: split and CV live in `model_selection`, models in `ensemble`, metrics in `metrics`."
+    },
+    {
+      "type": "quiz",
+      "question": "What does stratify=y buy you in train_test_split?",
+      "choices": [
+        "Shuffles the data more thoroughly",
+        "Preserves the class ratio in both train and test, so a 70/30 dataset stays 70/30 in each split",
+        "Sorts the split by label",
+        "Guarantees identical splits across runs"
+      ],
+      "answer": 1,
+      "explain": "Without stratification, an unlucky split of an imbalanced dataset can leave the test set with almost no minority-class examples, making your metrics noise. random_state (not stratify) is what makes splits reproducible. Saying \"I'll stratify since the classes are imbalanced\" is a cheap, strong signal."
+    },
+    {
+      "type": "quiz",
+      "question": "roc_auc_score(y_test, model.predict(X_test)) runs fine and returns a number. What's wrong with it?",
+      "choices": [
+        "Nothing, that's the standard usage",
+        "predict() gives hard 0/1 labels, so AUC collapses to evaluating one threshold; you want predict_proba(X_test)[:, 1] to evaluate the ranking",
+        "AUC needs the labels one-hot encoded",
+        "You must pass the training set instead"
+      ],
+      "answer": 1,
+      "explain": "AUC is a RANKING metric (lesson 2: probability a positive outscores a negative). Hard labels throw away the scores, silently degrading AUC toward balanced accuracy. It still runs and returns a plausible number, which is why it's such a common silent bug and a favorite interviewer probe."
+    },
+    {
+      "type": "text",
+      "md": "## GBM in two sentences (they will ask)\n\n> Boosting builds trees **sequentially**, each one fitting the errors (residuals) of the ensemble so far, with a learning rate shrinking each tree's contribution. A **random forest** builds deep trees **in parallel** on bootstrap samples and averages them: forests reduce variance, boosting reduces bias.\n\nThe knobs that matter:\n\n- **n_estimators**: how many trees. More = better fit until it overfits.\n- **learning_rate**: contribution per tree. Lower needs more trees; the classic trade-off (halve one, roughly double the other).\n- **max_depth**: 3 to 6 is the tabular sweet spot; boosted trees stay shallow (random-forest trees run deep).\n- **early stopping** on a validation set: the practical answer to \"how do you pick n_estimators?\"\n\nModern namedrops worth one sentence: XGBoost / LightGBM / HistGradientBoostingClassifier are fast histogram-based implementations of the same idea."
+    },
+    {
+      "type": "quiz",
+      "question": "You drop the learning rate from 0.1 to 0.01 and keep n_estimators=100. What do you expect?",
+      "choices": [
+        "Roughly the same model, 10x faster",
+        "Underfitting: each tree contributes 10x less, so 100 trees no longer add up to enough model; you'd raise n_estimators to compensate",
+        "Immediate overfitting",
+        "No effect; learning_rate only changes training speed"
+      ],
+      "answer": 1,
+      "explain": "learning_rate scales each tree's contribution, so rate times trees is roughly the total capacity budget. Low rate + many trees usually generalizes best but costs compute. Stating that trade-off, then \"I'd use early stopping rather than guessing n_estimators,\" is the complete answer."
+    },
+    {
+      "type": "quiz",
+      "question": "The interviewer asks why you didn't standardize features before the GBM. Best answer?",
+      "choices": [
+        "Oversight, let me add a StandardScaler",
+        "Trees split on thresholds, so monotonic feature scaling doesn't change any split; scaling matters for distance- and gradient-based models like KNN, SVMs, logistic regression, and neural nets",
+        "GBMs standardize internally",
+        "Standardizing is deprecated"
+      ],
+      "answer": 1,
+      "explain": "A tree asking \"is feature 3 > 5.2?\" asks the equivalent question after any monotonic rescaling, so scaling is a no-op for tree ensembles. Knowing WHICH model families need scaling (and that if you do scale, it goes inside a Pipeline fit on train only, per the leakage lesson) separates practitioners from tutorial-followers."
+    },
+    {
+      "type": "text",
+      "md": "## Cross-validation and importances, the one-liners\n\n```python\nscores = cross_val_score(model, X, y, cv=5, scoring=\"roc_auc\")\nprint(scores.mean(), scores.std())   # report both\n\nimport numpy as np\ntop_k = np.argsort(model.feature_importances_)[::-1][:k]\n```\n\nTwo talking points: report the fold **std**, not just the mean (a 0.92 ± 0.06 model and a 0.92 ± 0.005 model are different animals), and impurity-based `feature_importances_` are biased toward high-cardinality features; `permutation_importance` is the more honest check if they push.\n\n**Now drill it:** p13 in the handcoding folder is this exact workflow with asserts, written from memory against the clock."
+    }
+  ]
+}

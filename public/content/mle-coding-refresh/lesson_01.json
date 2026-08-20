@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Python That Flows Again",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## Getting the hands back\n\nYou've been coding with AI for years. Your judgment is sharp; your fingers are rusty. This course rebuilds the recall so that in a CoderPad, the idioms flow without a copilot.\n\n**How to use it:** every code block, read it and predict what it does before moving on. Every quiz, commit to an answer before tapping. Passive reading won't rebuild recall; prediction will.\n\nThis lesson: the five tools that solve most \"basics\" questions, and the rust traps that bite returning hand-coders."
+    },
+    {
+      "type": "text",
+      "md": "## Tool 1: dicts do most of the work\n\nThree patterns cover nearly every counting/grouping question:\n\n```python\n# counting, by hand\ncounts = {}\nfor x in items:\n    counts[x] = counts.get(x, 0) + 1\n\n# grouping\nfrom collections import defaultdict\ngroups = defaultdict(list)\nfor w in words:\n    groups[key(w)].append(w)\n\n# counting, the short way\nfrom collections import Counter\nCounter(items).most_common(2)   # [(item, count), ...] descending\n```\n\nOne rule: dict keys must be hashable. Strings, numbers, tuples: yes. Lists: no."
+    },
+    {
+      "type": "quiz",
+      "question": "You need to group words that are anagrams of each other. What's the canonical dict key for a word like \"eat\"?",
+      "choices": [
+        "sorted(\"eat\")  (the sorted list)",
+        "\"\".join(sorted(\"eat\"))  or  tuple(sorted(\"eat\"))",
+        "set(\"eat\")",
+        "hash(\"eat\")"
+      ],
+      "answer": 1,
+      "explain": "sorted() returns a LIST, which isn't hashable and can't be a dict key. Join it into a string or make it a tuple. set(\"eat\") fails on repeated letters (\"aab\" and \"ab\" collide) and sets aren't hashable either."
+    },
+    {
+      "type": "text",
+      "md": "## Tool 2: sorting with tuple keys\n\nOne pattern replaces custom comparators entirely:\n\n```python\n# sort by count descending, then name ascending\nsorted(pairs, key=lambda p: (-p[1], p[0]))\n```\n\nNegate a number to flip that field's direction. And remember: **Python's sort is stable**. Items with equal keys keep their original order, which gives you \"break ties by first appearance\" for free."
+    },
+    {
+      "type": "quiz",
+      "question": "You want the k most frequent items, ties broken by whichever appeared FIRST in the input. You have counts and first_seen index for each item. What key does the job?",
+      "choices": [
+        "key=lambda x: (counts[x], first_seen[x])",
+        "key=lambda x: (-counts[x], first_seen[x])",
+        "key=lambda x: (-counts[x], -first_seen[x])",
+        "key=lambda x: counts[x], reverse=True"
+      ],
+      "answer": 1,
+      "explain": "Count must sort descending (negate it), first-seen index ascending (leave it positive). Option D with reverse=True flips BOTH fields, so ties would break by LAST appearance."
+    },
+    {
+      "type": "text",
+      "md": "## Tools 3-5: iteration, strings, heaps\n\n```python\n# iteration: never range(len(x)) when you need the items\nfor i, x in enumerate(items): ...\nfor a, b in zip(list1, list2): ...\nfirst_index = {x: i for i, x in enumerate(items)}\n\n# strings (immutable!)\nwords = s.split()          # whitespace\ns2 = \"-\".join(words)       # join lives on the SEPARATOR\nrev = s[::-1]\n\n# top-k without sorting everything\nimport heapq\nheapq.nlargest(k, items, key=lambda x: x[1])\n```\n\nBecause strings are immutable, building one with `+=` in a loop copies the whole string every time."
+    },
+    {
+      "type": "quiz",
+      "question": "Building an n-character string with s += ch in a loop is O(n²). What's the idiomatic O(n) fix?",
+      "choices": [
+        "Use a bytearray",
+        "Preallocate the string with s = \" \" * n",
+        "Append pieces to a list, then \"\".join(parts) once at the end",
+        "Use recursion instead of a loop"
+      ],
+      "answer": 2,
+      "explain": "Collect parts in a list (appends are amortized O(1)), join once. This is the standard answer interviewers expect, and saying \"strings are immutable so += copies\" out loud earns the point."
+    },
+    {
+      "type": "text",
+      "md": "## The rust traps\n\nThese are the bugs that come back after years of AI-assisted coding. Each one is a real interview point deduction:\n\n```python\n# 1. Mutable default argument: ONE list shared across ALL calls\ndef collect(x, acc=[]):      # bug\ndef collect(x, acc=None):    # fix: acc = [] if acc is None else acc\n\n# 2. / is float division; // floors\n5 / 2   # 2.5\n5 // 2  # 2\n\n# 3. Assignment aliases; it does not copy\nb = a          # same list!\nb = a[:]       # shallow copy\n\n# 4. Never add/remove while iterating a list; iterate a copy\nfor x in items[:]: ...\n```"
+    },
+    {
+      "type": "quiz",
+      "question": "def add_task(task, tasks=[]): tasks.append(task); return tasks\n\nCalling add_task(\"a\") then add_task(\"b\") returns what?",
+      "choices": [
+        "[\"a\"] then [\"b\"]",
+        "[\"a\"] then [\"a\", \"b\"]",
+        "[\"b\"] then [\"a\"]",
+        "It raises a TypeError"
+      ],
+      "answer": 1,
+      "explain": "Default arguments are evaluated ONCE at function definition. Both calls share the same list, so the second call appends to the first call's list. Fix: default to None and create the list inside."
+    },
+    {
+      "type": "text",
+      "md": "## The ritual that gets graded\n\nCresta told you directly: edge-case thinking is part of the evaluation. Make it a reflex. Before writing any code, say:\n\n> \"Let me note edge cases first: **empty input, single element, all duplicates, ties, k=0, k larger than n**. I'll define tie-breaking as X and handle empty by returning Y.\"\n\nTen seconds, and the interviewer now knows you think before you type. After the happy path passes, actually run those cases.\n\n**Next lesson:** metrics from scratch, where zero denominators are the edge case that bites."
+    }
+  ]
+}

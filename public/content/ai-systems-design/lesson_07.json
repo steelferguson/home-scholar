@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Capstone: Design a Contact-Center AI Agent",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The prompt\n\n*\"Design an AI agent for a company's customer support: it should handle customer conversations across chat and email, resolve what it can, and hand off to human agents when it can't. 50,000 conversations a day.\"*\n\nThis is the capstone because it exercises every lesson, and because if you interview at an agentic-AI company, some version of THIS is the question. Walk it phase by phase, the way you'd narrate it live. Try to answer each phase yourself before reading on."
+    },
+    {
+      "type": "text",
+      "md": "## Phase 1-2: requirements and numbers (7 minutes)\n\nClarifying answers we'll assume (from asking lesson 1's questions): mixed FAQ + account actions; agent CAN act (refunds under $100, address changes) with confirmation; chat is live (streaming), email is async; quality bar: wrong actions are unacceptable, wrong information is bad; handoff to humans exists and is a feature, not a failure.\n\nThe numbers, out loud:\n- 50K conversations/day, ~10 turns each = 500K agent turns/day, ~6 turns/sec average, plan 3-4x peak = **~20-25 turns/sec peak**.\n- ~30K tokens/conversation = **1.5B tokens/day** if everything ran on one model. At frontier prices that's tens of thousands of dollars per day: **routing isn't optional at this scale, it's the design**.\n- Chat latency budget: first token < 1s, so streaming + prefix caching + a fast model on the hot path.\n\nTwo minutes of arithmetic just told us the architecture's biggest constraint. That's why the numbers come before the boxes."
+    },
+    {
+      "type": "text",
+      "md": "## Phase 3: the high-level picture (10 minutes)\n\nThe request path, narrated left to right:\n\n**Channel gateway** (chat websocket, email ingest) → **session service** (lesson 5: identity, history, scratchpad) → **input guardrail** (small model: topic/abuse/injection triage) → **the agent loop** (lesson 4) which draws on:\n\n- **Memory store**: user profile + extracted facts (lesson 5)\n- **RAG service**: hybrid search + rerank over help docs and policies (lesson 3)\n- **Tools**: order lookup, refund (idempotent, tiered), address change, create_ticket, handoff_to_human\n- **Model router** (lesson 2): small model for triage/rewriting/extraction, frontier model for the customer-facing turn, distilled model as routine traffic grows\n\n→ **output guardrail** (grounding + PII + policy) → back through the channel.\n\nAlongside the path, not on it: **trace store** (every turn's tree), **eval pipeline** (lesson 6), **human agent console** (receives the handoff package), **extraction job** (end-of-conversation memory writes).\n\nOffer the interviewer the fork: \"I can go deep on the agent loop, retrieval, serving economics, or the eval system: which is most useful?\""
+    },
+    {
+      "type": "quiz",
+      "question": "The interviewer asks: \"email and chat behave very differently: what actually changes in your design between them?\"",
+      "choices": [
+        "Nothing; a conversation is a conversation",
+        "Latency posture and turn shape: chat needs streaming, sub-second first tokens, and short turns; email tolerates minutes but arrives as long multi-issue messages, so it can skip streaming, batch to cheaper models off-peak, and needs issue-splitting: same agent core, different serving policy per channel",
+        "Email needs a completely separate agent",
+        "Chat should disable tool use for speed"
+      ],
+      "answer": 1,
+      "explain": "The agent core (loop, tools, memory, guardrails) is shared; what varies is the serving envelope: chat sits on the latency-critical path (streaming, prefix caching, fast models), while email is async (queue it, batch it, use the cost-optimal model, handle multi-issue messages with a decomposition step). One core with per-channel policies beats two agents: half the eval surface, one set of tools."
+    },
+    {
+      "type": "text",
+      "md": "## Phase 4a deep dive: an actual turn through the loop\n\n\"Where's my refund for order 8841?\" walks through:\n\n1. Input guardrail (small model): on-topic, no injection → proceed.\n2. Context assembly: system prompt (cached) + tools + user profile (\"Pro plan, 2 prior tickets\") + compacted history + this message.\n3. Agent (frontier model): calls `lookup_order(8841)` → returns \"refund initiated 6/30, 5-10 business days.\"\n4. Agent drafts a grounded answer citing the order record; no action needed, so no confirmation gate.\n5. Output guardrail: claims match tool data, no PII beyond the user's own → send, streaming.\n6. Async: trace logged; if conversation ends, extraction updates memory (\"asked about refund on 8841\").\n\nNow the variant that shows the machinery: \"actually just cancel my whole subscription.\" The cancel tool is tier-3 (lesson 4): the agent drafts the cancellation summary, the CONFIRMATION UI shows the exact effect and date, and only the user's explicit yes executes it, with an idempotency key. If the user's message had been pasted from an email containing hidden instructions, the same gate stands between injection and effect."
+    },
+    {
+      "type": "text",
+      "md": "## Phase 4b deep dive: the handoff (the make-or-break feature)\n\nHandoff quality is what separates \"AI that helps\" from \"AI that customers fight to get past.\" Design it as a first-class flow:\n\n- **Triggers**: explicit request (\"human please\": always honored, immediately), the agent's own uncertainty (weak retrieval + low confidence), guardrail trips, sentiment collapse, or N failed resolution attempts.\n- **The package** (lesson 5): compacted summary, the issue and what's been tried, open task state, customer profile, and the last few verbatim turns. The human sees a briefing, not a scroll.\n- **The seam**: the customer shouldn't re-explain anything. The human's resolution gets logged in the SAME session, so memory extraction learns from it.\n- **The feedback loop**: every handoff is labeled by the human afterward (\"agent should have handled this\" vs \"genuinely needed me\"): that labeled stream is your best eval data and your routing-improvement backlog.\n\nEscalation rate then becomes the product's core health metric: falling = the agent absorbs more; spiking = something broke upstream."
+    },
+    {
+      "type": "text",
+      "md": "## Phase 5: the quality system (8 minutes, never skipped)\n\nCompressed from lesson 6, said in interview cadence:\n\n\"Offline: a versioned suite built from real conversations, every past incident a permanent regression case, scored by a rubric'd LLM judge that's calibrated against human labels quarterly and version-pinned. Every prompt/model/retrieval change runs the suite pre-merge with per-dimension gates: policy compliance can't regress even if overall score rises.\n\nShipping: canary 5% → watch online signals → ramp; old config stays hot for one-flip rollback.\n\nOnline: task-completion and escalation rates as the headline metrics, re-ask rate and sentiment as leading indicators, sampled judge scoring per segment and per tenant, and the loop-health vitals (tool-error rate, turns per conversation, token creep). Bad conversations flow back into the suite weekly.\"\n\nThat paragraph, delivered from experience, is the strongest five minutes of this interview."
+    },
+    {
+      "type": "quiz",
+      "question": "Closing question: \"you have two engineers and eight weeks: what ships first?\" The staff-level answer shape is:",
+      "choices": [
+        "The multi-agent orchestrator, since it's the hardest part",
+        "Narrow scope, full spine: FAQ + order-status only (read-only tools), with streaming chat, handoff, traces, and a starter eval suite from day one; actions and email come after the loop is proven safe on reads",
+        "All tools immediately, evals in week 7 once there's traffic to evaluate",
+        "Six weeks of eval infrastructure before any user sees it"
+      ],
+      "answer": 1,
+      "explain": "Ship the thinnest end-to-end slice: read-only scope caps the blast radius, but handoff, tracing, and a starter suite ship in week one because retrofitting the quality machinery is what actually kills these products. The two failure shapes to name: capability-first (option C) ships an ungoverned agent; infra-first (option D) ships nothing. Sequencing scope while keeping the full spine is the senior move."
+    },
+    {
+      "type": "text",
+      "md": "## You're ready. The rehearsal plan.\n\nThe framework is the six phases; the depth lives in lessons 2-6; the experience is already yours: name your real systems as you go (the judge-gated rollouts, the distillation economics, the production agents with tool tiers).\n\nRehearsal: run this capstone OUT LOUD, alone, with a 45-minute timer, sketching the boxes on paper. Where you reached for a lesson, reread that lesson. Then do a live mock with Claude: \"run an AI system design mock\" and Claude plays the interviewer, picks the deep dives, and pushes back on your tradeoffs, then grades against this course.\n\nVariants worth one mental rep each, since the same spine answers all of them: design a coding copilot (retrieval over a codebase, latency-critical), an AI analyst over company data (SQL tools, correctness-critical, abstain paths), and an email-drafting assistant (async, human-always-approves)."
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Training Loop From Memory",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The eight lines\n\nThis is the thing to be able to type cold. Everything else in PyTorch decorates it:\n\n```python\nmodel = MLP(4, 16, 2)\noptimizer = torch.optim.Adam(model.parameters(), lr=1e-3)\nloss_fn = nn.CrossEntropyLoss()\n\nfor epoch in range(200):\n    logits = model(X_train)              # 1. forward\n    loss = loss_fn(logits, y_train)      # 2. scalar loss\n    optimizer.zero_grad()                # 3. clear old grads\n    loss.backward()                      # 4. compute new grads\n    optimizer.step()                     # 5. apply them\n```\n\nThe beat is **forward, loss, zero, backward, step**. Say it like a drum pattern. zero_grad can come before the forward pass too; the only fatal orderings are backward before zero_grad's intent (stale grads accumulate, lesson 2) or step before backward (no grads to apply)."
+    },
+    {
+      "type": "quiz",
+      "question": "A training loop has forward, loss, loss.backward(), optimizer.step(), but no optimizer.zero_grad(). What happens?",
+      "choices": [
+        "RuntimeError on the second iteration",
+        "Nothing; step() clears gradients",
+        "Gradients from every past step pile up, so updates grow steadily larger: loss may fall at first, then oscillate or explode",
+        "The model trains identically"
+      ],
+      "answer": 2,
+      "explain": "backward() ADDS into .grad, so step 100 applies the sum of 100 steps' gradients: an effectively growing learning rate. No error is raised, which is what makes it the classic planted bug. The fix is one line; knowing WHERE it goes (any point before backward) is the recall being tested."
+    },
+    {
+      "type": "text",
+      "md": "## The optimizers you name\n\n```python\ntorch.optim.SGD(model.parameters(), lr=0.1)\ntorch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)\ntorch.optim.Adam(model.parameters(), lr=1e-3)    # the default choice\ntorch.optim.AdamW(model.parameters(), lr=1e-3)   # Adam + proper weight decay\n```\n\nInterview-sufficient knowledge: SGD follows the raw gradient (with momentum smoothing it); Adam adapts a per-parameter learning rate from gradient history, so it's more forgiving of the lr you pick. Default to `Adam(lr=1e-3)` and say \"I'd tune from here.\" Nobody expects the update equations; they expect you to know the constructor takes `model.parameters()`."
+    },
+    {
+      "type": "text",
+      "md": "## Evaluation: two switches, both required\n\n```python\nmodel.eval()                          # switch 1: layer behavior\nwith torch.no_grad():                 # switch 2: stop recording\n    logits = model(X_test)\n    preds = logits.argmax(dim=1)\n    acc = (preds == y_test).float().mean().item()\nmodel.train()                         # back to training mode after\n```\n\nThey do different things and don't imply each other:\n\n- `model.eval()` changes LAYER BEHAVIOR: dropout stops dropping, batchnorm uses running stats instead of batch stats.\n- `torch.no_grad()` stops GRAPH RECORDING: saves memory and time.\n\nWith neither dropout nor batchnorm in your model, eval() changes nothing, but writing both anyway is free and reads as someone with production habits."
+    },
+    {
+      "type": "quiz",
+      "question": "Your model has dropout. You evaluate inside torch.no_grad() but forget model.eval(). What do you see?",
+      "choices": [
+        "A RuntimeError",
+        "Identical results; no_grad covers it",
+        "Noisy, degraded test accuracy that changes run to run: dropout is still randomly zeroing activations during your \"evaluation\"",
+        "Gradients leak into the test set"
+      ],
+      "answer": 2,
+      "explain": "no_grad and eval are independent switches. With dropout still in training mode, every eval forward pass randomly kills neurons, so accuracy is both worse and nondeterministic. The symmetric bug (eval() but no no_grad) wastes memory building graphs but gives correct numbers. You want both, and knowing WHY each exists is the interview answer."
+    },
+    {
+      "type": "text",
+      "md": "## Prove it trains: the overfit-toy-data ritual\n\nSame ritual as numpy-land, torch edition:\n\n```python\ntorch.manual_seed(0)                      # reproducibility\nX = torch.randn(20, 4)\ny = (X[:, 0] > 0).long()                  # learnable rule, labels int64\n\nmodel = nn.Sequential(nn.Linear(4, 16), nn.ReLU(), nn.Linear(16, 2))\noptimizer = torch.optim.Adam(model.parameters(), lr=0.01)\nloss_fn = nn.CrossEntropyLoss()\n\nlosses = []\nfor _ in range(200):\n    loss = loss_fn(model(X), y)\n    optimizer.zero_grad(); loss.backward(); optimizer.step()\n    losses.append(loss.item())\n\nprint(losses[0])     # ~0.693 = ln(2): coin-flip loss for 2 classes\nprint(losses[-1])    # ~0.01: it learned\n```\n\nTwo anchors to state out loud: initial loss should be about **ln(num_classes)** (0.69 for 2, 2.3 for 10), and a model that can't overfit 20 points has a bug, not a capacity problem."
+    },
+    {
+      "type": "text",
+      "md": "## DataLoader: the batched version\n\nWhen data doesn't fit in one gulp (or the interviewer asks for \"proper batching\"):\n\n```python\nfrom torch.utils.data import TensorDataset, DataLoader\n\ndataset = TensorDataset(X, y)                     # zips tensors together\nloader = DataLoader(dataset, batch_size=32, shuffle=True)\n\nfor epoch in range(10):\n    for X_batch, y_batch in loader:               # the loop gains one level\n        loss = loss_fn(model(X_batch), y_batch)\n        optimizer.zero_grad(); loss.backward(); optimizer.step()\n```\n\nThat's the entire API you need: TensorDataset wraps tensors, DataLoader batches and shuffles, the training loop grows an inner for. `shuffle=True` for training, False for evaluation.\n\nNext, last lesson: the gotcha catalog plus attention in torch as the capstone."
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Designing the Evaluator Itself",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The reframe that changes everything\n\nLesson 6 covered evals as a layer in the product: suites, gates, monitoring. This lesson goes one level deeper, into the evaluator ITSELF, because that is where most eval efforts are naive and where senior candidates separate themselves.\n\nThe single idea to hold: **an evaluator is a measurement instrument, and an instrument you have not calibrated is not a source of truth, it is a confident guess.** Everything else in this lesson falls out of taking that sentence seriously. A team that cannot tell you how they know their JUDGE is good does not have an eval system. They have a number that feels like one."
+    },
+    {
+      "type": "text",
+      "md": "## Where the eval set comes from\n\nA weak suite is a pile of test cases someone imagined. A strong suite is grown from the real distribution, and above all from real FAILURES.\n\nThe discipline: every production incident becomes a permanent regression case. A confidently-wrong answer that reached a customer on Tuesday is a labeled test case forever after. Over quarters, the suite becomes a precise map of your product's actual failure surface, which is exactly the thing a competitor cannot guess.\n\nThis is why the suite is a living, versioned asset, not a fixture file. It also connects to lesson 6's flywheel: the online monitoring feeds the suite, and the suite gates the next change, so the two form a loop that keeps the same bug from shipping twice."
+    },
+    {
+      "type": "quiz",
+      "question": "Two teams have 500-case eval suites. Team A wrote theirs by brainstorming scenarios before launch. Team B grew theirs from six months of production failures. Why is B's fundamentally more valuable, even at the same size?",
+      "choices": [
+        "B's is newer",
+        "B's suite matches the real input distribution and encodes actual failure modes the system exhibits, so passing it predicts production quality; A's tests scenarios that may never occur and misses the ones that do",
+        "Brainstormed suites are always too easy",
+        "B used more people to write it"
+      ],
+      "answer": 1,
+      "explain": "Eval value is about representativeness, not count. A's cases sample from what someone imagined; B's sample from what actually breaks. A suite that does not match the production distribution can be green while the product is failing, because it is testing the wrong inputs. This is why 'grow it from real failures' beats 'write more cases.'"
+    },
+    {
+      "type": "text",
+      "md": "## Decompose the judgment\n\nOne blended score is the most common eval mistake. \"Quality: 7 out of 10\" hides exactly the regression that hurts, because a gain on fluency can mask a drop in policy compliance, and the average looks fine.\n\nThe fix: score independent dimensions separately, and gate on each. A realistic rubric for a support answer:\n\n```\nfactual accuracy    (is every claim true?)\ngrounding           (does each claim trace to a source?)\npolicy compliance   (did it follow the rules?)\ntone                (on-brand, appropriate?)\nformat              (structure, length, citations present?)\n```\n\nThe gate says: overall may rise, but policy compliance MUST NOT regress. A single number can never express that constraint. Decomposition is also what makes a failing eval actionable: you learn WHICH axis broke, which points at which change caused it."
+    },
+    {
+      "type": "text",
+      "md": "## The trust hierarchy of eval methods\n\nNot all evaluation is equally trustworthy. The best systems push each check as far UP this hierarchy as the task allows:\n\n1. **Programmatic checks** (most trusted): anything verifiable by code. Does the JSON parse, does the SQL run, does the invoice reconcile to the penny, do the tests pass. Deterministic, free, no judge to calibrate.\n2. **Reference-based**: a golden answer exists, so compare against it (exact match, or semantic similarity for open text).\n3. **Pairwise preference**: is output A better than output B? Used for relative comparison.\n4. **Rubric-based LLM judge** (least trusted): a model scores open-ended output against a rubric. The only scalable option for subjective quality, and the one needing the most scrutiny.\n\nMuch of great eval design is really TASK design: reshaping a fuzzy question into a checkable one so you can climb this ladder. \"Is this summary good?\" is a rung-4 problem; \"does this summary contain the three required facts?\" is a rung-1 problem."
+    },
+    {
+      "type": "quiz",
+      "question": "Why do the best systems prefer pairwise preference (A vs B) over absolute scoring (rate this 1 to 10) when they must use a model judge?",
+      "choices": [
+        "Pairwise is faster to compute",
+        "Relative judgments are far more consistent than absolute ones: both humans and model judges reliably pick the better of two outputs, while '7 vs 8 out of 10' is noisy and drifts, so pairwise gives more stable, reproducible signal",
+        "Absolute scoring is not supported by most judge models",
+        "Pairwise needs no calibration"
+      ],
+      "answer": 1,
+      "explain": "Absolute scores have no stable anchor: what one judge call considers a 7, another calls an 8, and the scale drifts across runs and raters. Choosing between two concrete outputs is a much easier and more repeatable task, which is why preference-based evaluation (and preference data generally) underpins so much of modern model development. The cost is that you get rankings, not absolute levels."
+    },
+    {
+      "type": "text",
+      "md": "## The judge is a model system with failure modes\n\nThis is the heart of the lesson. An LLM-as-judge you have not validated is a confident random-number generator. Treat it like the model system it is:\n\n- **Calibrate against humans.** Sample the judge's scores, have experts label the same items, and measure agreement (correlation, or Cohen's kappa for categorical rubrics). If the judge does not track humans, its numbers are decoration. Maintain and refresh this calibration set.\n- **Version and pin it.** The judge model plus the judge prompt are part of the eval's identity. Silently upgrading the judge model invalidates every historical comparison, so a score that moves with no product change means: suspect the instrument first, and re-score a frozen sample to confirm.\n- **If humans themselves disagree, the task is underspecified.** Low inter-annotator agreement is a signal to fix the rubric, not to average the noise."
+    },
+    {
+      "type": "text",
+      "md": "## The judge's known biases (correct for each)\n\nModel judges have systematic, documented biases. The best systems correct for them explicitly:\n\n- **Fluency bias**: judges reward confident, well-written answers even when wrong. Pair the judge with grounding/factuality checks so eloquence cannot buy a passing score.\n- **Position bias**: in pairwise comparisons, judges favor whichever option came first (or second). Fix by running both orders and averaging.\n- **Verbosity bias**: longer answers score higher regardless of quality. Watch for it; sometimes penalize length explicitly.\n- **Self-preference**: a model judge rates its OWN family's outputs higher. This matters when your judge and your system are the same base model, a very common and easily-missed setup. Use a different judge family, or calibrate the bias out.\n\nNaming these unprompted in an interview signals that you have actually operated judge systems, not just read about them."
+    },
+    {
+      "type": "quiz",
+      "question": "Your production system runs on model X. Your eval judge is also model X (convenient, same API). Offline scores look great; users are lukewarm. What bias should you check first?",
+      "choices": [
+        "Position bias",
+        "Self-preference: a model judge systematically rates outputs from its own family higher, so an X-judge flatters an X-system, inflating offline scores relative to real quality; switch to a different judge family or calibrate the gap",
+        "Verbosity bias",
+        "There is no issue; matching judge to system is best practice"
+      ],
+      "answer": 1,
+      "explain": "Self-preference is the trap hiding in the convenient setup. When judge and system share a base model, the judge's notion of 'good' is correlated with the system's notion of 'what I produce,' so offline numbers drift above reality. The fix is an independent judge family (or an ensemble) plus human calibration. This exact mistake ships overconfident systems."
+    },
+    {
+      "type": "text",
+      "md": "## Meta-evaluation: test the evaluator\n\nIf the evaluator is an instrument, you must verify it works, the same way you verify a model.\n\n- **Known-bad injection**: feed the judge outputs you KNOW are wrong (fabricated facts, policy violations) and confirm it catches them. A judge that passes planted failures is broken.\n- **Discrimination test**: construct outputs at deliberately different quality levels (excellent, mediocre, poor) and confirm the judge separates them in the right order. A judge that scores them all 7 has no resolution.\n- **Stability**: run the judge on the same item multiple times; wild score variance means the rubric is too vague to be reliable.\n\nA great eval system is validated the way a great model is: against a ground truth, with adversarial cases, and with an honest look at its own variance. 'Who evaluates the evaluator' is not a paradox; it is a required step."
+    },
+    {
+      "type": "text",
+      "md": "## Component and trajectory evaluation\n\nBlended end-to-end scores are undebuggable. The best systems evaluate the parts.\n\n- **RAG**: score retrieval (recall@k, no model needed) separately from generation (faithfulness). Then a bad answer is diagnosable: right chunk plus bad answer is a generation problem; wrong chunk is a retrieval problem.\n- **Agents**: evaluate the TRAJECTORY, not just the final answer. Was tool selection reasonable, did each step make progress, were there needless loops? Two agents can reach the same answer, one by competence and one by luck, and only process evaluation tells them apart. This is rubric-scoring the path plus checking the outcome.\n\nThe principle: evaluate at the granularity where you would take ACTION. If you cannot act on a score, it is the wrong score."
+    },
+    {
+      "type": "text",
+      "md": "## Statistical honesty\n\nEval numbers are estimates, and the best teams treat them as such.\n\n- A 2-point move on 50 examples is noise. Use enough samples, and report confidence intervals, not point estimates.\n- Run significance tests on A/B comparisons before declaring a winner.\n- **Segment everything**: a healthy average routinely hides a collapsed segment. Score per cohort (new vs returning users, short vs long conversations) and per tenant, because 'quality went up on average' can mean 'up for most, catastrophic for one enterprise customer.'\n\nOverclaiming from noisy evals is how teams ship regressions they 'measured' as improvements. The credibility move in an interview is to say 'I would not act on that delta without a confidence interval.'"
+    },
+    {
+      "type": "text",
+      "md": "## The frontier: capability elicitation and verifiable rewards\n\nBeyond product evals, the hardest evaluation problems (safety, dangerous-capability, agent autonomy: METR's territory) add two ideas worth knowing:\n\n- **Verifiable rewards are the gold standard, so engineer tasks to be checkable.** Code that passes tests, math that checks out, a game won or lost. When the reward is programmatic, no judge is needed and the whole calibration problem disappears. Frontier eval design is often really task design in disguise.\n- **Measure what the model CAN do, not what it does by default (capability elicitation).** To assess risk you must TRY HARD to make the model succeed: good scaffolding, strong prompting, fine-tuning, many attempts. A model that fails a task by default may succeed when genuinely elicited, so evaluating default behavior systematically UNDERESTIMATES capability. This is the opposite instinct from product evals, which measure typical behavior, and confusing the two is a real interview tell."
+    },
+    {
+      "type": "quiz",
+      "question": "A safety team reports 'the model refuses to help with task X, so it cannot do X.' Why is this reasoning flawed under the capability-elicitation frame?",
+      "choices": [
+        "Refusals are always fake",
+        "Default refusal measures propensity, not capability: with better scaffolding, prompting, fine-tuning, or repeated attempts the model may well succeed, so a single default failure underestimates what the system CAN do, which is what actually bounds risk",
+        "The model should never refuse",
+        "You need a bigger eval set"
+      ],
+      "answer": 1,
+      "explain": "Capability and propensity are different axes. 'Won't by default' is not 'can't when elicited,' and risk assessment cares about the ceiling, not the default. Serious capability evals actively elicit: they scaffold, prompt hard, and give multiple attempts, because an adversary would. This inverts the product-eval instinct (measure typical behavior), and holding both frames without confusing them is exactly the sophistication these interviews probe."
+    },
+    {
+      "type": "text",
+      "md": "## Contamination, uplift, and the synthesis\n\nTwo last frontier practices:\n\n- **Contamination control**: if eval data leaked into training, the numbers are fiction. Use held-out sets, canary strings, and freshly-collected data to keep the test honest.\n- **Human uplift as ultimate ground truth**: does the system actually make a real human faster or better at the real task, measured in a controlled study? Every cheap proxy (judge scores, completion rates) is approximating this, and the best organizations periodically re-anchor their proxies against an expensive uplift measurement.\n\n**The synthesis, and your one-sentence interview answer**: the best evaluators recursively apply their own discipline to themselves. They are calibrated against a ground truth taken seriously, versioned and monitored for drift, tested with known-answer and adversarial cases, honest about statistical uncertainty, and clear about whether they are measuring typical behavior or maximum capability. If you can explain how you know your judge is good, you have an eval system. If you cannot, you have a number that feels like one."
+    }
+  ]
+}

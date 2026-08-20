@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "The Whole Framework, Worked",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## One assignment, start to finish\n\nLet us run the entire framework on a realistic take-home:\n\n> \"Build an HTTP API with a single endpoint that returns a user's recent order history, rate-limited per user. Include tests. A few hours.\"\n\nWatch how the lessons chain: understand, decompose, spec, generate, review, verify, iterate. Try to predict each phase before reading it."
+    },
+    {
+      "type": "text",
+      "md": "## Phases 1-2: understand and decompose (no AI yet)\n\n**Understand (lesson 2)**: The real problem is a small but production-shaped service. Ambiguities I decide: rate limit is per-user sliding window, 100/min (stated as an assumption in my writeup); \"recent\" means last 30 days; over-limit returns HTTP 429; data source is a provided orders store. Risk map: the rate limiter is the interesting core (review hard); the endpoint plumbing and data access are boilerplate (delegate freely).\n\n**Decompose (lesson 3)**, vertical slices, interfaces first:\n1. Interfaces: the limiter's `allow(user_id)`, the order-store query signature, the endpoint contract.\n2. Walking skeleton: one endpoint that returns hardcoded orders, running.\n3. Fill: real order query, then the rate limiter, then wire the limiter into the endpoint.\n\nI have written zero code and I already know the shape, the risks, and the order of work."
+    },
+    {
+      "type": "text",
+      "md": "## Phases 3-4: spec and generate\n\n**Spec the skeleton (lesson 4)**: \"An HTTP server in [framework], one GET endpoint /users/{id}/orders returning JSON, hardcode a list of orders for now. Match [any given conventions].\" Low-risk, I skim-review it.\n\n**Spec the rate limiter (lesson 4)**, the risky core, so full spec: the signature, sliding-window behavior, 100/min from constructor args, in-memory, return bool, and two examples including the boundary. I also ask for the APPROACH first: it says \"store a deque of timestamps per user, evict older than the window, allow if length < limit.\" That approach is correct, so I let it implement. Had it said \"fixed buckets,\" I would have corrected the plan before any code.\n\nNote what I did NOT do: I did not ask \"how should I rate limit this?\" The rate limiter is the point of the assignment, so I designed it and told the AI."
+    },
+    {
+      "type": "quiz",
+      "question": "In this worked example, why spec the rate limiter in full detail but only skim-spec the endpoint plumbing?",
+      "choices": [
+        "The endpoint is harder so it needs less detail",
+        "Attention follows risk: the limiter is the assignment's core where subtle bugs hide and where the evaluation focuses, so it gets a full spec and hard review; the plumbing is low-risk boilerplate where a quick spec and skim suffice",
+        "You should spec everything in full detail always",
+        "The AI writes endpoints better than limiters"
+      ],
+      "answer": 1,
+      "explain": "The risk map from phase 1 drives where you spend effort. Equal scrutiny everywhere wastes time on boilerplate and under-examines the core. Full spec plus hard review on the limiter (the interesting, bug-prone, graded part); light touch on the CRUD plumbing. Matching attention to risk is what makes the whole process fast without being reckless."
+    },
+    {
+      "type": "text",
+      "md": "## Phases 5-6: review and verify\n\n**Review (lesson 5)**, two passes on the limiter. Intent pass: yes, it is a real sliding window with a per-user deque, matches my design. Correctness pass: reading closely, it evicts old timestamps and checks length, good, but it records the request BEFORE checking the limit, so the 101st request evicts, appends, then compares 101 < 100: off-by-one, the boundary is wrong.\n\n**Verify (lesson 6)**: my hand case (limit 2: True, True, False) would have caught it, and does. I also add the property check (never more than N in any window) and the boundary case explicitly. The endpoint I verify by running it: start the server, hit the route, see JSON.\n\nThe review found the bug by reading; the tiny test confirmed it. Either alone might have missed it; together they caught it."
+    },
+    {
+      "type": "text",
+      "md": "## Phase 7: iterate (surgically)\n\n**Iterate (lesson 7)**: I diagnose precisely: \"it records before checking, so it allows one over the limit; check length first, then append on allow.\" That is a surgical, one-spot fix, not a regeneration, so the rest of the reviewed code stays verified. One line moves, I re-run the tests, boundary now correct.\n\nTotal: I understood the problem, designed the core myself, delegated the boilerplate and the mechanical implementation, caught the one real bug through review plus a hand case, and fixed it surgically. The AI did most of the typing; I did all of the deciding and judging. That division is the whole course."
+    },
+    {
+      "type": "text",
+      "md": "## The meta-pitfalls to watch\n\nThree traps that survive even good technique:\n\n- **The velocity illusion**: AI gets you to 80% fast, which feels like near-done, but the last 20% (the edge cases, the integration, the subtle correctness) is where the real time is, and you have less understanding to spend on it because you did not build the first 80%. Budget for the tail.\n- **The ownership gap**: if you cannot explain every decision in your submission, you did not really do it, and in an interview the follow-up questions expose this instantly. Understand what you ship.\n- **Scope creep**: AI makes adding features cheap, so it is tempting to over-build. The assignment asked for one endpoint; resist the elaborate framework. Simplicity is a graded quality.\n\nAll three come from the same root: letting the AI's speed substitute for your understanding. It cannot."
+    },
+    {
+      "type": "text",
+      "md": "## The durable takeaway\n\nThe entire course compresses to a few sentences you can carry into any assignment:\n\n- You are the director: own the problem, the architecture, the correctness bar, and the taste. Delegate the mechanical middle.\n- Understand and decompose before prompting. Spec each chunk as a contract. Review in two passes and verify with real signal. Iterate surgically and diagnose before you direct.\n- Match attention to risk, keep verified code verified, and know when to take over.\n- Above all: **AI makes you faster, not braver.** Same rigor, higher speed.\n\nThat last line is the whole thing. The engineers who thrive with AI are not the ones who trust it most; they are the ones who direct it best and check it hardest. Now go run this on a real assignment, and if you want a live rep, say 'give me a coding assignment to practice the framework' and drive it end to end."
+    }
+  ]
+}
