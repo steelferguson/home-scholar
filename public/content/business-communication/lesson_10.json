@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Storytelling with Data",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## A number is not a message\n\n\"Conversion is 2.3%.\" Is that good? A triumph? A crisis? The number alone can't say — and a listener given a bare number will either shrug or invent their own interpretation.\n\nData persuades only when it's wrapped in three things:\n\n1. **A comparison** that gives it meaning\n2. **A claim** that says what it means\n3. **A story shape** that makes it land and stick\n\nThis lesson is how analytical people stop being 'the one with the spreadsheet' and become 'the one who made the room understand.'"
+    },
+    {
+      "type": "text",
+      "md": "## Every number needs a 'compared to what?'\n\nRaw numbers become information the moment you attach the right baseline:\n\n- **vs. time:** \"2.3%, down from 3.1% before the redesign\"\n- **vs. peers:** \"2.3%, against an industry median around 4%\"\n- **vs. plan:** \"2.3% — the business case assumed 3%\"\n- **vs. scale that intuits:** \"that 0.8-point drop is ~1,200 lost customers a month, about $2M a year\"\n\nChoosing the comparison is choosing the message — and that's a responsibility, not a trick. Pick the one that answers the decision at hand, and be ready to show the others. If your point only survives under one carefully-chosen baseline, you don't have a point yet."
+    },
+    {
+      "type": "text",
+      "md": "## Speak numbers for the ear, not the eye\n\nSpoken data follows different rules than written data:\n\n- **Round aggressively when talking.** \"About a third\" lands; \"32.7%\" evaporates. Precision lives in the appendix; the ear keeps magnitudes.\n- **One number per sentence.** \"Revenue grew 40% while costs grew 12% and churn fell from 5.1 to 4.4 against a plan of 4.8\" is four numbers and zero memories.\n- **Humanize scale.** \"14,000 support tickets\" → \"one ticket every four minutes, around the clock.\" Time, people, and money are the scales intuition already owns.\n- **Say the so-what before the digits:** \"Churn is our biggest leak — we lose roughly one customer in twenty every month.\" The frame first, the figure second (Lesson 1, always)."
+    },
+    {
+      "type": "quiz",
+      "question": "You're telling execs that API latency went from 180ms to 420ms. The most effective spoken version is:",
+      "choices": [
+        "\"Latency increased from 180 to 420 milliseconds, a 133% regression.\"",
+        "\"Our API got more than twice as slow this quarter — pages that felt instant now visibly lag, and it's showing up in checkout abandonment.\"",
+        "\"p50 latency regressed; I'll share the full percentile distribution.\"",
+        "\"Latency is 420 milliseconds now.\""
+      ],
+      "answer": 1,
+      "explain": "'More than twice as slow' is a magnitude the ear keeps; 'visibly lags' and 'checkout abandonment' translate milliseconds into experience and money. The precise figures belong in the doc — the sentence's job is to make the room care accurately."
+    },
+    {
+      "type": "text",
+      "md": "## Charts are sentences: title = claim, ink = evidence\n\nExtending Lesson 5's rule into chart craft:\n\n- **Title the chart with its finding:** not \"Monthly Active Users, 2025–2026\" but \"Growth stalled the month we introduced the paywall.\" A chart whose title is a claim can be skimmed and still deliver.\n- **One chart, one message.** If you need to say two things, make two charts. The eight-line spaghetti chart says everything and communicates nothing.\n- **Direct attention:** gray out everything except the series that carries the claim; annotate the moment that matters (\"paywall launched here\"). Design the two seconds of attention the chart will actually get.\n- **Play fair.** Bar charts start at zero; truncated axes and cherry-picked windows win the meeting and lose your ethos the first time someone checks. Your long-term persuasiveness is exactly your track record of fair charts."
+    },
+    {
+      "type": "widget",
+      "widget": "before-after",
+      "md": "### The data dump vs. the data story\n\nAn analyst presenting the same quarterly findings to leadership:",
+      "props": {
+        "beforeLabel": "The tour of the spreadsheet",
+        "afterLabel": "The story the data tells",
+        "before": "This quarter signups were 48,200, up 6% quarter over quarter. Activation was 61%, roughly flat. Week-4 retention was 44%, down from 47%. Average revenue per user was $23.10, up from $22.80. Churn was 4.9% versus 4.6% last quarter. Support tickets per thousand users rose from 31 to 38. NPS came in at 41, down from 46...",
+        "after": "The headline: we're filling the bathtub faster, but the drain is widening — and the drain started widening exactly when we changed onboarding.\n\nThree numbers tell it. Signups grew 6%. But week-4 retention dropped three points, and support load per user rose a quarter — both starting in the first cohort after the onboarding change in April.\n\nIf retention stays here, the signup growth nets out to zero revenue growth by Q4. The ask: two weeks of engineering time to A/B the old onboarding flow against the new one, decision data by June 15.",
+        "notes": [
+          "Seven metrics became one storyline — 'bathtub filling, drain widening' — plus the three numbers that prove it",
+          "The correlation is anchored to a moment ('the first cohort after April') the audience can evaluate",
+          "It ends in a falsifiable next step with a date, not a recitation"
+        ]
+      }
+    },
+    {
+      "type": "text",
+      "md": "## The shape of a data story\n\nThe before/after you just read follows a reusable arc — the analyst's version of SCQA:\n\n1. **Headline** — the claim in one image or sentence (\"the drain is widening\").\n2. **Evidence** — the 2–3 numbers that carry it, each with its comparison. Not all the numbers; *the load-bearing* numbers.\n3. **Stakes** — what happens if nothing changes, in money/time/customers.\n4. **Resolution** — the decision or test that the data makes possible, with a date.\n\nAnd a matching honesty rule: **show your uncertainty at the load-bearing joint.** \"Retention dropped after the onboarding change — correlation, not yet causation; the A/B test is how we find out\" is more persuasive to smart audiences than false certainty, because it tells them you know the difference."
+    },
+    {
+      "type": "quiz",
+      "question": "Which chart title follows this lesson?",
+      "choices": [
+        "\"Figure 3: Revenue by Segment, FY2025–FY2026 (USD, quarterly)\"",
+        "\"Revenue Analysis\"",
+        "\"Enterprise now funds the company: 71% of revenue from 9% of customers\"",
+        "\"Q4 Data\""
+      ],
+      "answer": 2,
+      "explain": "It's a claim with its own evidence embedded — a skimming exec gets the finding without reading the axes. The others are labels: accurate, complete, and empty. (Keep the FY/segment detail as the subtitle; claims and metadata can coexist.)"
+    },
+    {
+      "type": "quiz",
+      "question": "Your data shows a result that supports your recommendation, but only when measured from March onward; including January–February weakens it. You should:",
+      "choices": [
+        "Present the March-onward window — you're allowed to choose your framing",
+        "Present the full window, flag the January–February anomaly, and explain why you believe the March-onward trend is the signal",
+        "Drop the metric entirely and argue qualitatively",
+        "Present both windows and let the audience decide with no guidance"
+      ],
+      "answer": 1,
+      "explain": "Cherry-picked windows are the truncated axis of time — they work until anyone re-runs the numbers, and then your ethos (Lesson 9) pays for it. Showing the inconvenient data *and* arguing your interpretation is both more honest and more persuasive: it proves you looked."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **No naked numbers:** every figure gets a 'compared to what' chosen for the decision at hand.\n2. **Spoken data is rounded, one per sentence, humanized** — precision lives in the doc.\n3. **Charts are sentences:** claim in the title, attention directed, axes fair.\n4. **Story arc:** headline → load-bearing numbers → stakes → resolution-with-a-date. Flag uncertainty at the joint that carries the weight.\n\n**Drill this week:** take one chart you've already made and retitle it as a claim. If you can't — if the chart doesn't *have* a finding — that's worth knowing too."
+    }
+  ]
+}

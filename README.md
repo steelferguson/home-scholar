@@ -4,7 +4,7 @@ A web app for self-paced audio learning — language courses, music theory, and 
 
 ## Status
 
-_Last updated: 2026-08-15_
+_Last updated: 2026-08-20_
 
 **Live** (database migrated + seeded on the production Supabase project):
 - **Native mobile shell** — `projects/home-scholar-mobile/` wraps this app in an
@@ -54,6 +54,15 @@ _Last updated: 2026-08-15_
   agent live, back-office document tailoring, five practice scenarios), with two worked examples
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
+
+**In progress:**
+- Business Communication course: 11 visual lessons (pyramid principle, MECE,
+  impromptu speaking, vocal delivery, SCQA presentations, business writing,
+  meetings/feedback, Q&A, persuasion, data storytelling, remote presence)
+  + 3 new widgets (before-after, word-hunt, practice-timer). Content is in
+  the repo; to go live: `vercel --prod`, then run
+  `scripts/seed_communication_course.sql` in the Supabase SQL editor
+
 
 **Next up** (see CLAUDE.md for details):
 - Verify background audio on a physical device; iOS TestFlight build; create a
@@ -110,6 +119,7 @@ Run these in the Supabase SQL Editor, in order:
 1. `scripts/setup_db.sql` — tables, RLS, seed courses
 2. `scripts/migrate_visual_lessons.sql` — visual/quiz lesson support
 3. `scripts/seed_visual_lessons.sql` — registers the visual/quiz lessons
+4. `scripts/seed_communication_course.sql` — Business Communication course
 
 Visual and quiz lesson content ships with the app (`public/content/`) — no
 storage upload needed. (`scripts/upload_visual.py` exists for optionally

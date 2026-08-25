@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Remote Presence: Video Calls & Async",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The room is now a grid of rectangles\n\nEverything in this course still applies on video — and then the medium subtracts things you were relying on: most body language, natural turn-taking, ambient attention, hallway repair conversations.\n\nRemote communication rewards two things disproportionately:\n\n1. **Deliberate delivery** — because the thin channel amplifies vocal habits (Lesson 4 matters *more* on a call, not less)\n2. **Deliberate structure** — because attention is shorter and interruptions are clumsier, answer-first (Lesson 1) stops being style and becomes survival"
+    },
+    {
+      "type": "text",
+      "md": "## The mechanical minimum (10 minutes, once)\n\nPresence on video starts with physics, not charisma. One-time setup:\n\n- **Camera at eye level**, not laptop-on-desk nostril view. A stack of books is a fine tripod.\n- **Light your face from the front** — a window or lamp behind the screen. Backlit = a silhouette with opinions.\n- **Audio beats video.** People forgive pixelation; they unconsciously downgrade the *speaker* when the sound is bad. Any headset mic beats the laptop's echo chamber.\n- **Look at the lens when it matters.** You can't make eye contact with everyone, but looking at the camera during your key sentence reads as looking at *each* person. Put the speaker's window right under the camera as a cheat.\n\nNone of this is vanity — it's removing static from the channel your words travel through."
+    },
+    {
+      "type": "text",
+      "md": "## Speaking on calls: the brevity premium\n\nOn video, attention decays faster and interruptions cost more (the awkward double-start, the 'no, you go'). Adjust:\n\n- **Shrink your turns.** A 90-second point in a room is a 45-second point on a call. Make it, then hand off explicitly: \"...so I'd pick option B. Priya, you've seen the client side — what am I missing?\"\n- **Front-load harder than ever.** Multitasking listeners give you their first sentence-worth of attention almost for free. Spend it on the point.\n- **Getting into the conversation:** on-camera, a visible lean-in plus raised finger; larger calls, use the hand-raise or drop the point in chat — \"+1, and one risk to flag when there's a beat\" — which lets the facilitator bring you in cleanly.\n- **Silence needs an owner.** Two seconds of quiet in a room is thinking; on a call it's ambiguity. When you *want* the silence, label it: \"Take 20 seconds to think before we go around.\""
+    },
+    {
+      "type": "quiz",
+      "question": "You have an important recommendation to make on a 12-person video call. The highest-impact combination is:",
+      "choices": [
+        "Share exhaustive slides so nothing gets missed, and talk through every one",
+        "Speak longer than you would in person, since you can't rely on body language",
+        "State the recommendation in your first sentence, keep your turn under a minute, look at the lens for the key line, then hand off to a named person",
+        "Put the recommendation only in chat to avoid interrupting"
+      ],
+      "answer": 2,
+      "explain": "The call versions of the course's core moves: answer first (attention decays fastest here), a compressed turn (the brevity premium), lens contact on the sentence that matters, and an explicit handoff (turn-taking doesn't happen naturally on video)."
+    },
+    {
+      "type": "text",
+      "md": "## Running remote and hybrid meetings\n\nFacilitation stops being optional on video — an unfacilitated call defaults to the three loudest people:\n\n- **Name the next speaker.** \"Alex, then Sam\" replaces the traffic control eye contact used to provide.\n- **Go-arounds for decisions.** \"Quick pass — everyone gets 30 seconds on option A or B.\" This is where remote *beats* rooms: turn-taking can be made perfectly fair.\n- **Use the parallel channels.** Chat for links and +1s; a shared doc for live notes so the meeting produces an artifact while it happens; the decisions-owners-dates close (Lesson 7) posted before everyone disconnects.\n- **Hybrid rule: one person, one rectangle.** If some people share a physical room, have laptops join individually (mics muted) — otherwise remote attendees become second-class viewers of a meeting happening somewhere else."
+    },
+    {
+      "type": "text",
+      "md": "## Async is a first-class medium — not a lesser meeting\n\nDistributed teams run on writing (Lesson 6 is the foundation). The additional async disciplines:\n\n- **Choose the medium by the job:** decisions with nuance → doc with a comment deadline; quick convergence → chat thread; emotion, conflict, or bad news → call, always. Three chat round-trips without convergence is the signal to switch.\n- **Write for a reader in another timezone:** every request self-contained — context, links, the specific ask, the deadline. \"Thoughts?\" costs a 24-hour round trip to discover what you actually wanted.\n- **Default to artifacts:** a recorded 4-minute walkthrough or a one-page doc scales to people who were asleep during the meeting.\n- **Close loops explicitly.** Async has no body language for 'we're done here': state \"Decision: B. Owners: ... Revisit if ...\" or the thread never ends."
+    },
+    {
+      "type": "quiz",
+      "question": "A design disagreement has gone 5 messages deep in Slack across two days, and the tone is getting clipped. The right move is:",
+      "choices": [
+        "Keep going — writing creates a useful record of the argument",
+        "Write one longer, definitive message that settles it",
+        "Propose a 15-minute call for the disagreement, then post the outcome back to the thread as the written record",
+        "Loop in a manager on the thread to break the tie"
+      ],
+      "answer": 2,
+      "explain": "Convergence failed in the medium — more of the medium won't fix it, and text strips the tone that keeps disagreement collaborative (Lesson 7). The call resolves it at high bandwidth; posting the outcome back preserves the record async needed. Escalation isn't warranted until the people involved have actually talked."
+    },
+    {
+      "type": "widget",
+      "widget": "practice-timer",
+      "md": "### Drill: the camera-ready 30 seconds\n\nEvery remote meeting with new people starts with some version of \"quick intros.\" Having a tight one is cheap executive presence. If you can, do this rep looking at your actual webcam:",
+      "props": {
+        "prompt": "Introduce yourself as if joining a call with a new client team: who you are, what you own, and the one thing you want them to remember. 30 seconds, looking at the lens.",
+        "seconds": 30,
+        "steps": [
+          "Name and role — one sentence, no career history",
+          "What you own that's relevant to *this* audience",
+          "One memorable specific ('I'm your escalation point for X')",
+          "Falling tone, stop — don't trail into 'so... yeah'"
+        ],
+        "buttonLabel": "Start the intro"
+      }
+    },
+    {
+      "type": "quiz",
+      "question": "Why does bad *audio* damage your credibility more than bad *video*?",
+      "choices": [
+        "It doesn't — video is how presence is judged",
+        "Words are the payload: listeners unconsciously attribute the strain of hard-to-hear speech to the speaker, downgrading the content itself",
+        "Audio problems are rarer, so they stand out more",
+        "Because recordings only capture audio"
+      ],
+      "answer": 1,
+      "explain": "Listeners experience effortful listening as a property of the *speaker*, not the equipment — fluency research calls this processing-fluency misattribution. Pixelated video is forgiven in seconds; a crackling mic quietly taxes everything you say."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **Fix the physics once:** eye-level camera, front light, real mic, lens contact on key lines.\n2. **Brevity premium:** shorter turns, harder front-loading, explicit handoffs, owned silence.\n3. **Facilitate on purpose** — name speakers, run go-arounds, one-person-one-rectangle for hybrid, post the decisions before disconnect.\n4. **Async is its own craft:** self-contained requests, medium matched to the job, three round-trips → call, loops closed in writing.\n\n**Drill this week:** rewatch (or just re-listen to) one recorded meeting you spoke in. Check three things: did your first sentence carry your point, how long were your turns, and where did your 'um's cluster? That 10-minute review is the fastest feedback loop this course has."
+    },
+    {
+      "type": "text",
+      "md": "## Course wrap: one operating system\n\nEleven lessons, one repeated shape:\n\n- **Structure your thinking** (pyramid, MECE) → **say the answer first** → **support in threes** → **frame it for the audience** → **deliver with pace and pause** → **close the loop** (the ask, the owner, the check-back).\n\nIt's the same move whether the medium is a memo, a slide deck, a chart, a hallway answer, a negotiation, or a grid of rectangles.\n\n**A practice cadence that works:**\n- **Daily:** one out-loud PREP rep (Lesson 3); one email edited answer-first before sending (Lessons 1, 6).\n- **Weekly:** record two minutes of yourself speaking and count fillers (Lesson 4); retitle one chart or slide as a claim (Lessons 5, 10).\n- **Each meeting:** map who cares about what before you make an ask (Lesson 9); paraphrase before you argue (Lessons 7, 8).\n\nCommunication is a motor skill wearing an intellectual costume. You now know the mechanics — the reps are yours to do."
+    }
+  ]
+}

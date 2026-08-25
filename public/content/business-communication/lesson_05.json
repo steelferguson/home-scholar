@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Presentations That Land: SCQA & Storylining",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## A presentation is an argument, not a tour\n\nMost weak presentations fail before slide one is designed: they're organized as a *tour of the work* (\"here's everything we did\") instead of an *argument for a conclusion* (\"here's what you should believe or decide, and why\").\n\nThis lesson covers the two structural tools that fix that:\n\n1. **SCQA** — a four-beat opening that earns attention in under a minute\n2. **Storylining** — making the deck itself readable as an argument, title by title"
+    },
+    {
+      "type": "text",
+      "md": "## SCQA: the opening that earns the next ten minutes\n\nFrom Minto again. Before any content, four beats:\n\n- **S — Situation.** A fact everyone already agrees with. \"We've grown enterprise revenue 40% a year for three years.\"\n- **C — Complication.** The thing that changed and created tension. \"This year, two deals in three are stalling at security review.\"\n- **Q — Question.** The question the complication forces. \"How do we stop losing deals we've already technically won?\"\n- **A — Answer.** Your governing thought. \"Stand up a dedicated compliance team — here's the plan.\"\n\nSituation earns nods, complication earns attention, the question aims that attention, and the answer is your pyramid's top. The rest of the deck is just supporting the A."
+    },
+    {
+      "type": "quiz",
+      "question": "Which is the *complication* in an SCQA opening?",
+      "choices": [
+        "\"Today I'll cover background, findings, and next steps\" — the agenda",
+        "\"We migrated to the new platform last year\" — stable context everyone knows",
+        "\"Since the migration, infra costs have doubled while traffic grew only 10%\" — the change that creates tension",
+        "\"We should renegotiate our cloud contract\" — the recommendation"
+      ],
+      "answer": 2,
+      "explain": "The complication is the disturbance in the agreed-upon situation — the reason this meeting exists *now*. B is the situation, D is the answer, and A (the agenda slide) is what SCQA replaces."
+    },
+    {
+      "type": "text",
+      "md": "## Storylining: titles are the deck\n\nThe highest-leverage rule in slide-making: **every slide title is a full-sentence claim, and the titles alone must read as your argument.**\n\n❌ Topic titles: *\"Market Overview\"*, *\"Q3 Results\"*, *\"Risks\"* — labels that say nothing.\n\n✅ Claim titles: *\"The mid-market segment is growing 3× faster than enterprise\"*, *\"Q3 beat plan on revenue but missed on margin\"*, *\"The top risk is vendor lock-in, and it's addressable for ~$50k\"*.\n\nThe test: read only the titles, in order (consultants call this the *horizontal logic*). If they don't form a coherent argument ending in your recommendation, no amount of slide polish will save it. This is also the fastest way to *build* a deck: write the titles first, as an outline, before opening the slide tool."
+    },
+    {
+      "type": "text",
+      "md": "## One idea per slide, and evidence that matches\n\n- **One slide, one claim.** If a slide needs two titles, it's two slides. If it has no claim, it's an appendix.\n- **The body exists to prove the title.** Whatever's on the slide — chart, table, quotes — should make a skeptic accept the title sentence. Anything that doesn't help prove it is clutter.\n- **Charts get claim titles too.** Not \"Revenue by quarter\" but \"Revenue recovered to pre-2025 levels in Q3.\" Say what the chart *means*, then let the chart prove it.\n- **Detail lives in the appendix.** You built it, you love it, and it's one question away — but it doesn't get airtime unless asked for."
+    },
+    {
+      "type": "widget",
+      "widget": "before-after",
+      "md": "### Horizontal logic in action\n\nHere are the slide titles from two versions of the same deck. Read each list top to bottom and notice which one you could act on without seeing a single slide body:",
+      "props": {
+        "beforeLabel": "Topic titles",
+        "afterLabel": "Claim titles (the storyline)",
+        "before": "1. Agenda\n2. Background\n3. Methodology\n4. Survey Results\n5. Competitive Analysis\n6. Financial Projections\n7. Risks\n8. Recommendation\n9. Next Steps",
+        "after": "1. Enterprise growth has stalled while our mid-market pipeline doubled\n2. Mid-market buyers churn less and close 3× faster than enterprise\n3. Two competitors moved down-market this year — the window is open but closing\n4. A dedicated mid-market motion pays back inside ~18 months under conservative assumptions\n5. The main risk — sales-team split focus — is manageable with a separate pod\n6. Ask: approve two hires and a Q3 pilot; decision needed by June 1",
+        "notes": [
+          "The 'after' titles ARE the argument — a reader could skim titles only and reach the decision",
+          "Nine slides became six: 'agenda', 'background', and 'methodology' had no claim to make",
+          "The last title is an explicit ask with a deadline — every persuasive deck ends with one"
+        ]
+      }
+    },
+    {
+      "type": "quiz",
+      "question": "The 'horizontal logic' test of a deck checks whether:",
+      "choices": [
+        "Every slide uses the same template and fonts",
+        "The slide titles, read alone and in order, form a complete argument",
+        "Each slide has at most six bullets of six words",
+        "The deck reads correctly left-to-right in slide-sorter view"
+      ],
+      "answer": 1,
+      "explain": "Storylining lives or dies at the title layer. If the titles alone don't carry the argument to its conclusion, the structure is broken regardless of how good each individual slide looks. (The six-by-six rule is about slide bodies, a different — and weaker — tool.)"
+    },
+    {
+      "type": "text",
+      "md": "## Delivering it: don't read the room a bedtime story\n\nStructure meets Lesson 4's delivery skills:\n\n- **Don't read slides.** The audience reads faster than you speak. Say the title's idea in your own words; let the slide be evidence.\n- **Pause at transitions.** The silence between slides is where the previous claim sinks in.\n- **Plan the cut-down.** Know in advance which 3 slides you'd keep if 30 minutes became 10. (If you storylined, it's the titles that carry the argument's spine.)\n- **The exec pre-wire:** for big decisions, walk key stakeholders through the storyline *before* the meeting. Surprises get defended against; previewed ideas get improved."
+    },
+    {
+      "type": "quiz",
+      "question": "Halfway through your 30-minute presentation, the exec says: \"We have 5 minutes — wrap it up.\" Best move?",
+      "choices": [
+        "Talk faster to get through the remaining slides",
+        "Skip to the recommendation slide, state the ask, and offer the skipped analysis as follow-up",
+        "Ask to reschedule the rest for next week",
+        "Continue at the same pace and let it end wherever it ends"
+      ],
+      "answer": 1,
+      "explain": "The deck exists to support the ask, not the other way around. Jump to the answer, state it with the ask and deadline, and let the evidence live in follow-up. This is also why answer-first storylining matters: you can always collapse to the spine."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **Open with SCQA** — agreed situation, tension-creating complication, the question it forces, your answer. Retire the agenda slide.\n2. **Titles are full-sentence claims**, and read alone they must form the argument (horizontal logic). Write titles before slides.\n3. **One slide, one claim**; the body exists only to prove its title; detail goes to appendix.\n4. **End with an explicit ask** and be able to collapse the whole deck to 3 spine slides on demand.\n\n**Drill this week:** take any existing deck of yours and rewrite only the titles into claims. Read them in order. You'll find the argument's gaps in about two minutes — cheaper than finding them live."
+    }
+  ]
+}

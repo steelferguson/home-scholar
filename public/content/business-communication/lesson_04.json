@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Vocal Delivery: Pace, Pauses & Filler Words",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The same words, twice as credible\n\nRecord two people reading the identical script. One rushes, fills every gap with *\"um\"*, and ends sentences with a rising pitch. The other speaks a touch slower, pauses at the commas, and lands sentences with a falling tone.\n\nSame words — completely different perceived competence. Delivery isn't decoration on top of your message; for spoken communication, **delivery is part of the message**.\n\nThe good news: unlike charisma, the three levers in this lesson — pace, pause, and fillers — are mechanical. They respond directly to practice."
+    },
+    {
+      "type": "text",
+      "md": "## Lever 1: Pace\n\nConversational English runs around **150 words per minute**. Under pressure, most people speed up — often past 180 — because adrenaline says *get this over with*. Fast talking compounds: less time to think → more fillers → more nerves → faster still.\n\nWhat to do instead:\n\n- **Slow the key sentences to ~120 wpm.** You don't need to be slow everywhere — slow down exactly where you want weight: the recommendation, the number, the risk.\n- **Vary it.** Constant pace (fast *or* slow) is monotony. Cruise through context, brake for the point.\n- **One idea per breath.** If you're running out of air mid-sentence, the sentence is too long for speech — split it."
+    },
+    {
+      "type": "text",
+      "md": "## Lever 2: The pause\n\nSilence feels ten times longer to the speaker than to the listener. A two-second pause that feels like an abyss to you reads as *command of the room* to everyone else.\n\nPauses do three jobs:\n\n- **Before a key point** — creates anticipation: \"Here's what I'd do. *(beat)* Cancel the project.\"\n- **After a key point** — gives it time to land. Rushing past your own conclusion tells people it wasn't important.\n- **Instead of a filler** — every \"um\" is a pause that lost its nerve. The pause and the filler occupy the same slot; you're choosing one or the other.\n\nRelated: end declarative sentences with a **falling pitch**. A rising tone (\"uptalk\") turns statements into questions and quietly asks permission for facts that don't need it."
+    },
+    {
+      "type": "quiz",
+      "question": "You're about to deliver your recommendation in a big meeting. The highest-impact vocal move is:",
+      "choices": [
+        "Speed up so no one can interrupt before you finish",
+        "Pause briefly before it, slow down while saying it, and pause again after",
+        "Raise your pitch at the end to invite agreement",
+        "Say it twice quickly in different words"
+      ],
+      "answer": 1,
+      "explain": "Pause–slow–pause is the vocal equivalent of bold text: anticipation before, weight during, landing time after. Speeding up and uptalk both signal that even you don't quite trust the sentence."
+    },
+    {
+      "type": "text",
+      "md": "## Lever 3: Fillers and verbal hedges\n\nFillers (*um, uh, like, you know, sort of, kind of, basically, actually*) happen when your mouth outruns your plan — sound keeps flowing while your brain fetches the next idea.\n\nA few per minute is human. A cluster at every clause boundary erodes authority, and **hedges are worse than fillers**: \"I sort of think we should maybe consider possibly delaying\" contains a strong recommendation wearing four disguises.\n\nThe fix is never \"try not to say um\" — you can't suppress mid-sentence. The fix is upstream: **know your next point (structure!), slow down, and let pauses take the slots fillers wanted.** Awareness training helps too — which is what the next exercise is for."
+    },
+    {
+      "type": "widget",
+      "widget": "word-hunt",
+      "md": "### Filler hunt\n\nThis is a transcript of a real-sounding project update. Tap every filler word and hedge you can find — then read the survivor sentence and notice it was a perfectly good update all along:",
+      "props": {
+        "prompt": "Find all the fillers and hedges (um, like, you know, sort of, kind of, basically, actually, maybe, I guess...)",
+        "text": "So um basically the migration is like on track. We actually finished the data validation, you know, ahead of schedule, and I guess the only sort of open risk is the vendor API, which is kind of rate-limited more than we expected. So we maybe want to, um, ask for a higher tier, which would actually cost like two hundred dollars a month more.",
+        "targets": [
+          "um",
+          "um",
+          "basically",
+          "like",
+          "actually",
+          "you know",
+          "I guess",
+          "sort of",
+          "kind of",
+          "maybe",
+          "actually",
+          "like"
+        ]
+      }
+    },
+    {
+      "type": "quiz",
+      "question": "Why does \"try hard not to say um\" fail as a strategy?",
+      "choices": [
+        "Fillers are genetic and can't be changed",
+        "Fillers are a symptom — the cause is speaking before the next idea is ready, so the fix is structure, slower pace, and pausing",
+        "Listeners actually prefer fillers because they sound natural",
+        "It works fine — suppression is the standard training method"
+      ],
+      "answer": 1,
+      "explain": "You can't consciously monitor individual syllables while also thinking about content. Fillers fade when the underlying causes go away: knowing your next point (frameworks), a pace your brain can keep up with, and treating silence as acceptable."
+    },
+    {
+      "type": "text",
+      "md": "## Projection and breath — the 30-second version\n\nQuiet, trailing speech undermines everything else. Two mechanical fixes:\n\n- **Breathe low.** Nervous speakers take shallow chest breaths and run out of air, so sentence endings die. One slow belly breath before you start; refill at the pauses you're now taking anyway.\n- **Aim your voice at the far side of the table**, not at your own laptop. Volume follows intention surprisingly well.\n\nAnd on video calls: your microphone forgives volume but not pace or fillers — if anything, delivery discipline matters *more* remotely, because you've lost most body-language channels."
+    },
+    {
+      "type": "widget",
+      "widget": "practice-timer",
+      "md": "### Drill: the deliberate minute\n\nSpeak for one minute about what you did yesterday at work. The content doesn't matter — the delivery does. Rules: pause at least four times, and if you feel a filler coming, stop and let the silence sit instead:",
+      "props": {
+        "prompt": "Describe yesterday's work out loud — slowly, with at least four deliberate pauses and zero fillers. When you catch a filler, pause instead and keep going.",
+        "seconds": 60,
+        "steps": [
+          "Slow start — one belly breath first",
+          "Brake at anything important; cruise the rest",
+          "Every 'um' you feel coming → silent pause instead",
+          "End on a falling tone, then stop"
+        ],
+        "buttonLabel": "Start the minute"
+      }
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **Pace:** ~150 wpm cruising, ~120 for the sentences that matter. Vary it; monotony kills both ways.\n2. **Pause** before and after key points, and in every slot a filler wanted. Silence reads as confidence.\n3. **Fillers are a symptom** — fix them upstream with structure, pace, and pause tolerance. Hedges (\"sort of\", \"maybe\") damage authority even more than \"um\".\n4. **Fall, don't rise**, at the end of statements. Breathe low; aim your voice across the room.\n\n**Drill this week:** record yourself for two minutes (any topic, phone voice memo), count your fillers, then re-record the same content once. The second take is reliably 50%+ cleaner — proof that awareness plus one rep works."
+    }
+  ]
+}

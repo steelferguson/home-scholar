@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Think on Your Feet: Impromptu Speaking Frameworks",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## \"What do you think?\"\n\nThe moments that build (or dent) your reputation are rarely the prepared ones. They're the meeting where someone turns to you and asks *\"what do you think?\"* — and you have zero seconds of prep.\n\nUnstructured speakers respond by **thinking out loud**: circling, backtracking, and hoping a point emerges. Structured speakers do something different: they grab a **container** and pour their thoughts into it.\n\nThis lesson gives you three containers and a way to buy the two seconds you need to choose one."
+    },
+    {
+      "type": "text",
+      "md": "## First: buy your two seconds\n\nA framework only helps if you have a beat to pick one. Three honest ways to get it:\n\n- **Pause.** Two full seconds of silence before answering reads as *thoughtful*, not slow. (Lesson 4 is all about this.)\n- **Repeat or rephrase the question.** \"Would I move the launch? Let me think about that for a second.\" Buys 3–4 seconds and confirms you understood it.\n- **Name your angle.** \"The way I'd look at that is from the customer's side...\" — you've started strong and told yourself where you're going.\n\nWhat *not* to do: start talking immediately and search for your point mid-sentence. That's where rambling is born."
+    },
+    {
+      "type": "text",
+      "md": "## Container 1: PREP\n\nThe workhorse for any *opinion* question.\n\n- **P — Point.** \"I'd delay the launch two weeks.\"\n- **R — Reason.** \"The payment flow failed QA twice, and payments is where a bad first impression is fatal.\"\n- **E — Example.** \"When we launched invoicing with a known bug last year, the support backlog took a month to clear.\"\n- **P — Point again.** \"So: two weeks now beats a month of cleanup later.\"\n\nNotice PREP *is* the pyramid from Lesson 1, miniaturized: answer first, support, land it again. 30–60 seconds, no rambling possible — the structure won't allow it."
+    },
+    {
+      "type": "text",
+      "md": "## Containers 2 & 3\n\n**What / So What / Now What** — for *situations and updates*:\n- **What:** \"Signups dropped 20% this week.\"\n- **So what:** \"That's our first drop since the redesign — it suggests the new onboarding is losing people.\"\n- **Now what:** \"I'm pulling funnel data today and will bring options Thursday.\"\n\n**Past / Present / Future** — for *\"where do things stand?\"* questions:\n- \"We started manual-only. Today about half the pipeline is automated. By Q3 the goal is full automation with human review only for edge cases.\"\n\nThree containers cover ~90% of impromptu moments: **opinion → PREP**, **event → What/So What/Now What**, **status → Past/Present/Future**."
+    },
+    {
+      "type": "quiz",
+      "question": "In a leadership meeting someone asks: \"You've been closest to the outage — what's the situation?\" Which container fits best?",
+      "choices": [
+        "PREP — state an opinion and defend it",
+        "What / So What / Now What — the facts, why they matter, what happens next",
+        "Past / Present / Future — the full history of the system",
+        "No container — outages are too fluid for structure"
+      ],
+      "answer": 1,
+      "explain": "\"What's the situation?\" is an event/update question: what happened, why it matters, what we're doing. PREP forces an opinion where facts are wanted, and the full system history buries the urgent part. Fluid situations need structure *more*, not less."
+    },
+    {
+      "type": "quiz",
+      "question": "You're asked a question and your mind goes blank. The best first move is:",
+      "choices": [
+        "Start talking anyway — silence is deadly",
+        "\"That's a great question\" while you stall",
+        "Pause, then rephrase the question in your own words",
+        "Admit you have no opinion and pass"
+      ],
+      "answer": 2,
+      "explain": "The pause-plus-rephrase combo buys ~5 seconds, confirms you heard the real question, and starts your answer from solid ground. 'Great question' is a transparent stall, and talking with no destination is how rambling starts."
+    },
+    {
+      "type": "widget",
+      "widget": "practice-timer",
+      "md": "### Drill: PREP in 60 seconds\n\nReading about frameworks does nothing — they only become available under pressure if you've *said them out loud*. Answer the prompt below, actually speaking, hitting all four beats:",
+      "props": {
+        "prompt": "\"Should meetings default to 25 minutes instead of 30? What do you think?\" — answer out loud using PREP.",
+        "seconds": 60,
+        "steps": [
+          "Point — your one-sentence position",
+          "Reason — the main why",
+          "Example — one concrete case or experience",
+          "Point — restate and stop talking"
+        ],
+        "buttonLabel": "Start the drill"
+      }
+    },
+    {
+      "type": "widget",
+      "widget": "practice-timer",
+      "md": "### Drill: the update\n\nOne more rep, different container. Pick a real project you're on right now:",
+      "props": {
+        "prompt": "Your skip-level manager asks: \"What's the latest on your main project?\" — answer out loud using What / So What / Now What.",
+        "seconds": 45,
+        "steps": [
+          "What — the single most important recent fact",
+          "So what — why it matters to someone at their level",
+          "Now what — the next action and when"
+        ],
+        "buttonLabel": "Start the drill"
+      }
+    },
+    {
+      "type": "text",
+      "md": "## Landing the plane\n\nRamblers don't just start badly — they end badly, trailing off with \"...so, yeah.\" Two fixes:\n\n- **Restate your point and stop.** The second P in PREP is a built-in landing strip. Say it, then be silent. Resist the urge to fill.\n- **Signal the ending.** \"So my bottom line is...\" tells everyone — including you — that the next sentence is the last one.\n\nA strong final sentence followed by confident silence is the single most underrated impromptu-speaking move."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **Buy two seconds** — pause, rephrase, or name your angle. Never start a sentence without a destination.\n2. **Three containers:** opinion → **PREP** · event → **What/So What/Now What** · status → **Past/Present/Future**.\n3. **Land the plane:** restate your point and stop talking.\n\n**Drill this week:** once a day, take any question from a meeting or article and answer it out loud, alone, in PREP form, in under a minute. Ten reps and the structure starts showing up on its own."
+    }
+  ]
+}

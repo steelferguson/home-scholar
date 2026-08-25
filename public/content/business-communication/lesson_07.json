@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "type": "visual",
+  "title": "Meetings, Feedback & Disagreeing Well",
+  "steps": [
+    {
+      "type": "text",
+      "md": "## The conversations that actually run a company\n\nDecks and memos are set pieces. Day to day, your communication reputation is built in three live formats: **meetings you run, feedback you give, and disagreements you navigate.**\n\nAll three reward the same skills from earlier lessons — answer-first, clean structure, deliberate delivery — plus one new ingredient: making it easy for the *other person* to stay constructive."
+    },
+    {
+      "type": "text",
+      "md": "## Meetings: know which of three things you're doing\n\nEvery worthwhile meeting is one of three types, and mixing them silently is how meetings go bad:\n\n- **Decide** — a decision-maker, options, and a call to make. Needs a pre-read.\n- **Create** — brainstorming, working sessions. Needs a problem statement, not slides.\n- **Inform/align** — status, context. Needs to justify being a meeting at all; most of these should be a doc or a message.\n\nMechanics that raise the floor:\n\n- **Agenda items as questions.** \"Q3 budget\" invites a ramble; \"Do we fund the mid-market pilot in Q3?\" can actually be answered.\n- **Open with purpose:** \"We're here to decide X; by the end we'll have picked 1, 2, or defer.\"\n- **Close with the loop:** decisions made, owners, dates — said out loud and posted in writing (Lesson 6). No owner and date = it didn't happen."
+    },
+    {
+      "type": "quiz",
+      "question": "Your weekly 45-minute 'sync' has eight attendees and consists of everyone reading out status. The structured fix is:",
+      "choices": [
+        "Cut it to 30 minutes to force efficiency",
+        "Move status to a written pre-post; keep a short meeting only for questions and decisions the status raises",
+        "Add an icebreaker to raise engagement",
+        "Rotate who runs it each week"
+      ],
+      "answer": 1,
+      "explain": "Read-out status is 'inform' content — it belongs in writing that people skim in 3 minutes, not in synchronized speech at 150 wpm. The live time is then reserved for what genuinely needs live humans: questions, exceptions, and decisions."
+    },
+    {
+      "type": "text",
+      "md": "## Feedback: SBI\n\nVague feedback (\"be more proactive\", \"great job on the deck\") is unusable — it names a judgment without the evidence. The **Situation–Behavior–Impact** model fixes both critical and positive feedback:\n\n- **Situation** — anchor the moment: \"In Tuesday's client call...\"\n- **Behavior** — what you observed, no interpretation: \"...when the pricing question came up, you answered before Maria, who owns pricing, could speak...\"\n- **Impact** — the effect: \"...she went quiet for the rest of the call, and the client heard two slightly different numbers from us.\"\n\nThen **stop and ask**: \"What was going on from your side?\" Feedback is a conversation opener, not a verdict. Notice what SBI removes: mind-reading (\"you don't respect Maria\") and character claims (\"you're a steamroller\") — the two things that reliably trigger defensiveness."
+    },
+    {
+      "type": "widget",
+      "widget": "before-after",
+      "md": "### Vague vs. SBI\n\nA manager needs to address the same issue in both versions:",
+      "props": {
+        "beforeLabel": "Judgment first (vague)",
+        "afterLabel": "SBI",
+        "before": "Hey, quick feedback — you've been kind of dominating meetings lately. A few people have mentioned it. You should try to leave more space for others. It's a growth area for you.",
+        "after": "Can I share something from Thursday's design review? (Situation) When Priya presented the caching option, you responded within a few seconds with three reasons it wouldn't work, and did the same on her follow-up point. (Behavior) The discussion ended there — we never actually explored her option, and she hasn't proposed anything in the two reviews since. (Impact) What's your read on it?",
+        "notes": [
+          "One concrete moment replaces 'lately' and the anonymous 'a few people'",
+          "Observable behavior — 'responded within seconds with three reasons' — not a character label like 'dominating'",
+          "Impact is factual and checkable, and the closing question invites their side before any prescription"
+        ]
+      }
+    },
+    {
+      "type": "quiz",
+      "question": "Which of these is a *Behavior* statement in the SBI sense?",
+      "choices": [
+        "\"You were disrespectful to the client\"",
+        "\"You interrupted the client twice while she was describing the bug\"",
+        "\"You clearly don't care about client relationships\"",
+        "\"You need to work on your listening skills\""
+      ],
+      "answer": 1,
+      "explain": "Behavior is what a camera would record — 'interrupted twice while she was describing the bug.' 'Disrespectful' is a judgment, 'don't care' is mind-reading, and 'work on listening' is a prescription. All three invite argument; the observable fact doesn't."
+    },
+    {
+      "type": "text",
+      "md": "## Disagreeing well\n\nDisagreement is where careers quietly compound — people remember who made conflicts smarter and who made them hotter.\n\n- **Steelman first.** Restate their position so well they'd endorse it: \"So your case is that shipping now captures the holiday season, and the bugs are edge-case only — is that fair?\" You've proven you listened, *and* you've confirmed you're attacking the real argument.\n- **Then differ, aimed at the idea:** \"I see it differently — here's the piece that worries me...\" Never \"that's wrong,\" aim at the *claim*, not the person.\n- **Downgrade certainty honestly.** Distinguish \"I'm confident this breaks under load\" from \"my instinct says users will hate this.\" Calibrated speakers get believed on the days it matters.\n- **Know your line.** Are you sharing a concern, or blocking? Say which: \"This is a concern, not a veto.\""
+    },
+    {
+      "type": "text",
+      "md": "## When the decision goes the other way\n\n**Disagree and commit** is a communication act, done in this order:\n\n1. Disagree *fully and on the record, before* the decision: \"I want to make the case against this one more time, then I'll back whatever we pick.\"\n2. Commit *visibly after*: \"Team, we're going with option B. I argued for A, but B won on time-to-market, and I'm fully behind it — here's my part.\"\n\nSaying you disagreed (transparency) while executing wholeheartedly (commitment) is the move. What poisons teams is the third path: surface agreement in the room, quiet sabotage-by-lethargy after. And if you *keep* relitigating after committing, you've taught everyone your commitment means nothing."
+    },
+    {
+      "type": "quiz",
+      "question": "Your proposal loses; the team picks the option you argued against. The 'disagree and commit' move is:",
+      "choices": [
+        "Execute it, but note your objection in every status update so you're covered if it fails",
+        "State once that you argued the other way and are now fully behind the decision — then execute like it was your idea",
+        "Execute at minimum effort; the results will vindicate you",
+        "Escalate to your manager's manager for a second opinion"
+      ],
+      "answer": 1,
+      "explain": "One transparent acknowledgment, then wholehearted execution. Perpetual I-told-you-so breadcrumbs (A) and slow-walking (C) are commitment theater; routine escalation (D) burns trust for a re-roll of the dice. Save escalation for genuine new information or ethics."
+    },
+    {
+      "type": "text",
+      "md": "## Takeaways\n\n1. **Meetings:** know the type (decide / create / inform), agenda items as questions, close with decisions + owners + dates in writing.\n2. **Feedback = SBI:** camera-visible behavior in a specific situation, plus its impact — then a question, not a verdict.\n3. **Disagree by steelmanning first**, aim at the claim, and label your certainty and your intent (concern vs. block).\n4. **Disagree and commit:** object fully before the decision, back it visibly after.\n\n**Drill this week:** in your next disagreement, don't state your view until you've restated theirs to their satisfaction. Watch what it does to the temperature of the conversation."
+    }
+  ]
+}

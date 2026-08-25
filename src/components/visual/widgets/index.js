@@ -4,6 +4,9 @@ import SoftmaxSlider from './SoftmaxSlider'
 import GradientDescentBall from './GradientDescentBall'
 import EmbeddingSpace from './EmbeddingSpace'
 import AttentionHeatmap from './AttentionHeatmap'
+import BeforeAfter from './BeforeAfter'
+import WordHunt from './WordHunt'
+import PracticeTimer from './PracticeTimer'
 
 // Registry: lesson JSON references widgets by id, so content stays code-free.
 // Adding a new visualization = add a component here; old app versions render
@@ -15,4 +18,7 @@ export const WIDGETS = {
   'gradient-descent-ball': GradientDescentBall,
   'embedding-space': EmbeddingSpace,
   'attention-heatmap': AttentionHeatmap,
+  'before-after': BeforeAfter,
+  'word-hunt': WordHunt,
+  'practice-timer': PracticeTimer,
 }
