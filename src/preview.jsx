@@ -7,6 +7,7 @@ import { DEFAULT_COIN_PER_CORRECT, DEFAULT_ARCADE_SECONDS } from './components/g
 import './index.css'
 
 const ArcadeGame = lazy(() => import('./components/game/ArcadeGame'))
+const ItemGallery = lazy(() => import('./components/cog/ItemGallery'))
 
 // Dev-only harness: preview local content JSONs (content/**) through the real
 // lesson components without Supabase or uploads. Run `npm run dev` and open
@@ -24,6 +25,7 @@ function contentUrlFor(content) {
 
 function Preview() {
   const [selected, setSelected] = useState(null)
+  const [gallery, setGallery] = useState(false)
   const [arcade, setArcade] = useState(false)
   const [roundResult, setRoundResult] = useState(null)
 
@@ -34,11 +36,26 @@ function Preview() {
   )
   useEffect(() => () => { if (contentUrl) URL.revokeObjectURL(contentUrl) }, [contentUrl])
 
+  if (gallery) {
+    return (
+      <Suspense fallback={<div className="p-8 text-gray-400">Loading gallery...</div>}>
+        <ItemGallery onBack={() => setGallery(false)} />
+      </Suspense>
+    )
+  }
+
   if (!selected) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Content Preview</h1>
         <p className="text-sm text-gray-500 mb-6">Local files under <code>content/</code>, rendered with the real lesson components.</p>
+        <button
+          onClick={() => setGallery(true)}
+          className="mb-6 block w-full max-w-lg rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-left font-medium text-blue-800 hover:border-blue-400"
+        >
+          CogAT item gallery
+          <span className="ml-2 text-xs font-normal text-blue-500">generated items, by subtest and level</span>
+        </button>
         <div className="grid gap-2 max-w-lg">
           {LESSONS.map(l => (
             <button
