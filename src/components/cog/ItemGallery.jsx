@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { generateItem, IMPLEMENTED, SUBTESTS } from '../../lib/cog'
+import { MIN_LEVEL, MAX_LEVEL, MASTERY_FROM } from '../../lib/cog/levels.js'
 import ItemView from './ItemView'
 
 // Dev-only. Dumps generated items so item QUALITY can be judged by eye, which is
@@ -23,7 +24,9 @@ export default function ItemGallery({ onBack }) {
     <div className="min-h-screen bg-slate-50 p-6">
       <button onClick={onBack} className="mb-4 text-sm text-blue-600 hover:underline">&larr; Back</button>
       <h1 className="text-2xl font-bold text-slate-900">CogAT item gallery</h1>
-      <p className="mb-5 text-sm text-slate-500">Generated live. Levels 1-4 ~ age 8, 5-8 ~ age 10, 9-12 ~ age 12+.</p>
+      <p className="mb-5 text-sm text-slate-500">
+        Generated live. Levels 1-4 ~ age 8, 5-8 ~ age 10, 9-12 ~ age 12+, {MASTERY_FROM}-{MAX_LEVEL} is headroom past that.
+      </p>
 
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
         <select
@@ -36,8 +39,9 @@ export default function ItemGallery({ onBack }) {
 
         <label className="flex items-center gap-2 text-sm text-slate-600">
           Level <strong className="w-6 text-slate-900">{level}</strong>
+          {level >= MASTERY_FROM && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">mastery</span>}
           <input
-            type="range" min="1" max="12" value={level}
+            type="range" min={MIN_LEVEL} max={MAX_LEVEL} value={level}
             onChange={(e) => { setLevel(Number(e.target.value)); setPage(0) }}
           />
         </label>

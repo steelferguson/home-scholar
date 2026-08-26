@@ -105,6 +105,32 @@ const RULES = [
       return { terms, explain: `Times ${k}, then take away ${c}, every step.`, near: c }
     },
   },
+  {
+    name: 'doubling_jump', from: 13,
+    make: (rng) => {
+      const d = rng.int(1, 3)
+      let step = d
+      const terms = series(rng.int(1, 8), (prev) => { const out = prev + step; step *= 2; return out })
+      return { terms, explain: `The jump doubles every time: +${d}, +${d * 2}, +${d * 4}, and so on.`, near: d }
+    },
+  },
+  {
+    name: 'alternating_ops', from: 14,
+    make: (rng) => {
+      const k = rng.int(2, 3), c = rng.int(2, 7)
+      const terms = series(rng.int(1, 6), (prev, i) => (i % 2 === 1 ? prev * k : prev + c))
+      return { terms, explain: `The steps alternate: times ${k}, then add ${c}, then times ${k} again.`, near: c }
+    },
+  },
+  {
+    name: 'fib_plus', from: 15,
+    make: (rng) => {
+      const c = rng.int(1, 4)
+      const terms = [rng.int(1, 5), rng.int(2, 7)]
+      for (let i = 2; i <= SHOWN; i++) terms.push(terms[i - 1] + terms[i - 2] + c)
+      return { terms, explain: `Add the two numbers before it, then add ${c} more.`, near: c }
+    },
+  },
 ]
 
 // Hard levels must mean harder *patterns*, not bigger multiplication. A series

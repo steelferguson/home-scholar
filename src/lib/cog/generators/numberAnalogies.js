@@ -16,6 +16,8 @@ const RULES = [
   { name: 'mul_add',  from: 8,  make: (rng) => { const k = rng.int(2, 3), c = rng.int(1, 6); return { f: (n) => n * k + c, explain: `multiply by ${k} then add ${c}`, near: c } } },
   { name: 'square',   from: 10, make: () => ({ f: (n) => n * n, explain: 'multiply it by itself', near: 2, ceiling: 12 }) },
   { name: 'mul_sub',  from: 11, make: (rng) => { const k = rng.int(2, 3), c = rng.int(1, 5); return { f: (n) => n * k - c, explain: `multiply by ${k} then take away ${c}`, near: c } } },
+  { name: 'square_plus', from: 13, make: (rng) => { const c = rng.int(1, 6); return { f: (n) => n * n + c, explain: `multiply it by itself then add ${c}`, near: c, ceiling: 14 } } },
+  { name: 'triangular', from: 15, make: () => ({ f: (n) => (n * (n + 1)) / 2, explain: 'add up every number from 1 up to it', near: 3, ceiling: 12, floor: 2 }) },
 ]
 
 const magnitudeCap = (level) => (level <= 4 ? 60 : level <= 8 ? 200 : 500)
