@@ -1,5 +1,6 @@
 import { figure, visualKey, sameFigure, chooseRules, applyRules, ruleCount, SHAPES, SHADINGS, SIZES, RULE_GROUP } from '../figures.js'
 import { buildItem } from '../item.js'
+import { MASTERY_FROM } from '../levels.js'
 
 // A 2x2 matrix:  A -> B  as  C -> ?
 //
@@ -28,7 +29,7 @@ const baseFigure = (rng) => figure({
   rotation: rng.pick([0, 90, 180, 270]),
 })
 
-export function generateFigureMatrices({ level, seed, rng }) {
+function build2x2({ level, seed, rng }) {
   const n = ruleCount(level)
 
   return rng.attempt(
@@ -69,7 +70,7 @@ export function generateFigureMatrices({ level, seed, rng }) {
 
       return buildItem({
         subtest: 'figure_matrices', level, seed, rng,
-        prompt: { kind: 'matrix', cells: [a, b, c, null] },
+        prompt: { kind: 'matrix', columns: 2, cells: [a, b, c, null] },
         correct: { kind: 'figure', figure: correct },
         distractors: rng.shuffle(distractors).map((f) => ({ kind: 'figure', figure: f })),
         explain: `Going across, ${rules.map((r) => r.describe).join(', and ')}. Do the same to the bottom-left shape.`,
@@ -78,4 +79,77 @@ export function generateFigureMatrices({ level, seed, rng }) {
     },
     (it) => it !== null,
   )
+}
+
+// From the mastery band the matrix becomes 3x3 and the rule applies TWICE across
+// each row: A -> B -> C. Spotting a transformation is one thing; carrying it
+// through a second step, on a third row you have not seen worked, is the step up
+// that makes levels past 12 mean something.
+//
+// Fewer rules fire than in a 2x2 at the same level -- applying two rules twice
+// is already harder than applying four rules once, and four compounding
+// transformations produce a figure nobody could check.
+const rulesFor3x3 = (level) => (level >= 15 ? 3 : 2)
+
+function build3x3({ level, seed, rng }) {
+  const n = rulesFor3x3(level)
+
+  return rng.attempt(
+    () => {
+      const a = baseFigure(rng)
+
+      // Rules first, then the rows. Choosing rules, deriving the row difference
+      // from a probe, and then re-choosing the rules is how the 2x2 path used to
+      // break its own guarantee a third of the time; do not reintroduce it here.
+      const rules = chooseRules(rng, level, [a], n)
+      if (rules.length < n) return null
+
+      // Three row starts, differing on one attribute no rule touches.
+      const claimed = new Set(rules.map((r) => ATTRIBUTE_OF[r.name]))
+      const free = Object.keys(VARIATIONS).filter((attr) => !claimed.has(GROUP_OF[attr]))
+      if (!free.length) return null
+
+      const attr = rng.pick(free)
+      const rowStarts = [a]
+      for (let i = 0; i < 30 && rowStarts.length < 3; i++) {
+        const candidate = VARIATIONS[attr](rng, a)
+        if (!rowStarts.some((f) => f[attr] === candidate[attr])) rowStarts.push(candidate)
+      }
+      if (rowStarts.length < 3) return null
+
+      // Every rule must survive BOTH steps on every row, or a row wraps halfway
+      // across and the pattern stops being true where it is applied twice.
+      if (!rules.every((r) => rowStarts.every((f) => r.fits(f)))) return null
+      const midpoints = rowStarts.map((f) => applyRules(f, rules))
+      if (!rules.every((r) => midpoints.every((m) => r.fits(m)))) return null
+
+      const rows = rowStarts.map((start, i) => [start, midpoints[i], applyRules(midpoints[i], rules)])
+      const correct = rows[2][2]
+
+      const flat = rows.flat()
+      if (flat.some((f, i) => flat.findIndex((g) => sameFigure(f, g)) !== i)) return null
+
+      const distractors = [
+        rows[2][1],                              // stopped after one step
+        rows[2][0],                              // never transformed the row at all
+        applyRules(correct, rules),              // carried it one step too far
+        rows[1][2],                              // finished the row above instead
+        rows[0][2],
+      ].filter((f) => !sameFigure(f, correct))
+
+      return buildItem({
+        subtest: 'figure_matrices', level, seed, rng,
+        prompt: { kind: 'matrix', columns: 3, cells: [...rows[0], ...rows[1], rows[2][0], rows[2][1], null] },
+        correct: { kind: 'figure', figure: correct },
+        distractors: rng.shuffle(distractors).map((f) => ({ kind: 'figure', figure: f })),
+        explain: `Going across each row, ${rules.map((r) => r.describe).join(', and ')} — twice over, once for each step.`,
+        key: (c) => visualKey(c.figure),
+      })
+    },
+    (it) => it !== null,
+  )
+}
+
+export function generateFigureMatrices(args) {
+  return args.level >= MASTERY_FROM ? build3x3(args) : build2x2(args)
 }

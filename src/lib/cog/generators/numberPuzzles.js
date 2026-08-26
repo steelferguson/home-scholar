@@ -84,12 +84,35 @@ const forms = {
       explain: `${s1} is ${v1} and ${s2} is ${v2}, so ${v1} ${times ? 'x' : '+'} ${v2} + ${c} = ${correct}.`,
     }
   },
+  // Two equations, two unknowns. Solving one symbol out of a pair is a real
+  // step past "substitute the value you were given", and it is the first item
+  // here that cannot be done by reading left to right.
+  simultaneous: (rng) => {
+    const [s1, s2] = rng.sample(SYMBOLS, 2)
+    const v1 = rng.int(4, 14)
+    const v2 = rng.int(1, v1 - 1)
+    const askFirst = rng.next() < 0.5
+    const correct = askFirst ? v1 : v2
+    const sum = v1 + v2
+    const difference = v1 - v2
+
+    return {
+      givens: [`${s1} + ${s2} = ${sum}`, `${s1} - ${s2} = ${difference}`],
+      question: `${askFirst ? s1 : s2} = ___`,
+      correct,
+      distractors: [askFirst ? v2 : v1, sum, difference, correct + 1, Math.floor(sum / 2)],
+      explain: `Adding the two lines gives ${s1} twice over: ${sum} + ${difference} = ${sum + difference}, so ${s1} = ${v1} and ${s2} = ${v2}.`,
+    }
+  },
 }
 
 const formsFor = (level) => {
   if (level <= 6) return [forms.missingOperand]
   if (level <= 9) return [forms.missingOperand, forms.oneSymbol]
-  return [forms.oneSymbol, forms.twoSymbols]
+  if (level <= 12) return [forms.oneSymbol, forms.twoSymbols]
+  // Mastery leans on simultaneous equations, keeping two-symbol items in
+  // rotation so the earlier form stays warm.
+  return [forms.simultaneous, forms.simultaneous, forms.twoSymbols]
 }
 
 export function generateNumberPuzzles({ level, seed, rng }) {
