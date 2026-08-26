@@ -10,13 +10,13 @@ import { targetSeconds } from './levels.js'
 
 export const SUBTESTS = {
   verbal_analogies:     { battery: 'verbal',       label: 'Word Analogies',      pace: 1.0 },
-  verbal_classification:{ battery: 'verbal',       label: 'Odd One Out',         pace: 0.9 },
+  verbal_classification:{ battery: 'verbal',       label: 'Which Word Belongs',         pace: 0.9 },
   sentence_completion:  { battery: 'verbal',       label: 'Sentence Completion', pace: 1.1 },
   number_series:        { battery: 'quantitative', label: 'Number Series',       pace: 1.1 },
   number_analogies:     { battery: 'quantitative', label: 'Number Analogies',    pace: 1.1 },
   number_puzzles:       { battery: 'quantitative', label: 'Number Puzzles',      pace: 1.3 },
   figure_matrices:      { battery: 'nonverbal',    label: 'Figure Matrices',     pace: 1.2 },
-  figure_classification:{ battery: 'nonverbal',    label: 'Figure Odd One Out',  pace: 1.0 },
+  figure_classification:{ battery: 'nonverbal',    label: 'Which Shape Belongs',  pace: 1.0 },
   paper_folding:        { battery: 'nonverbal',    label: 'Paper Folding',       pace: 1.4 },
 }
 
