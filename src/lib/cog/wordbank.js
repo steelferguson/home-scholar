@@ -111,3 +111,105 @@ export function tiersFor(level) {
   if (level <= 9) return [2, 3]
   return [3, 2]
 }
+
+// Categories for classification and sentence items. `singular` is how the
+// category reads inside a sentence ("a robin is a kind of BIRD"). `words` are
+// members, tagged
+// by tier the same way pairs are. `near` is the load-bearing part: words tightly
+// ASSOCIATED with the category but not members of it -- feather for birds, nail
+// for tools. They make the distractor that catches a kid answering on "this
+// feels related" instead of "this is one of these", which is the same trap the
+// analogies set, in a different shape.
+export const CATEGORIES = {
+  birds: { singular: 'bird',
+    words: [['robin', 1], ['sparrow', 1], ['eagle', 1], ['owl', 1], ['hawk', 2], ['crow', 1], ['falcon', 2], ['heron', 3]], near: ['nest', 'feather', 'beak', 'perch'] },
+  mammals: { singular: 'mammal',
+    words: [['dog', 1], ['cat', 1], ['horse', 1], ['cow', 1], ['bear', 1], ['wolf', 2], ['fox', 2], ['otter', 3]], near: ['fur', 'paw', 'kennel', 'burrow'] },
+  fruit: { singular: 'fruit',
+    words: [['apple', 1], ['pear', 1], ['plum', 1], ['peach', 1], ['cherry', 1], ['mango', 2], ['apricot', 3]], near: ['seed', 'orchard', 'juice', 'peel'] },
+  vegetables: { singular: 'vegetable',
+    words: [['carrot', 1], ['pea', 1], ['bean', 1], ['potato', 1], ['onion', 2], ['spinach', 2], ['turnip', 3]], near: ['garden', 'soil', 'salad', 'harvest'] },
+  tools: { singular: 'tool',
+    words: [['hammer', 1], ['saw', 1], ['drill', 2], ['wrench', 2], ['pliers', 2], ['chisel', 3], ['screwdriver', 2]], near: ['nail', 'workbench', 'toolbox', 'plank'] },
+  instruments: { singular: 'musical instrument',
+    words: [['piano', 1], ['guitar', 1], ['drum', 1], ['flute', 2], ['violin', 2], ['trumpet', 2], ['cello', 3], ['oboe', 3]], near: ['song', 'stage', 'melody', 'orchestra'] },
+  metals: { singular: 'metal', countable: false,
+    words: [['gold', 1], ['silver', 1], ['iron', 2], ['copper', 2], ['tin', 2], ['lead', 3], ['zinc', 3]], near: ['rust', 'mine', 'ore', 'forge'] },
+  shapes: { singular: 'shape',
+    words: [['circle', 1], ['square', 1], ['triangle', 1], ['oval', 1], ['diamond', 2], ['hexagon', 2], ['pentagon', 3]], near: ['line', 'corner', 'angle', 'edge'] },
+  colors: { singular: 'color', countable: false,
+    words: [['red', 1], ['blue', 1], ['green', 1], ['yellow', 1], ['purple', 1], ['orange', 1], ['crimson', 3], ['amber', 3]], near: ['paint', 'brush', 'rainbow', 'shade'] },
+  clothing: { singular: 'clothing',
+    words: [['shirt', 1], ['coat', 1], ['hat', 1], ['sock', 1], ['glove', 1], ['scarf', 2], ['trousers', 2]], near: ['closet', 'button', 'zipper', 'hanger'] },
+  furniture: { singular: 'furniture',
+    words: [['chair', 1], ['table', 1], ['bed', 1], ['desk', 1], ['shelf', 2], ['couch', 2], ['wardrobe', 3]], near: ['room', 'cushion', 'carpet', 'lamp'] },
+  weather: { singular: 'weather', countable: false,
+    words: [['rain', 1], ['snow', 1], ['fog', 2], ['wind', 1], ['hail', 2], ['thunder', 2], ['sleet', 3]], near: ['umbrella', 'cloud', 'forecast', 'season'] },
+  vehicles: { singular: 'vehicle',
+    words: [['car', 1], ['truck', 1], ['bus', 1], ['train', 1], ['boat', 1], ['bicycle', 2], ['tractor', 2]], near: ['road', 'driver', 'garage', 'ticket'] },
+  buildings: { singular: 'building',
+    words: [['house', 1], ['school', 1], ['barn', 2], ['castle', 2], ['tower', 2], ['cottage', 3], ['cathedral', 3]], near: ['brick', 'roof', 'doorway', 'street'] },
+  body_parts: { singular: 'body part',
+    words: [['arm', 1], ['leg', 1], ['hand', 1], ['foot', 1], ['elbow', 2], ['knee', 2], ['shoulder', 2]], near: ['sleeve', 'bone', 'muscle', 'mitten'] },
+  emotions: { singular: 'feeling', countable: false,
+    words: [['joy', 2], ['anger', 2], ['fear', 2], ['sorrow', 3], ['envy', 3], ['pride', 3], ['relief', 3]], near: ['smile', 'tear', 'shout', 'sigh'] },
+  time_units: { singular: 'length of time',
+    words: [['hour', 1], ['minute', 1], ['week', 1], ['month', 1], ['year', 1], ['decade', 2], ['century', 3]], near: ['clock', 'calendar', 'watch', 'schedule'] },
+  planets: { singular: 'planet',
+    words: [['mars', 2], ['venus', 2], ['jupiter', 2], ['saturn', 2], ['mercury', 3], ['neptune', 3]], near: ['star', 'moon', 'comet', 'telescope'] },
+  liquids: { singular: 'liquid', countable: false,
+    words: [['water', 1], ['milk', 1], ['oil', 2], ['juice', 1], ['honey', 2], ['syrup', 3]], near: ['cup', 'bottle', 'straw', 'kettle'] },
+  insects: { singular: 'insect',
+    words: [['ant', 1], ['bee', 1], ['beetle', 2], ['moth', 2], ['wasp', 2], ['cricket', 3]], near: ['web', 'hive', 'sting', 'antenna'] },
+}
+
+// Members of a category that a given level is allowed to use.
+export const membersFor = (category, tiers) =>
+  CATEGORIES[category].words.filter(([, tier]) => tiers.includes(tier)).map(([word]) => word)
+
+// Categories with enough usable members at this level to build an item.
+export const categoriesFor = (tiers, needed) =>
+  Object.keys(CATEGORIES).filter((name) => membersFor(name, tiers).length >= needed)
+
+// Grammar tagging. Sentence templates prefix words with articles and pluralise
+// them, and an 8-year-old reads these -- "a group of fishs", "a bald has almost
+// no hair" and "a wind and a snow are both kinds of weather" all shipped before
+// this existed. Rather than guess at inflection, the data says what each word
+// is, and a template that cannot phrase a word correctly declines it and the
+// generator re-rolls.
+
+// Uncountable nouns: never "a gold", "a rain", "a knowledge".
+export const MASS = new Set([
+  'oxygen', 'gas', 'copper', 'granite', 'gold', 'silver', 'iron', 'tin', 'lead', 'zinc',
+  'glass', 'marble', 'clay', 'wax', 'rubber', 'wood', 'wool', 'fiber', 'water', 'air',
+  'sight', 'speech', 'hair', 'sound', 'silence', 'darkness', 'knowledge', 'strength',
+  'skill', 'heat', 'growth', 'decay', 'famine', 'illness', 'friction', 'erosion',
+  'sunlight', 'neglect', 'frost', 'drought', 'practice', 'study', 'exercise', 'rain',
+  'snow', 'fog', 'wind', 'hail', 'thunder', 'sleet', 'milk', 'oil', 'juice', 'honey',
+  'syrup', 'joy', 'anger', 'fear', 'sorrow', 'envy', 'pride', 'relief', 'clothing',
+  'blue', 'red', 'green', 'yellow', 'purple', 'orange', 'crimson', 'amber',
+  'furniture', 'weather', 'crops', 'parents', 'contents', 'light',
+])
+
+// Words that are adjectives, not nouns. "A blind has almost no sight" is the
+// failure this prevents.
+export const ADJECTIVES = new Set([
+  'hot', 'cold', 'up', 'down', 'open', 'closed', 'fast', 'slow', 'heavy', 'ancient',
+  'modern', 'warm', 'damp', 'soaked', 'big', 'enormous', 'sad', 'devastated', 'tired',
+  'exhausted', 'cool', 'frozen', 'annoyed', 'furious', 'bright', 'blinding', 'quiet',
+  'silent', 'hungry', 'starving', 'clever', 'brilliant', 'unusual', 'unprecedented',
+  'generous', 'stingy', 'permanent', 'temporary', 'solid', 'liquid', 'bald', 'blind',
+  'mute', 'barren', 'empty', 'expand', 'shrink',
+])
+
+// Nouns whose plural is not formed by adding s.
+export const IRREGULAR_PLURAL = new Set(['fish', 'sheep', 'deer'])
+
+export const isCountableNoun = (word) => !MASS.has(word) && !ADJECTIVES.has(word)
+// Silent h takes "an" despite the consonant. Only `hour` occurs in these banks,
+// but the set is the right place for the next one.
+const SILENT_H = new Set(['hour', 'honest', 'heir'])
+// Sentences are shown to a child; they start with a capital.
+export const sentenceCase = (text) => text.charAt(0).toUpperCase() + text.slice(1)
+
+export const article = (word) => (SILENT_H.has(word) || /^[aeiou]/i.test(word) ? 'an' : 'a')

@@ -4,11 +4,23 @@ import { clampLevel } from './levels.js'
 import { generateNumberSeries } from './generators/numberSeries.js'
 import { generateVerbalAnalogies } from './generators/verbalAnalogies.js'
 import { generateFigureMatrices } from './generators/figureMatrices.js'
+import { generateVerbalClassification } from './generators/verbalClassification.js'
+import { generateSentenceCompletion } from './generators/sentenceCompletion.js'
+import { generateNumberAnalogies } from './generators/numberAnalogies.js'
+import { generateNumberPuzzles } from './generators/numberPuzzles.js'
+import { generateFigureClassification } from './generators/figureClassification.js'
+import { generatePaperFolding } from './generators/paperFolding.js'
 
 export const GENERATORS = {
   number_series: generateNumberSeries,
   verbal_analogies: generateVerbalAnalogies,
   figure_matrices: generateFigureMatrices,
+  verbal_classification: generateVerbalClassification,
+  sentence_completion: generateSentenceCompletion,
+  number_analogies: generateNumberAnalogies,
+  number_puzzles: generateNumberPuzzles,
+  figure_classification: generateFigureClassification,
+  paper_folding: generatePaperFolding,
 }
 
 export const IMPLEMENTED = Object.keys(GENERATORS)

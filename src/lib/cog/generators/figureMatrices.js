@@ -1,16 +1,16 @@
-import { figure, visualKey, sameFigure, chooseRules, applyRules, ruleCount, SHAPES, SHADINGS, SIZES, RULES } from '../figures.js'
+import { figure, visualKey, sameFigure, chooseRules, applyRules, ruleCount, SHAPES, SHADINGS, SIZES, RULE_GROUP } from '../figures.js'
 import { buildItem } from '../item.js'
 
 // A 2x2 matrix:  A -> B  as  C -> ?
 //
 // The rules that turn A into B must turn C into the answer.
 
-const ATTRIBUTE_OF = {
-  count_up: 'count', count_down: 'count', count_double: 'count',
-  shade_step: 'shading', shade_back: 'shading',
-  rotate_90: 'rotation', rotate_45: 'rotation',
-  size_up: 'size', shape_next: 'shape', flip: 'flipped',
-}
+// Shared with chooseRules, so the row difference reserves the same groups the
+// rules do -- including `scale`, which covers count AND size together.
+const ATTRIBUTE_OF = RULE_GROUP
+
+// The row difference is chosen per group, not per attribute.
+const GROUP_OF = { shape: 'shape', count: 'scale', shading: 'shading', size: 'scale' }
 
 const VARIATIONS = {
   shape: (rng, f) => ({ ...f, shape: rng.pick(SHAPES.filter((s) => s !== f.shape)) }),
@@ -47,7 +47,7 @@ export function generateFigureMatrices({ level, seed, rng }) {
       // defensible readings, which is how a bright kid gets told they are wrong
       // for reasoning correctly.
       const claimed = new Set(rules.map((r) => ATTRIBUTE_OF[r.name]))
-      const free = Object.keys(VARIATIONS).filter((attr) => !claimed.has(attr))
+      const free = Object.keys(VARIATIONS).filter((attr) => !claimed.has(GROUP_OF[attr]))
       if (!free.length) return null
       const c = VARIATIONS[rng.pick(free)](rng, a)
 

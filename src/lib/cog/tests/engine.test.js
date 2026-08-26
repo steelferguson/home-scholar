@@ -1,11 +1,11 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { generateItem, IMPLEMENTED } from '../index.js'
+import { generateItem, IMPLEMENTED, SUBTESTS } from '../index.js'
 import { visualKey, sameFigure, RULES, chooseRules, ruleCount, SHAPES, SIZES, rotationVisible } from '../figures.js'
 import { makeRng } from '../rng.js'
 import { targetSeconds, clampLevel, MAX_LEVEL, MIN_LEVEL } from '../levels.js'
-import { PAIRS } from '../wordbank.js'
+import { PAIRS, CATEGORIES, MASS, ADJECTIVES } from '../wordbank.js'
 
 const LEVELS = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1)
 const SEEDS = Array.from({ length: 200 }, (_, i) => i)
@@ -20,7 +20,11 @@ const everyItem = function* () {
   }
 }
 
-const choiceKey = (c) => (c.kind === 'figure' ? visualKey(c.figure) : c.text)
+const choiceKey = (c) => {
+  if (c.kind === 'figure') return visualKey(c.figure)
+  if (c.kind === 'holes') return c.holes.map(([r, col]) => `${r},${col}`).sort().join(' ')
+  return c.text
+}
 
 test('every generator produces an item at every level', () => {
   for (const { subtest, level, seed, item } of everyItem()) {
@@ -173,7 +177,12 @@ test('every subtest offers enough distinct items at every level', () => {
   // produces a handful of items forever. Nothing errors, the tests pass, and he
   // meets the same question three times in one sitting. Level 1 of number
   // series was exactly this -- 24 distinct items -- before the ranges widened.
-  const FLOOR = { number_series: 100, verbal_analogies: 150, figure_matrices: 400 }
+  const FLOOR = {
+    number_series: 100, verbal_analogies: 150, figure_matrices: 400,
+    verbal_classification: 150, sentence_completion: 150,
+    number_analogies: 150, number_puzzles: 150,
+    figure_classification: 200, paper_folding: 40,
+  }
   const SAMPLE = 800
   for (const subtest of IMPLEMENTED) {
     for (const level of LEVELS) {
@@ -206,6 +215,110 @@ test('the row difference in a figure matrix is never an attribute a rule touches
       const attr = differing[0]
       assert.equal(b[attr], a[attr], `L${level} seed ${seed}: a rule wrote ${attr}, which is also the row difference`)
       assert.equal(answer[attr], c[attr], `L${level} seed ${seed}: the row difference ${attr} did not survive into the answer`)
+    }
+  }
+})
+
+test('all nine CogAT subtests have a generator', () => {
+  const expected = [
+    'verbal_analogies', 'verbal_classification', 'sentence_completion',
+    'number_series', 'number_analogies', 'number_puzzles',
+    'figure_matrices', 'figure_classification', 'paper_folding',
+  ]
+  assert.deepEqual([...IMPLEMENTED].sort(), [...expected].sort())
+  for (const subtest of expected) assert.ok(SUBTESTS[subtest], `${subtest} has no entry in SUBTESTS`)
+})
+
+test('sentences are grammatical', () => {
+  // An 8-year-old reads these. "A group of fishs is called a ___", "a bald has
+  // almost no ___" and "a wind and a snow are both kinds of ___" all shipped
+  // before the word bank carried countability and part-of-speech tags.
+  const badArticle = new RegExp(`\\b(a|an) (${[...MASS, ...ADJECTIVES].join('|')})\\b`, 'i')
+  for (const level of LEVELS) {
+    for (const seed of SEEDS) {
+      const { sentence } = generateItem('sentence_completion', level, seed).prompt
+      assert.match(sentence, /^[A-Z]/, `not capitalised: "${sentence}"`)
+      assert.match(sentence, /\.$/, `no full stop: "${sentence}"`)
+      assert.equal((sentence.match(/___/g) || []).length, 1, `wrong number of blanks: "${sentence}"`)
+      assert.doesNotMatch(sentence, badArticle, `article on a mass noun or adjective: "${sentence}"`)
+      assert.doesNotMatch(sentence, /\ba (a|e|i|o)[a-z]/i, `"a" before a vowel: "${sentence}"`)
+      assert.doesNotMatch(sentence, /\b(fish|sheep|deer)s\b/i, `bad plural: "${sentence}"`)
+    }
+  }
+})
+
+test('figure classification has exactly one defensible answer', () => {
+  // The stems can share MORE than the intended invariant by chance. Whatever
+  // they actually share, the correct answer must match all of it and no wrong
+  // answer may. 6.8% of items failed this before it was enforced.
+  const ATTRS = ['shape', 'count', 'shading', 'size']
+  for (const level of LEVELS) {
+    for (const seed of SEEDS) {
+      const item = generateItem('figure_classification', level, seed)
+      const stems = item.prompt.figures
+      const shared = ATTRS.filter((attr) => stems.every((f) => f[attr] === stems[0][attr]))
+      assert.ok(shared.length > 0, `L${level} seed ${seed}: the stems share nothing`)
+
+      const matches = item.choices.filter((c) => shared.every((attr) => c.figure[attr] === stems[0][attr]))
+      assert.equal(matches.length, 1, `L${level} seed ${seed}: ${matches.length} choices match everything the stems share`)
+      assert.equal(item.choices.indexOf(matches[0]), item.answer, `L${level} seed ${seed}: the matching choice is not the answer`)
+    }
+  }
+})
+
+test('paper folding answers are the punches mirrored across every fold', () => {
+  for (const level of LEVELS) {
+    for (const seed of SEEDS) {
+      const item = generateItem('paper_folding', level, seed)
+      const { folds, punches, grid } = item.prompt
+      const MIRROR = grid - 1
+
+      let expected = punches.map(([r, c]) => [r, c])
+      if (folds.includes('vertical')) expected = [...expected, ...expected.map(([r, c]) => [r, MIRROR - c])]
+      if (folds.includes('horizontal')) expected = [...expected, ...expected.map(([r, c]) => [MIRROR - r, c])]
+      const norm = (hs) => [...new Set(hs.map(([r, c]) => `${r},${c}`))].sort().join(' ')
+
+      assert.equal(norm(item.choices[item.answer].holes), norm(expected), `L${level} seed ${seed}: wrong unfold`)
+      // Punches must lie in the part of the paper still visible after folding.
+      for (const [r, c] of punches) {
+        if (folds.includes('vertical')) assert.ok(c < grid / 2, `L${level} seed ${seed}: punch outside the folded paper`)
+        if (folds.includes('horizontal')) assert.ok(r < grid / 2, `L${level} seed ${seed}: punch outside the folded paper`)
+      }
+    }
+  }
+})
+
+test('category bank is well formed', () => {
+  for (const [name, cat] of Object.entries(CATEGORIES)) {
+    assert.ok(cat.singular, `${name} has no singular label`)
+    assert.ok(cat.near.length >= 3, `${name} has too few associated-but-not-member words`)
+    const words = cat.words.map(([w]) => w)
+    assert.equal(new Set(words).size, words.length, `${name} repeats a word`)
+    for (const w of words) assert.ok(!cat.near.includes(w), `${name}: "${w}" is both a member and an associate`)
+  }
+})
+
+test('size is never asked about while the count is changing', () => {
+  // The renderer shrinks each copy as the count rises, so four large shapes are
+  // drawn smaller than one small shape. Any item that asks the eye to compare
+  // size across different counts is unanswerable, however sound its spec.
+  for (const level of LEVELS) {
+    for (const seed of SEEDS) {
+      const matrix = generateItem('figure_matrices', level, seed)
+      const [a, b] = matrix.prompt.cells
+      assert.ok(
+        a.count === b.count || a.size === b.size,
+        `figure_matrices L${level} seed ${seed}: a rule changes count and size together`,
+      )
+
+      const group = generateItem('figure_classification', level, seed)
+      const stems = group.prompt.figures
+      const countVaries = stems.some((f) => f.count !== stems[0].count)
+      const sizeShared = stems.every((f) => f.size === stems[0].size)
+      assert.ok(
+        !(countVaries && sizeShared),
+        `figure_classification L${level} seed ${seed}: shared size across differing counts`,
+      )
     }
   }
 })

@@ -116,14 +116,20 @@ export function ruleCount(level) {
 
 export const applyRules = (f, rules) => rules.reduce((acc, r) => r.apply(acc), f)
 
-// Rules that would collide (two rules writing the same attribute) make an
-// unreadable item, so they are never combined.
-const ATTRIBUTE = {
-  count_up: 'count', count_down: 'count', count_double: 'count',
+// Rules that would collide make an unreadable item, so they are never combined.
+//
+// Note count and size share the group `scale`. That is not tidiness: the
+// renderer draws each copy smaller when there are more of them, so four large
+// shapes are drawn smaller than one small shape. If a count rule and a size rule
+// fire together, "the shape gets bigger" makes the shapes visibly SHRINK. The
+// two dimensions are only comparable while the other is held still.
+export const RULE_GROUP = {
+  count_up: 'scale', count_down: 'scale', count_double: 'scale', size_up: 'scale',
   shade_step: 'shading', shade_back: 'shading',
   rotate_90: 'rotation', rotate_45: 'rotation',
-  size_up: 'size', shape_next: 'shape', flip: 'flipped',
+  shape_next: 'shape', flip: 'flipped',
 }
+const ATTRIBUTE = RULE_GROUP
 
 // `bases` are every figure the rules will be applied to (both stems of a 2x2
 // matrix, every cell of a series). A rule is only eligible if it fits them all.
