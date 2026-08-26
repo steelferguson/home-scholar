@@ -188,3 +188,24 @@ test('every subtest offers enough distinct items at every level', () => {
     }
   }
 })
+
+test('the row difference in a figure matrix is never an attribute a rule touches', () => {
+  // C is A with one attribute changed, and no rule may write that attribute --
+  // otherwise the row difference and the transformation argue over the same
+  // thing. Stated observably: whatever separates A from C must survive
+  // untouched into the answer, and must be identical in A and B.
+  const ATTRS = ['shape', 'count', 'shading', 'size', 'rotation', 'flipped']
+  for (const level of LEVELS) {
+    for (const seed of SEEDS) {
+      const item = generateItem('figure_matrices', level, seed)
+      const [a, b, c] = item.prompt.cells
+      const answer = item.choices[item.answer].figure
+      const differing = ATTRS.filter((attr) => a[attr] !== c[attr])
+
+      assert.equal(differing.length, 1, `L${level} seed ${seed}: A and C differ in ${differing.length} attributes (${differing.join(', ')})`)
+      const attr = differing[0]
+      assert.equal(b[attr], a[attr], `L${level} seed ${seed}: a rule wrote ${attr}, which is also the row difference`)
+      assert.equal(answer[attr], c[attr], `L${level} seed ${seed}: the row difference ${attr} did not survive into the answer`)
+    }
+  }
+})

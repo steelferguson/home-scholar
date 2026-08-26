@@ -3,10 +3,7 @@ import { buildItem } from '../item.js'
 
 // A 2x2 matrix:  A -> B  as  C -> ?
 //
-// The rules that turn A into B must turn C into the answer. C is A with ONE
-// attribute changed that no rule touches -- if a rule and the row difference
-// wrote the same attribute the item would have two defensible answers, which is
-// how a bright kid gets told they are wrong for reasoning correctly.
+// The rules that turn A into B must turn C into the answer.
 
 const ATTRIBUTE_OF = {
   count_up: 'count', count_down: 'count', count_double: 'count',
@@ -38,18 +35,25 @@ export function generateFigureMatrices({ level, seed, rng }) {
     () => {
       const a = baseFigure(rng)
 
-      // Provisional rules, so we know which attributes are spoken for; C then
-      // varies an attribute none of them touch.
-      const probe = chooseRules(rng, level, [a], n)
-      if (probe.length < n) return null
-      const claimed = new Set(probe.map((r) => ATTRIBUTE_OF[r.name]))
+      // Rules first, then C. An earlier version probed for rules, chose C's
+      // varied attribute against the probe, then re-chose the rules -- which
+      // silently landed on a different set a third of the time, so the
+      // "attribute no rule touches" guarantee below was not actually held.
+      const rules = chooseRules(rng, level, [a], n)
+      if (rules.length < n) return null
+
+      // C is A with ONE attribute changed that no rule touches. If a rule and
+      // the row difference wrote the same attribute the item would have two
+      // defensible readings, which is how a bright kid gets told they are wrong
+      // for reasoning correctly.
+      const claimed = new Set(rules.map((r) => ATTRIBUTE_OF[r.name]))
       const free = Object.keys(VARIATIONS).filter((attr) => !claimed.has(attr))
       if (!free.length) return null
       const c = VARIATIONS[rng.pick(free)](rng, a)
 
-      // Re-choose against BOTH stems: a rule that fits A may not fit C.
-      const rules = chooseRules(rng, level, [a, c], n)
-      if (rules.length < n) return null
+      // A rule that fits A may not fit C once C differs; re-roll rather than
+      // ship a rule that wraps on the bottom row only.
+      if (!rules.every((r) => r.fits(c))) return null
 
       const b = applyRules(a, rules)
       const correct = applyRules(c, rules)
