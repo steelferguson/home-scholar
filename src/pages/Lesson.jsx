@@ -1,9 +1,13 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
 import { isNativeShell } from '../lib/nativeBridge'
 import ReactMarkdown from 'react-markdown'
+import AppHeader from '../components/AppHeader'
+import LoadState from '../components/LoadState'
+import WebAudioPlayer from '../components/audio/WebAudioPlayer'
+import { useQuery, queryData } from '../hooks/useQuery'
 
 // Both players pull heavy deps (KaTeX, confetti) — keep them out of the main chunk
 const VisualLessonPlayer = lazy(() => import('../components/visual/VisualLessonPlayer'))
@@ -19,29 +23,19 @@ const loadingCard = (
 export default function Lesson({ user, onSignOut }) {
   const { slug, number } = useParams()
   const navigate = useNavigate()
-  const lessonNum = parseInt(number)
-  const [course, setCourse] = useState(null)
-  const [lesson, setLesson] = useState(null)
-  const [allLessons, setAllLessons] = useState([])
-  const [vocab, setVocab] = useState(null) // { url, text } — keyed to detect stale content
-  const [playbackRate, setPlaybackRate] = useState(1)
-  const audioRef = useRef(null)
-  const saveTimerRef = useRef(null)
-  const { progress, savePosition, markComplete } = useProgress(user.id)
-
-  useEffect(() => {
-    supabase.from('courses').select('*').eq('slug', slug).single().then(({ data }) => {
-      setCourse(data)
-      if (data) {
-        supabase.from('lessons').select('*').eq('course_id', data.id).order('lesson_number')
-          .then(({ data: lessons }) => {
-            setAllLessons(lessons || [])
-            const current = lessons?.find(l => l.lesson_number === lessonNum)
-            setLesson(current || null)
-          })
-      }
-    })
+  const lessonNum = Number(number)
+  const [vocab, setVocab] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const saved = useProgress()
+  const { progress, savePosition, markComplete } = saved
+  const load = useCallback(async () => {
+    const course = await queryData(supabase.from('courses').select('*').eq('slug', slug).maybeSingle())
+    if (!course) return null
+    const allLessons = await queryData(supabase.from('lessons').select('*').eq('course_id', course.id).order('lesson_number'))
+    return { course, allLessons: allLessons || [], lesson: allLessons?.find(item => item.lesson_number === lessonNum) }
   }, [slug, lessonNum])
+  const { data, loading, error, retry } = useQuery(`${slug}/${number}`, load)
+  const { course, lesson, allLessons = [] } = data || {}
 
   // Load vocab; the stale flag stops a slow response for a previous lesson
   // from clobbering the current one
@@ -55,42 +49,11 @@ export default function Lesson({ user, onSignOut }) {
     return () => { stale = true }
   }, [lesson?.vocab_url])
 
-  // Resume from saved position
-  useEffect(() => {
-    if (!lesson || !audioRef.current) return
-    const saved = progress[lesson.id]
-    if (saved?.last_position_seconds && saved.status !== 'completed') {
-      audioRef.current.currentTime = saved.last_position_seconds
-    }
-  }, [lesson, progress])
-
-  // Auto-save position every 10 seconds during playback
-  const handleTimeUpdate = useCallback(() => {
-    if (!lesson || !audioRef.current) return
-    if (saveTimerRef.current) return
-    saveTimerRef.current = setTimeout(() => {
-      saveTimerRef.current = null
-      if (audioRef.current && !audioRef.current.paused) {
-        savePosition(lesson.id, audioRef.current.currentTime)
-      }
-    }, 10000)
-  }, [lesson, savePosition])
-
-  // Save position on pause
-  const handlePause = useCallback(() => {
-    if (!lesson || !audioRef.current) return
-    savePosition(lesson.id, audioRef.current.currentTime)
-  }, [lesson, savePosition])
-
-  // Apply playback rate — also re-applied when the audio element remounts
-  // after visiting a non-audio lesson (lesson changes → fresh element at 1x)
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.playbackRate = playbackRate
-  }, [playbackRate, lesson])
-
   const handleMarkComplete = async () => {
-    if (!lesson) return
-    await markComplete(lesson.id)
+    if (!lesson || saving) return
+    setSaving(true)
+    try { await markComplete(lesson.id) } catch { /* Shared progress notice displays the failure. */ }
+    finally { setSaving(false) }
   }
 
   const vocabContent = vocab && vocab.url === lesson?.vocab_url ? vocab.text : ''
@@ -98,12 +61,13 @@ export default function Lesson({ user, onSignOut }) {
   const nextLesson = allLessons.find(l => l.lesson_number === lessonNum + 1)
   const isCompleted = lesson && progress[lesson.id]?.status === 'completed'
 
-  if (!lesson) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-400">Loading...</div>
-      </div>
-    )
+  if (loading || error || !lesson) {
+    return <div className="app-page">
+      <AppHeader user={user} onSignOut={onSignOut} backTo="/" backLabel="All courses" />
+      <main className="lesson-main"><LoadState loading={loading}
+        message={loading ? 'Loading your lesson…' : error ? 'We couldn’t load this lesson.' : 'This lesson could not be found.'}
+        onRetry={error ? retry : undefined} backTo="/" /></main>
+    </div>
   }
 
   // Kids quiz-game lessons take over the whole screen with their own theme.
@@ -120,30 +84,21 @@ export default function Lesson({ user, onSignOut }) {
           user={user}
           lesson={lesson}
           onExit={() => navigate(`/course/${slug}`)}
-          onComplete={() => markComplete(lesson.id)}
+          onComplete={handleMarkComplete}
         />
       </Suspense>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to={`/course/${slug}`} className="text-blue-600 hover:underline text-sm">
-            &larr; {course?.title}
-          </Link>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500">{user.email}</span>
-          <button onClick={onSignOut} className="text-sm text-gray-400 hover:text-gray-600">Sign out</button>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-6 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-1">
-          Lesson {lesson.lesson_number}: {lesson.title}
-        </h2>
+    <div className="app-page">
+      <AppHeader user={user} onSignOut={onSignOut} backTo={`/course/${slug}`} backLabel={course.title} />
+      <main className="lesson-main">
+        <p className="eyebrow mb-3">LESSON {lesson.lesson_number}</p>
+        {saved.error && <div className="inline-notice" role="alert">{saved.error} <button onClick={saved.retry}>Try again</button></div>}
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">
+          {lesson.title}
+        </h1>
         <p className="text-sm text-gray-500 mb-6">
           {lesson.duration_minutes ? `${Math.round(lesson.duration_minutes)} minutes` : ''}
           {isCompleted && <span className="ml-2 text-green-600 font-medium">Completed</span>}
@@ -158,7 +113,7 @@ export default function Lesson({ user, onSignOut }) {
                 lesson={lesson}
                 savedStep={progress[lesson.id]?.last_position_seconds || 0}
                 isCompleted={isCompleted}
-                onSaveStep={(i) => { if (!isCompleted) savePosition(lesson.id, i) }}
+                onSaveStep={(i) => { if (!isCompleted) savePosition(lesson.id, i).catch(() => {}) }}
                 onMarkComplete={handleMarkComplete}
               />
             </Suspense>
@@ -180,40 +135,19 @@ export default function Lesson({ user, onSignOut }) {
               />
             </Suspense>
           ) : (
-            <>
-              <audio
-                ref={audioRef}
-                src={lesson.audio_url}
-                controls
-                onTimeUpdate={handleTimeUpdate}
-                onPause={handlePause}
-                className="w-full mb-3"
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Speed:</span>
-                {[0.75, 1, 1.25, 1.5].map(rate => (
-                  <button
-                    key={rate}
-                    onClick={() => setPlaybackRate(rate)}
-                    className={`px-2 py-1 text-xs rounded ${
-                      playbackRate === rate
-                        ? 'bg-blue-100 text-blue-700 font-medium'
-                        : 'text-gray-500 hover:bg-gray-100'
-                    }`}
-                  >
-                    {rate}x
-                  </button>
-                ))}
-              </div>
-            </>
+            <WebAudioPlayer key={lesson.id} lesson={lesson}
+              savedPosition={progress[lesson.id]?.last_position_seconds || 0}
+              progressReady={!saved.loading && !saved.error} completed={isCompleted}
+              onSave={savePosition} onComplete={handleMarkComplete} />
           )}
           {!isCompleted && (
             <div className="flex justify-end mt-4">
               <button
                 onClick={handleMarkComplete}
-                className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
+                disabled={saving}
+                className="primary-button"
               >
-                Mark Complete
+                {saving ? 'Saving…' : 'Mark complete'}
               </button>
             </div>
           )}

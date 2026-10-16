@@ -1,85 +1,63 @@
-import { useState, useEffect } from 'react'
+import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
+import { useQuery, queryData } from '../hooks/useQuery'
+import AppHeader from '../components/AppHeader'
+import LoadState from '../components/LoadState'
 
 export default function Dashboard({ user, onSignOut }) {
-  const [courses, setCourses] = useState([])
-  const [lessons, setLessons] = useState({})
-  const { progress } = useProgress(user.id)
-
-  useEffect(() => {
-    supabase.from('courses').select('*').order('sort_order').then(({ data }) => {
-      setCourses(data || [])
-    })
-    supabase.from('lessons').select('id, course_id').then(({ data }) => {
-      const map = {}
-      for (const l of data || []) {
-        if (!map[l.course_id]) map[l.course_id] = []
-        map[l.course_id].push(l.id)
-      }
-      setLessons(map)
-    })
+  const saved = useProgress()
+  const load = useCallback(async () => {
+    const [courses, lessons] = await Promise.all([
+      queryData(supabase.from('courses').select('*').order('sort_order')),
+      queryData(supabase.from('lessons').select('id, course_id, lesson_type')),
+    ])
+    return { courses: courses || [], lessons: lessons || [] }
   }, [])
-
-  const getCourseProgress = (courseId) => {
-    const lessonIds = lessons[courseId] || []
-    if (lessonIds.length === 0) return { completed: 0, total: 0, pct: 0 }
-    const completed = lessonIds.filter(id => progress[id]?.status === 'completed').length
-    return { completed, total: lessonIds.length, pct: Math.round((completed / lessonIds.length) * 100) }
-  }
-
+  const { data, loading, error, retry } = useQuery('courses', load)
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Home Scholar</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500">{user.email}</span>
-          <button onClick={onSignOut} className="text-sm text-gray-400 hover:text-gray-600">
-            Sign out
-          </button>
+    <div className="app-page">
+      <AppHeader user={user} onSignOut={onSignOut} />
+      <main className="dashboard-main">
+        <div className="dashboard-heading">
+          <h1>Your courses</h1>
+          {data && <span>{data.courses.length} courses</span>}
         </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Courses</h2>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map(course => {
-            const { completed, total, pct } = getCourseProgress(course.id)
-            return (
-              <Link
-                key={course.id}
-                to={`/course/${course.slug}`}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition block"
-              >
-                <h3 className="font-semibold text-gray-900 mb-1">
-                  {course.title}
-                  {course.audience === 'kids' && (
-                    <span className="ml-2 text-xs font-bold bg-gradient-to-r from-pink-500 to-amber-500 text-white rounded-full px-2 py-0.5 align-middle">
-                      KIDS 🎈
-                    </span>
-                  )}
-                </h3>
-                <p className="text-sm text-gray-500 mb-3">{course.description}</p>
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-                  <span>{completed}/{total} lessons</span>
-                  <span>{pct}%</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-
-        {courses.length === 0 && (
-          <p className="text-gray-400 text-center py-12">No courses available yet.</p>
-        )}
+        {loading ? <LoadState loading message="Loading your courses…" />
+          : error ? <LoadState message="We couldn’t load your courses." onRetry={retry} />
+          : data.courses.length === 0 ? <div className="state-card"><p>No courses are available yet.</p></div>
+          : <>
+            {saved.error && <div className="inline-notice" role="alert">{saved.error} <button onClick={saved.retry}>Try again</button></div>}
+            <div className="course-table-heading" aria-hidden="true">
+              <span>Course</span><span>Format</span><span>Progress</span>
+            </div>
+            <div className="course-rows">
+              {data.courses.map(course => {
+                const lessons = data.lessons.filter(lesson => lesson.course_id === course.id)
+                const completed = lessons.filter(lesson => saved.progress[lesson.id]?.status === 'completed').length
+                const pct = lessons.length ? Math.round(completed / lessons.length * 100) : 0
+                const audio = lessons.some(lesson => !lesson.lesson_type || lesson.lesson_type === 'audio')
+                const kids = course.audience === 'kids'
+                return <Link key={course.id} to={`/course/${course.slug}`} className="course-button">
+                  <div className="course-info">
+                    <h2>{course.title}</h2>
+                    <p>{course.description}</p>
+                  </div>
+                  <span className="course-format">{kids ? 'Kids' : audio ? 'Audio' : 'Interactive'}</span>
+                  <div className="course-progress-cell">
+                    <div className="course-progress-label">
+                      <span>{saved.loading ? 'Loading progress…' : saved.error ? 'Progress unavailable' : `${completed} / ${lessons.length} complete`}</span>
+                      <strong>{!saved.loading && !saved.error ? `${pct}%` : '—'}</strong>
+                    </div>
+                    <div className="course-progress" role="progressbar" aria-label={`${course.title} completion`} aria-valuenow={!saved.loading && !saved.error ? pct : undefined} aria-valuemin={0} aria-valuemax={100}>
+                      <span style={{ width: `${!saved.loading && !saved.error ? pct : 0}%` }} />
+                    </div>
+                  </div>
+                </Link>
+              })}
+            </div>
+          </>}
       </main>
     </div>
   )

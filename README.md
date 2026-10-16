@@ -4,7 +4,7 @@ A web app for self-paced audio learning — language courses, music theory, and 
 
 ## Status
 
-_Last updated: 2026-08-20_
+_Last updated: 2026-10-16_
 
 **Live** (database migrated + seeded on the production Supabase project):
 - **Native mobile shell** — `projects/home-scholar-mobile/` wraps this app in an
@@ -54,6 +54,21 @@ _Last updated: 2026-08-20_
   agent live, back-office document tailoring, five practice scenarios), with two worked examples
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
+
+**October 2026 refresh:**
+- Graphite theme with charcoal text, consistent gray course-row fills and subtle
+  shadows. Larger typography, tighter spacing, aligned desktop columns and shared
+  audio controls. The header pairs a plain wordmark with the approved house-and-book mark.
+  No course icons, decorative arrows or marketing taglines.
+- Distinct loading, empty, error and retry states for courses/lessons, with
+  cancellation of stale route responses and useful not-found states.
+- Browser resume happens once after metadata and progress arrive; later saves
+  cannot pull playback backwards. Mouse, touch and keyboard share seek handling.
+- Shared progress state serializes saves, waits for initial progress and preserves
+  completed lessons during replays; progress failures are visible.
+- Native control state ignores stale ticks during a seek and supports the version
+  2 shell's seek acknowledgements, with compatibility for the installed version 1.
+  The companion native shell branch also prepares matching icon/splash assets.
 
 **In progress:**
 - Business Communication course: 11 visual lessons (pyramid principle, MECE,
@@ -184,3 +199,40 @@ home-scholar/
 ## License
 
 MIT
+
+## Verifying the UI/audio refresh locally
+
+No production credentials or data are needed:
+
+```bash
+node --test tests/*.test.js src/lib/cog/tests/*.test.js
+npm run build
+npm run lint
+node tests/serve.mjs
+```
+
+The fixture server binds only `127.0.0.1:5187`, disables env-file loading and
+substitutes an in-memory Supabase fixture. Open `/` for the course dashboard,
+`/?scenario=loading`, `/?scenario=empty`, `/?scenario=error`, and
+`/?scenario=progress-error` for failure/empty states. The fixture toolbar can
+release held loading or repair a failed backend before pressing **Try again**.
+`/course/spanish/lesson/2?native=1` simulates the version 2 audio bridge and
+intentionally sends stale status before each seek acknowledgement.
+
+Open `/tests/audio-regression.html` and click **Run audio regression checks**
+for five checks using a real browser audio element and local WAV data.
+`/tests/mobile.html?width=320` or `width=390` renders the app inside a phone-width
+iframe; `width=1100` provides a scaled desktop layout; `&path=/course/spanish/lesson/2&native=1` renders the native player.
+Fixtures are development-only and are not Vite production entry points.
+
+The 2026-10-16 run passed 44 Node checks, five browser-media checks, build and
+lint. The companion shell passed eight seek checks and iOS/Android JS exports.
+Native background audio and lock-screen behavior still need a physical device;
+these checks make no claim about device execution or a production release.
+
+Theme exploration lives only in the local fixture: `/?embed=1&themes=1` offers
+Navy & Paper, Graphite and Clay & Linen. Steel selected Graphite, which is now the
+base product theme. Steel approved the simplified blue/ivory house-and-book
+artwork without the sprout. It supplies the header, favicon and native assets.
+The Home Scholar wordmark has no text shadow; course rows retain prominent
+bottom-left shadows.

@@ -1,98 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
+import { useQuery, queryData } from '../hooks/useQuery'
+import AppHeader from '../components/AppHeader'
+import LoadState from '../components/LoadState'
 
 export default function Course({ user, onSignOut }) {
   const { slug } = useParams()
-  const [course, setCourse] = useState(null)
-  const [lessonList, setLessonList] = useState([])
-  const { progress } = useProgress(user.id)
-
-  useEffect(() => {
-    supabase.from('courses').select('*').eq('slug', slug).single().then(({ data }) => {
-      setCourse(data)
-      if (data) {
-        supabase.from('lessons').select('*').eq('course_id', data.id).order('lesson_number')
-          .then(({ data: lessons }) => setLessonList(lessons || []))
-      }
-    })
+  const saved = useProgress()
+  const load = useCallback(async () => {
+    const course = await queryData(supabase.from('courses').select('*').eq('slug', slug).maybeSingle())
+    if (!course) return null
+    const lessons = await queryData(supabase.from('lessons').select('*').eq('course_id', course.id).order('lesson_number'))
+    return { course, lessons: lessons || [] }
   }, [slug])
-
-  if (!course) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-400">Loading...</div>
-      </div>
-    )
-  }
-
-  const statusIcon = (lessonId) => {
-    const p = progress[lessonId]
-    if (!p || p.status === 'not_started') return <span className="text-gray-300">&#9675;</span>
-    if (p.status === 'in_progress') return <span className="text-blue-500">&#9684;</span>
-    return <span className="text-green-500">&#9679;</span>
-  }
-
-  const typeIcon = (lesson) => {
-    if (lesson.lesson_type === 'visual') return <span title="Interactive visual lesson">📊</span>
-    if (lesson.lesson_type === 'quiz_game') return <span title="Quiz game">🎮</span>
-    return <span title="Audio lesson">🎧</span>
-  }
-
-  const nextLesson = lessonList.find(l => {
-    const p = progress[l.id]
-    return !p || p.status !== 'completed'
-  })
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/" className="text-blue-600 hover:underline text-sm">&larr; Courses</Link>
-          <h1 className="text-xl font-bold text-gray-900">Home Scholar</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500">{user.email}</span>
-          <button onClick={onSignOut} className="text-sm text-gray-400 hover:text-gray-600">Sign out</button>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-6 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">{course.title}</h2>
-        <p className="text-gray-500 mb-6">{course.description}</p>
-
-        {nextLesson && (
-          <Link
-            to={`/course/${slug}/lesson/${nextLesson.lesson_number}`}
-            className="inline-block mb-6 px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
-          >
-            Continue &rarr; Lesson {nextLesson.lesson_number}
-          </Link>
-        )}
-
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-          {lessonList.map(lesson => (
-            <Link
-              key={lesson.id}
-              to={`/course/${slug}/lesson/${lesson.lesson_number}`}
-              className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition"
-            >
-              <span className="text-lg">{statusIcon(lesson.id)}</span>
-              <span className="text-sm">{typeIcon(lesson)}</span>
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-gray-900">
-                  Lesson {lesson.lesson_number}
-                </span>
-                <span className="text-sm text-gray-500 ml-2">{lesson.title}</span>
-              </div>
-              <span className="text-xs text-gray-400 shrink-0">
-                {lesson.duration_minutes ? `${Math.round(lesson.duration_minutes)} min` : ''}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </main>
-    </div>
-  )
+  const { data, loading, error, retry } = useQuery(slug, load)
+  const completed = data?.lessons.filter(lesson => saved.progress[lesson.id]?.status === 'completed').length || 0
+  const next = data?.lessons.find(lesson => saved.progress[lesson.id]?.status !== 'completed')
+  return <div className="app-page">
+    <AppHeader user={user} onSignOut={onSignOut} backTo="/" backLabel="All courses" />
+    <main className="lesson-main">
+      {loading ? <LoadState loading message="Loading your lessons…" />
+        : error ? <LoadState message="We couldn’t load this course." onRetry={retry} backTo="/" />
+        : !data ? <LoadState message="This course could not be found." backTo="/" />
+        : <>
+          <div className="page-intro"><h1>{data.course.title}</h1><p>{data.course.description}</p></div>
+          {saved.error && <div className="inline-notice" role="alert">{saved.error} <button onClick={saved.retry}>Try again</button></div>}
+          <div className="course-summary"><span>{saved.loading ? 'Loading progress…' : saved.error ? 'Progress unavailable' : `${completed} of ${data.lessons.length} complete`}</span>
+            {next && !saved.loading && !saved.error && <Link className="primary-button" to={`/course/${slug}/lesson/${next.lesson_number}`}>{completed || saved.progress[next.id] ? 'Continue' : 'Start learning'} →</Link>}
+          </div>
+          {data.lessons.length === 0 ? <div className="state-card"><p>Lessons are on their way. Check back soon.</p></div> :
+            <div className="lesson-list">{data.lessons.map(lesson => {
+              const status = saved.progress[lesson.id]?.status
+              return <Link key={lesson.id} to={`/course/${slug}/lesson/${lesson.lesson_number}`} className="lesson-row">
+                <span className={`lesson-number ${status === 'completed' ? 'is-complete' : ''}`}>{status === 'completed' ? '✓' : String(lesson.lesson_number).padStart(2, '0')}</span>
+                <div className="lesson-row-text"><h2>{lesson.title}</h2><span>{lesson.lesson_type === 'visual' ? 'Interactive lesson' : lesson.lesson_type === 'quiz_game' ? 'Quiz & play' : 'Audio lesson'}{status === 'in_progress' ? ' · In progress' : status === 'completed' ? ' · Completed' : ''}</span></div>
+                <span className="lesson-duration">{lesson.duration_minutes ? `${Math.round(lesson.duration_minutes)} min` : ''}</span><span aria-hidden="true">→</span>
+              </Link>
+            })}</div>}
+        </>}
+    </main>
+  </div>
 }
