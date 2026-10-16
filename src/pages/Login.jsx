@@ -1,34 +1,43 @@
 import { useState } from 'react'
 import { isNativeShell } from '../lib/nativeBridge'
+import Brand from '../components/Brand'
 
 export default function Login({ onEmailSignIn, onEmailSignUp, onGoogleSignIn }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState(null)
+  const [notice, setNotice] = useState(null)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
+    setNotice(null)
     setLoading(true)
-    const { error } = isSignUp
-      ? await onEmailSignUp(email, password)
-      : await onEmailSignIn(email, password)
-    if (error) setError(error.message)
-    setLoading(false)
+    try {
+      const { error, data } = isSignUp
+        ? await onEmailSignUp(email, password)
+        : await onEmailSignIn(email, password)
+      if (error) setError(error.message)
+      else if (isSignUp && !data?.session) setNotice('Check your email to confirm your account, then sign in.')
+    } catch { setError('We couldn’t connect. Please try again.') }
+    finally { setLoading(false) }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">Home Scholar</h1>
-        <p className="text-center text-gray-500 mb-8">Language learning, your way</p>
+    <div className="login-page">
+      <div className="login-content">
+        <div className="login-brand"><Brand large /></div>
+        <h1>Your next chapter starts here.</h1>
+        <p className="login-subtitle">Languages, big ideas, and little discoveries.<br />Learn something new at your own pace.</p>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="login-form space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
+              id="email"
+              autoComplete="email"
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -37,8 +46,10 @@ export default function Login({ onEmailSignIn, onEmailSignUp, onGoogleSignIn }) 
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
+              id="password"
+              autoComplete={isSignUp ? "new-password" : "current-password"}
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -48,14 +59,15 @@ export default function Login({ onEmailSignIn, onEmailSignUp, onGoogleSignIn }) 
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p role="alert" className="text-red-600 text-sm">{error}</p>}
+          {notice && <p role="status" className="text-emerald-700 text-sm">{notice}</p>}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition"
           >
-            {loading ? '...' : isSignUp ? 'Sign Up' : 'Sign In'}
+            {loading ? 'One moment…' : isSignUp ? 'Sign Up' : 'Sign In'}
           </button>
 
           {/* Google refuses OAuth from an embedded webview
@@ -73,7 +85,11 @@ export default function Login({ onEmailSignIn, onEmailSignUp, onGoogleSignIn }) 
 
               <button
                 type="button"
-                onClick={onGoogleSignIn}
+                onClick={async () => {
+                  setError(null)
+                  try { const { error } = await onGoogleSignIn(); if (error) setError(error.message) }
+                  catch { setError('We couldn’t connect to Google. Please try again.') }
+                }}
                 className="w-full py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
               >
                 Continue with Google
@@ -85,7 +101,7 @@ export default function Login({ onEmailSignIn, onEmailSignUp, onGoogleSignIn }) 
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               type="button"
-              onClick={() => { setIsSignUp(!isSignUp); setError(null) }}
+              onClick={() => { setIsSignUp(!isSignUp); setError(null); setNotice(null) }}
               className="text-blue-600 hover:underline"
             >
               {isSignUp ? 'Sign in' : 'Sign up'}

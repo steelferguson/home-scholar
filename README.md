@@ -4,7 +4,7 @@ A web app for self-paced audio learning — language courses, music theory, and 
 
 ## Status
 
-_Last updated: 2026-08-20_
+_Last updated: 2026-10-16_
 
 **Live** (database migrated + seeded on the production Supabase project):
 - **Native mobile shell** — `projects/home-scholar-mobile/` wraps this app in an
@@ -54,6 +54,19 @@ _Last updated: 2026-08-20_
   agent live, back-office document tailoring, five practice scenarios), with two worked examples
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
+
+**Prepared for review (2026-10-16; not deployed):**
+- Warm green/cream UI, a book-and-audio logo, consistent headers, clearer course
+  cards and shared audio controls; responsive layouts checked at 320/390/1280px.
+- Distinct loading, empty, error and retry states for courses/lessons, with
+  cancellation of stale route responses and useful not-found states.
+- Browser resume happens once after metadata and progress arrive; later saves
+  cannot pull playback backwards. Mouse, touch and keyboard share seek handling.
+- Shared progress state serializes saves, waits for initial progress and preserves
+  completed lessons during replays; progress failures are visible.
+- Native control state ignores stale ticks during a seek and supports the version
+  2 shell's seek acknowledgements, with compatibility for the installed version 1.
+  The companion native shell branch also prepares matching icon/splash assets.
 
 **In progress:**
 - Business Communication course: 11 visual lessons (pyramid principle, MECE,
@@ -184,3 +197,33 @@ home-scholar/
 ## License
 
 MIT
+
+## Verifying the UI/audio refresh locally
+
+No production credentials or data are needed:
+
+```bash
+node --test tests/*.test.js src/lib/cog/tests/*.test.js
+npm run build
+npm run lint
+node tests/serve.mjs
+```
+
+The fixture server binds only `127.0.0.1:5187`, disables env-file loading and
+substitutes an in-memory Supabase fixture. Open `/` for the course dashboard,
+`/?scenario=loading`, `/?scenario=empty`, `/?scenario=error`, and
+`/?scenario=progress-error` for failure/empty states. The fixture toolbar can
+release held loading or repair a failed backend before pressing **Try again**.
+`/course/spanish/lesson/2?native=1` simulates the version 2 audio bridge and
+intentionally sends stale status before each seek acknowledgement.
+
+Open `/tests/audio-regression.html` and click **Run audio regression checks**
+for four checks using a real browser audio element and local WAV data.
+`/tests/mobile.html?width=320` or `width=390` renders the app inside a phone-width
+iframe; `&path=/course/spanish/lesson/2&native=1` renders the native player.
+Fixtures are development-only and are not Vite production entry points.
+
+The 2026-10-16 run passed 41 Node checks, four browser-media checks, build and
+lint. The companion shell passed five seek checks and iOS/Android JS exports.
+Native background audio and lock-screen behavior still need a physical device;
+these checks make no claim about device execution or a production release.
