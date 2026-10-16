@@ -56,8 +56,9 @@ _Last updated: 2026-10-16_
   coins, streaks, and the arcade platformer reward
 
 **Prepared for review (2026-10-16; not deployed):**
-- Warm green/cream UI, a book-and-audio logo, consistent headers, clearer course
-  cards and shared audio controls; responsive layouts checked at 320/390/1280px.
+- Muted full-width course buttons with subtle shadows, aligned desktop columns,
+  compact phone rows, a house-and-book logo and shared audio controls. No course
+  icons, decorative arrows or marketing taglines.
 - Distinct loading, empty, error and retry states for courses/lessons, with
   cancellation of stale route responses and useful not-found states.
 - Browser resume happens once after metadata and progress arrive; later saves
@@ -220,7 +221,7 @@ intentionally sends stale status before each seek acknowledgement.
 Open `/tests/audio-regression.html` and click **Run audio regression checks**
 for four checks using a real browser audio element and local WAV data.
 `/tests/mobile.html?width=320` or `width=390` renders the app inside a phone-width
-iframe; `&path=/course/spanish/lesson/2&native=1` renders the native player.
+iframe; `width=1100` provides a scaled desktop layout; `&path=/course/spanish/lesson/2&native=1` renders the native player.
 Fixtures are development-only and are not Vite production entry points.
 
 The 2026-10-16 run passed 41 Node checks, four browser-media checks, build and

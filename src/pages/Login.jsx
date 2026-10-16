@@ -29,8 +29,8 @@ export default function Login({ onEmailSignIn, onEmailSignUp, onGoogleSignIn }) 
     <div className="login-page">
       <div className="login-content">
         <div className="login-brand"><Brand large /></div>
-        <h1>Your next chapter starts here.</h1>
-        <p className="login-subtitle">Languages, big ideas, and little discoveries.<br />Learn something new at your own pace.</p>
+        <h1>{isSignUp ? 'Create an account' : 'Sign in'}</h1>
+        <p className="login-subtitle">{isSignUp ? 'Save your courses and lesson progress.' : 'Continue your courses and lessons.'}</p>
 
         <form onSubmit={handleSubmit} className="login-form space-y-4">
           <div>

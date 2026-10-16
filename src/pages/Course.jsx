@@ -25,7 +25,7 @@ export default function Course({ user, onSignOut }) {
         : error ? <LoadState message="We couldn’t load this course." onRetry={retry} backTo="/" />
         : !data ? <LoadState message="This course could not be found." backTo="/" />
         : <>
-          <div className="page-intro"><p className="eyebrow">A CHAPTER AT A TIME</p><h1>{data.course.title}</h1><p>{data.course.description}</p></div>
+          <div className="page-intro"><h1>{data.course.title}</h1><p>{data.course.description}</p></div>
           {saved.error && <div className="inline-notice" role="alert">{saved.error} <button onClick={saved.retry}>Try again</button></div>}
           <div className="course-summary"><span>{saved.loading ? 'Loading progress…' : saved.error ? 'Progress unavailable' : `${completed} of ${data.lessons.length} complete`}</span>
             {next && !saved.loading && !saved.error && <Link className="primary-button" to={`/course/${slug}/lesson/${next.lesson_number}`}>{completed || saved.progress[next.id] ? 'Continue' : 'Start learning'} →</Link>}
