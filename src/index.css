@@ -56,9 +56,9 @@ a { text-decoration: none; }
 .app-header { background: #ffffff; border-bottom: 1px solid #d1d2d4; }
 .header-inner { max-width: 1152px; margin: auto; min-height: 68px; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .brand { display: inline-flex; align-items: center; gap: 12px; color: #3e424a; font-size: 26px; font-weight: 700; letter-spacing: -.7px; line-height: 1.25; }
-.brand svg { width: 44px; height: 44px; flex-shrink: 0; }
+.brand img { width: 44px; height: 44px; flex-shrink: 0; object-fit: cover; border-radius: 9px; }
 .brand-large { font-size: 25px; }
-.brand-large svg { width: 58px; height: 58px; }
+.brand-large img { width: 58px; height: 58px; }
 .header-account { display: flex; align-items: center; gap: 24px; font-size: 12px; }
 .account-email { color: #57595f; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .quiet-button { display: inline-flex; align-items: center; justify-content: center; color: #3e424a; padding: 10px 12px; border-radius: 8px; font-size: 15px; font-weight: 600; }
@@ -143,9 +143,9 @@ a { text-decoration: none; }
 @media (max-width: 560px) {
   .header-inner { padding: 10px 12px; min-height: 60px; }
   .brand { font-size: 24px; gap: 8px; }
-  .brand svg { width: 38px; height: 38px; }
+  .brand img { width: 38px; height: 38px; }
   .brand-large { font-size: 25px; }
-  .brand-large svg { width: 58px; height: 58px; }
+  .brand-large img { width: 58px; height: 58px; }
   .header-account { gap: 0; }
   .account-email { display: none; }
   .header-breadcrumb { padding: 0 20px 14px; }

@@ -53,3 +53,50 @@ test('position saves wait for initial progress so replays preserve completion', 
   assert.equal(store.getSnapshot().progress.lesson.last_position_seconds, 90)
   assert.equal(written[0].status, 'completed')
 })
+
+test('retry replaces cached progress with the latest server completion', async () => {
+  let rows = [{ lesson_id: 'lesson', status: 'in_progress', last_position_seconds: 10 }]
+  const { client, written } = clientFixture()
+  const from = client.from
+  client.from = () => ({ ...from(), select: () => ({ eq: async () => ({ data: rows }) }) })
+  const store = createProgressStore(client, 'learner')
+  await store.load()
+  rows = [{ lesson_id: 'lesson', status: 'completed', last_position_seconds: 50, completed_at: '2026-10-16' }]
+  await store.load()
+  assert.equal(store.getSnapshot().progress.lesson.status, 'completed')
+  assert.equal(store.getSnapshot().progress.lesson.last_position_seconds, 50)
+  await store.savePosition('lesson', 60)
+  assert.equal(written.at(-1).status, 'completed')
+})
+
+test('retry removes cached rows that are no longer on the server', async () => {
+  let rows = [{ lesson_id: 'lesson', status: 'in_progress', last_position_seconds: 10 }]
+  const client = { from: () => ({ select: () => ({ eq: async () => ({ data: rows }) }) }) }
+  const store = createProgressStore(client, 'learner')
+  await store.load()
+  rows = []
+  await store.load()
+  assert.deepEqual(store.getSnapshot().progress, {})
+})
+
+test('a refresh cannot overwrite a completion saved while its request was pending', async () => {
+  let finishWrite, finishRefresh
+  let refreshing = false
+  const client = { from: () => ({
+    select: () => ({ eq: () => refreshing
+      ? new Promise(resolve => { finishRefresh = resolve })
+      : Promise.resolve({ data: [] }) }),
+    upsert: payload => ({ select: () => new Promise(resolve => { finishWrite = () => resolve({ data: [payload] }) }) }),
+  }) }
+  const store = createProgressStore(client, 'learner')
+  await store.load()
+  const saving = store.markComplete('lesson')
+  await new Promise(resolve => setTimeout(resolve, 0))
+  refreshing = true
+  const loading = store.load()
+  finishWrite()
+  await saving
+  finishRefresh({ data: [{ lesson_id: 'lesson', status: 'in_progress', last_position_seconds: 10 }] })
+  await loading
+  assert.equal(store.getSnapshot().progress.lesson.status, 'completed')
+})

@@ -3,6 +3,8 @@ export function createProgressStore(client, userId) {
   let state = { progress: {}, loading: Boolean(userId), error: null }
   const listeners = new Set()
   const writes = new Map()
+  const writtenVersions = new Map()
+  let writeVersion = 0
   let loadVersion = 0
   let initialLoad = null
   let loadFailed = false
@@ -12,6 +14,7 @@ export function createProgressStore(client, userId) {
   }
   const performLoad = async () => {
     const version = ++loadVersion
+    const startedAtWrite = writeVersion
     publish({ loading: Boolean(userId), error: null })
     if (!userId) return
     try {
@@ -20,8 +23,13 @@ export function createProgressStore(client, userId) {
       if (error) throw new Error('Could not load progress')
       if (version === loadVersion) {
         loadFailed = false
+        const progress = Object.fromEntries((data || []).map(row => [row.lesson_id, row]))
+        // A response may predate a save that finished during this request.
+        for (const [lessonId, writtenAt] of writtenVersions) {
+          if (writtenAt > startedAtWrite) progress[lessonId] = state.progress[lessonId]
+        }
         publish({
-          progress: { ...Object.fromEntries((data || []).map(row => [row.lesson_id, row])), ...state.progress },
+          progress,
           loading: false,
         })
       }
@@ -48,6 +56,7 @@ export function createProgressStore(client, userId) {
           user_id: userId, lesson_id: lessonId, ...changes, updated_at: new Date().toISOString(),
         }, { onConflict: 'user_id,lesson_id' }).select()
         if (error || !data?.[0]) throw new Error('Save failed')
+        writtenVersions.set(lessonId, ++writeVersion)
         publish({ progress: { ...state.progress, [lessonId]: data[0] }, error: null })
       } catch {
         publish({ error: 'Your progress could not be saved. Please try again.' })

@@ -55,10 +55,10 @@ _Last updated: 2026-10-16_
 - Spanish Quest (Kids): 3 quiz-game lessons (animals, colors, numbers) with
   coins, streaks, and the arcade platformer reward
 
-**Prepared for review (2026-10-16; not deployed):**
+**October 2026 refresh:**
 - Graphite theme with charcoal text, consistent gray course-row fills and subtle
   shadows. Larger typography, tighter spacing, aligned desktop columns and shared
-  audio controls. The header uses a wordmark while Steel supplies a logo reference.
+  audio controls. The header pairs a plain wordmark with the approved house-and-book mark.
   No course icons, decorative arrows or marketing taglines.
 - Distinct loading, empty, error and retry states for courses/lessons, with
   cancellation of stale route responses and useful not-found states.
@@ -220,18 +220,19 @@ release held loading or repair a failed backend before pressing **Try again**.
 intentionally sends stale status before each seek acknowledgement.
 
 Open `/tests/audio-regression.html` and click **Run audio regression checks**
-for four checks using a real browser audio element and local WAV data.
+for five checks using a real browser audio element and local WAV data.
 `/tests/mobile.html?width=320` or `width=390` renders the app inside a phone-width
 iframe; `width=1100` provides a scaled desktop layout; `&path=/course/spanish/lesson/2&native=1` renders the native player.
 Fixtures are development-only and are not Vite production entry points.
 
-The 2026-10-16 run passed 41 Node checks, four browser-media checks, build and
-lint. The companion shell passed five seek checks and iOS/Android JS exports.
+The 2026-10-16 run passed 44 Node checks, five browser-media checks, build and
+lint. The companion shell passed eight seek checks and iOS/Android JS exports.
 Native background audio and lock-screen behavior still need a physical device;
 these checks make no claim about device execution or a production release.
 
 Theme exploration lives only in the local fixture: `/?embed=1&themes=1` offers
 Navy & Paper, Graphite and Clay & Linen. Steel selected Graphite, which is now the
-base product theme. The rejected symbol is removed from the header/favicon;
-logo replacement is waiting for Steel's suggestion. Two generated concepts were
-also rejected and must not be used as app assets.
+base product theme. Steel approved the simplified blue/ivory house-and-book
+artwork without the sprout. It supplies the header, favicon and native assets.
+The Home Scholar wordmark has no text shadow; course rows retain prominent
+bottom-left shadows.
