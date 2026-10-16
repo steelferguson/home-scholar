@@ -33,13 +33,13 @@ export default function Dashboard({ user, onSignOut }) {
               <span>Course</span><span>Format</span><span>Progress</span>
             </div>
             <div className="course-rows">
-              {data.courses.map((course, index) => {
+              {data.courses.map(course => {
                 const lessons = data.lessons.filter(lesson => lesson.course_id === course.id)
                 const completed = lessons.filter(lesson => saved.progress[lesson.id]?.status === 'completed').length
                 const pct = lessons.length ? Math.round(completed / lessons.length * 100) : 0
                 const audio = lessons.some(lesson => !lesson.lesson_type || lesson.lesson_type === 'audio')
                 const kids = course.audience === 'kids'
-                return <Link key={course.id} to={`/course/${course.slug}`} className={`course-button course-tone-${index % 4}`}>
+                return <Link key={course.id} to={`/course/${course.slug}`} className="course-button">
                   <div className="course-info">
                     <h2>{course.title}</h2>
                     <p>{course.description}</p>

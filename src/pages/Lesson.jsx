@@ -145,7 +145,7 @@ export default function Lesson({ user, onSignOut }) {
               <button
                 onClick={handleMarkComplete}
                 disabled={saving}
-                className="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition"
+                className="primary-button"
               >
                 {saving ? 'Saving…' : 'Mark complete'}
               </button>

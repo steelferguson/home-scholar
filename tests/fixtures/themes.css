@@ -1,0 +1,29 @@
+/* Preview-only themes; the selected direction will be applied to production. */
+:root[data-preview-theme="navy"] {
+  --hs-bg: #f5f6f8; --hs-surface: #ffffff; --hs-row: #e8edf5;
+  --hs-text: #172640; --hs-muted: #4d5c72; --hs-accent: #254f89;
+  --hs-line: #ccd6e4; --hs-track: #cdd7e6;
+}
+:root[data-preview-theme="graphite"] {
+  --hs-bg: #f6f6f6; --hs-surface: #ffffff; --hs-row: #e8e8e9;
+  --hs-text: #222326; --hs-muted: #57595f; --hs-accent: #3e424a;
+  --hs-line: #d1d2d4; --hs-track: #ccced2;
+}
+:root[data-preview-theme="clay"] {
+  --hs-bg: #faf7f2; --hs-surface: #fffdfa; --hs-row: #eee4da;
+  --hs-text: #352820; --hs-muted: #6e5748; --hs-accent: #9b553e;
+  --hs-line: #dac8b8; --hs-track: #dbc7b6;
+}
+[data-preview-theme] .app-page, [data-preview-theme] .login-page { background: var(--hs-bg); color: var(--hs-text); }
+[data-preview-theme] .app-header, [data-preview-theme] .login-form { background: var(--hs-surface); border-color: var(--hs-line); }
+[data-preview-theme] .brand, [data-preview-theme] .quiet-button, [data-preview-theme] .header-breadcrumb { color: var(--hs-accent); }
+[data-preview-theme] .course-button { background: var(--hs-row); border-color: var(--hs-line); color: var(--hs-text); box-shadow: 0 2px 3px #16223814; }
+[data-preview-theme] .course-button:hover { border-color: var(--hs-accent); }
+[data-preview-theme] .course-info p, [data-preview-theme] .course-format, [data-preview-theme] .course-progress-label, [data-preview-theme] .course-table-heading, [data-preview-theme] .dashboard-heading > span, [data-preview-theme] .account-email, [data-preview-theme] .login-subtitle { color: var(--hs-muted); }
+[data-preview-theme] .course-progress-label strong { color: var(--hs-text); }
+[data-preview-theme] .course-progress { background: var(--hs-track); }
+[data-preview-theme] .course-progress > span, [data-preview-theme] .primary-button, [data-preview-theme] .play-button { background: var(--hs-accent); }
+.theme-picker { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 12px; background: var(--hs-surface); color: var(--hs-text); border-bottom: 1px solid var(--hs-line); font-size: 13px; }
+.theme-picker > span { margin-right: 4px; }
+.theme-picker button { padding: 6px 9px; border-radius: 6px; font-size: 14px; border: 1px solid var(--hs-line); }
+.theme-picker button[aria-pressed=true] { background: var(--hs-accent); color: #ffffff; border-color: var(--hs-accent); }

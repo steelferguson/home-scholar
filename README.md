@@ -56,9 +56,10 @@ _Last updated: 2026-10-16_
   coins, streaks, and the arcade platformer reward
 
 **Prepared for review (2026-10-16; not deployed):**
-- Muted full-width course buttons with subtle shadows, aligned desktop columns,
-  compact phone rows, a house-and-book logo and shared audio controls. No course
-  icons, decorative arrows or marketing taglines.
+- Graphite theme with charcoal text, consistent gray course-row fills and subtle
+  shadows. Larger typography, tighter spacing, aligned desktop columns and shared
+  audio controls. The header uses a wordmark while Steel supplies a logo reference.
+  No course icons, decorative arrows or marketing taglines.
 - Distinct loading, empty, error and retry states for courses/lessons, with
   cancellation of stale route responses and useful not-found states.
 - Browser resume happens once after metadata and progress arrive; later saves
@@ -228,3 +229,9 @@ The 2026-10-16 run passed 41 Node checks, four browser-media checks, build and
 lint. The companion shell passed five seek checks and iOS/Android JS exports.
 Native background audio and lock-screen behavior still need a physical device;
 these checks make no claim about device execution or a production release.
+
+Theme exploration lives only in the local fixture: `/?embed=1&themes=1` offers
+Navy & Paper, Graphite and Clay & Linen. Steel selected Graphite, which is now the
+base product theme. The rejected symbol is removed from the header/favicon;
+logo replacement is waiting for Steel's suggestion. Two generated concepts were
+also rejected and must not be used as app assets.

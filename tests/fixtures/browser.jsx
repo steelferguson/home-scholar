@@ -1,6 +1,8 @@
 import { createRoot } from 'react-dom/client'
+import ThemePicker from './ThemePicker'
 import { fixture } from './supabase'
 import '../../src/index.css'
+import './themes.css'
 
 const params = new URLSearchParams(location.search)
 if (params.get('native') === '1') {
@@ -22,6 +24,11 @@ fixture.hold(params.get('scenario') === 'loading')
 // Load the app only after setting the native bridge flag.
 const { default: MainApp } = await import('../../src/App')
 createRoot(document.getElementById('root')).render(<MainApp />)
-if (!params.has('embed')) createRoot(document.getElementById('fixture-tools')).render(<div style={{ background: '#20392e', color: 'white', padding: '6px 14px', fontSize: 11 }}>
+if (!params.has('embed') && !params.has('themes')) createRoot(document.getElementById('fixture-tools')).render(<div style={{ background: '#20392e', color: 'white', padding: '6px 14px', fontSize: 11 }}>
   LOCAL FIXTURE · <button onClick={() => fixture.hold(false)}>Release loading</button> · <button onClick={() => { fixture.setScenario('normal'); fixture.hold(false) }}>Repair backend</button>
 </div>)
+
+if (params.has('themes')) {
+  document.documentElement.dataset.previewTheme = 'graphite'
+  createRoot(document.getElementById('fixture-tools')).render(<ThemePicker />)
+}
