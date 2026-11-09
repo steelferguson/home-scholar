@@ -3,8 +3,8 @@ import { supabase } from '../supabaseClient'
 import { createProgressStore } from '../lib/progressStore'
 import { ProgressContext } from '../hooks/useProgress'
 
-export default function ProgressProvider({ userId, children }) {
-  const store = useMemo(() => createProgressStore(supabase, userId), [userId])
+export default function ProgressProvider({ userId, profileId, children }) {
+  const store = useMemo(() => createProgressStore(supabase, userId, profileId), [userId, profileId])
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot)
   useEffect(() => { store.load() }, [store])
   const value = useMemo(() => ({ ...state, savePosition: store.savePosition,

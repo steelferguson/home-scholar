@@ -14,6 +14,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
   const { content, error } = useLessonContent(lesson.content_url)
   const [screen, setScreen] = useState('intro') // intro | round | results | arcade
   const [roundResult, setRoundResult] = useState(null)
+  const [saveError, setSaveError] = useState(null)
   const [coinsBanked, setCoinsBanked] = useState(false)
   const { playerState, recordQuizResult, spendCoins } = usePlayerState(user.id)
 
@@ -28,13 +29,17 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
     if (banked) {
       setCoinsBanked(true)
-      await recordQuizResult(lesson.id, correct, total, coinsEarned)
-      onComplete()
+      try {
+        await recordQuizResult(lesson.id, correct, total, coinsEarned)
+        onComplete()
+      } catch { setSaveError('Your result could not be fully saved. Please ask a parent to check your connection.') }
     }
   }
 
   const startArcade = async () => {
-    if (await spendCoins(arcadeCost)) setScreen('arcade')
+    try {
+      if (await spendCoins(arcadeCost)) setScreen('arcade')
+    } catch { setSaveError('Your coins could not be loaded or saved. Please try again.') }
   }
 
   if (error) {
@@ -74,6 +79,8 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
     <div className="min-h-screen bg-gradient-to-b from-sky-400 to-indigo-600">
       <RewardBar coins={playerState.coins} streak={playerState.streak_days} onExit={onExit} />
 
+      {saveError && <p role="alert" className="p-4 text-center text-white">{saveError}</p>}
+
       {screen === 'intro' && (
         <div className="flex flex-col items-center justify-center px-6 pt-16 text-center">
           <div className="text-7xl mb-4 animate-bounce-in">{content.icon || '⭐'}</div>
@@ -110,7 +117,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
           <p className="text-white text-2xl font-bold mb-1">
             {roundResult.correct} / {roundResult.total} first try
           </p>
-          {roundResult.banked ? (
+          {roundResult.banked && !saveError ? (
             <p className="text-yellow-300 text-3xl font-black mb-10 animate-pop">+{roundResult.coinsEarned} 🪙</p>
           ) : (
             <p className="text-indigo-100 text-xl font-bold mb-10">Great practice! 💪</p>

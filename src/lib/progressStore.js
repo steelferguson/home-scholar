@@ -1,5 +1,5 @@
 // One store per signed-in user, shared by pages and background audio.
-export function createProgressStore(client, userId) {
+export function createProgressStore(client, userId, profileId = null) {
   let state = { progress: {}, loading: Boolean(userId), error: null }
   const listeners = new Set()
   const writes = new Map()
@@ -18,12 +18,14 @@ export function createProgressStore(client, userId) {
     publish({ loading: Boolean(userId), error: null })
     if (!userId) return
     try {
-      const { data, error } = await client.from('user_progress')
-        .select('lesson_id, status, last_position_seconds, completed_at').eq('user_id', userId)
+      let query = client.from('user_progress')
+        .select('lesson_id, profile_id, status, last_position_seconds, completed_at').eq('user_id', userId)
+      if (profileId) query = query.eq('profile_id', profileId)
+      const { data, error } = await query
       if (error) throw new Error('Could not load progress')
       if (version === loadVersion) {
         loadFailed = false
-        const progress = Object.fromEntries((data || []).map(row => [row.lesson_id, row]))
+        const progress = Object.fromEntries((data || []).filter(row => profileId ? row.profile_id === profileId : !row.profile_id).map(row => [row.lesson_id, row]))
         // A response may predate a save that finished during this request.
         for (const [lessonId, writtenAt] of writtenVersions) {
           if (writtenAt > startedAtWrite) progress[lessonId] = state.progress[lessonId]
@@ -53,8 +55,8 @@ export function createProgressStore(client, userId) {
         : updates
       try {
         const { data, error } = await client.from('user_progress').upsert({
-          user_id: userId, lesson_id: lessonId, ...changes, updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,lesson_id' }).select()
+          user_id: userId, ...(profileId ? { profile_id: profileId } : {}), lesson_id: lessonId, ...changes, updated_at: new Date().toISOString(),
+        }, { onConflict: profileId ? 'profile_id,lesson_id' : 'user_id,lesson_id' }).select()
         if (error || !data?.[0]) throw new Error('Save failed')
         writtenVersions.set(lessonId, ++writeVersion)
         publish({ progress: { ...state.progress, [lessonId]: data[0] }, error: null })

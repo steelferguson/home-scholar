@@ -9,82 +9,47 @@ import Course from './pages/Course'
 import Lesson from './pages/Lesson'
 import ProgressProvider from './components/ProgressProvider'
 import Brand from './components/Brand'
+import FamilyProvider from './components/family/FamilyProvider'
+import ParentPage from './components/family/ParentPage'
+import { useFamily } from './hooks/useFamily'
 import { stop } from './lib/playbackStore'
 
 // Shell only: audio keeps playing after you leave the lesson page
 const MiniPlayer = lazy(() => import('./components/audio/MiniPlayer'))
-
-function ProtectedRoute({ user, children }) {
-  if (!user) return <Navigate to="/login" />
-  return children
-}
 
 function NativeAudioSync({ userId }) {
   useNativeAudioSync(userId)
   return null
 }
 
-export default function App() {
-  const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut } = useAuth()
-
-  const handleSignOut = () => { stop(); signOut() }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div role="status" className="text-center"><Brand large /><p className="mt-4">Opening your learning space…</p></div>
-      </div>
-    )
+function FamilyApp({ user, signOut }) {
+  const { active, loading, store } = useFamily()
+  const handleSignOut = async () => {
+    stop()
+    const { error } = await signOut()
+    if (error) throw new Error('Could not sign out. Please try again.')
+    store.lock()
   }
-
-  return (
-    <ProgressProvider key={user?.id || "signed-out"} userId={user?.id}>
-      <NativeAudioSync userId={user?.id} />
-      <BrowserRouter>
+  if (loading) return <p role="status">Loading your family…</p>
+  return <BrowserRouter>
+    {!active ? <ParentPage onSignOut={handleSignOut} /> :
+      <ProgressProvider key={active.id} userId={user.id} profileId={active.id}>
+        <NativeAudioSync userId={user.id} />
         <Routes>
-          <Route
-            path="/login"
-            element={
-              user ? <Navigate to="/" /> :
-              <Login
-                onEmailSignIn={signInWithEmail}
-                onEmailSignUp={signUpWithEmail}
-                onGoogleSignIn={signInWithGoogle}
-              />
-            }
-          />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute user={user}>
-                <Dashboard user={user} onSignOut={handleSignOut} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/course/:slug"
-            element={
-              <ProtectedRoute user={user}>
-                <Course user={user} onSignOut={handleSignOut} />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/course/:slug/lesson/:number"
-            element={
-              <ProtectedRoute user={user}>
-                <Lesson user={user} onSignOut={handleSignOut} />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/parent" element={<ParentPage onSignOut={handleSignOut} />} />
+          <Route path="/" element={<Dashboard user={user} />} />
+          <Route path="/course/:slug" element={<Course user={user} />} />
+          <Route path="/course/:slug/lesson/:number" element={<Lesson user={user} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        {isNativeShell && user && (
-          <Suspense fallback={null}>
-            <MiniPlayer />
-          </Suspense>
-        )}
-      </BrowserRouter>
-    </ProgressProvider>
-  )
+        {isNativeShell && <Suspense fallback={null}><MiniPlayer /></Suspense>}
+      </ProgressProvider>}
+  </BrowserRouter>
+}
+
+export default function App() {
+  const { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut } = useAuth()
+  if (loading) return <div className="login-page" role="status"><Brand large /><p>Opening your learning space…</p></div>
+  if (!user) return <Login onEmailSignIn={signInWithEmail} onEmailSignUp={signUpWithEmail} onGoogleSignIn={signInWithGoogle} />
+  return <FamilyProvider key={user.id} user={user}><FamilyApp user={user} signOut={signOut} /></FamilyProvider>
 }
