@@ -1,33 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useSyncExternalStore } from 'react'
 import { supabase } from '../supabaseClient'
+import { createAuthStore } from '../lib/authStore'
+
+// Subscribe during module initialization, before the recovery callback can finish.
+const store = createAuthStore(supabase)
+store.start()
+if (import.meta.hot) import.meta.hot.dispose(() => store.stop())
 
 export function useAuth() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const signInWithEmail = (email, password) =>
-    supabase.auth.signInWithPassword({ email, password })
-
-  const signUpWithEmail = (email, password) =>
-    supabase.auth.signUp({ email, password })
-
-  const signInWithGoogle = () =>
-    supabase.auth.signInWithOAuth({ provider: 'google' })
-
-  const signOut = () => supabase.auth.signOut()
-
-  return { user, loading, signInWithEmail, signUpWithEmail, signInWithGoogle, signOut }
+  const state = useSyncExternalStore(store.subscribe, store.getSnapshot)
+  return {
+    ...state,
+    signInWithEmail: (email, password) => supabase.auth.signInWithPassword({ email, password }),
+    signUpWithEmail: (email, password) => supabase.auth.signUp({ email, password }),
+    signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google' }),
+    signOut: () => supabase.auth.signOut(),
+    setRecoveryPassword: store.setRecoveryPassword,
+    cancelRecovery: store.cancelRecovery,
+  }
 }

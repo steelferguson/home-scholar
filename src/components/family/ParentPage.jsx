@@ -3,12 +3,15 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useFamily } from '../../hooks/useFamily'
 import { stop } from '../../lib/playbackStore'
 import Brand from '../Brand'
+import { supabase } from '../../supabaseClient'
+import { sendParentPasswordLink } from '../../lib/authStore'
 
-export default function ParentPage({ onSignOut }) {
+export default function ParentPage({ user, onSignOut }) {
   const { profiles, active, unlocked, loading, error: loadError, store } = useFamily()
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState(null)
+  const [emailSent, setEmailSent] = useState(false)
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
   const run = async action => {
@@ -26,6 +29,12 @@ export default function ParentPage({ onSignOut }) {
         <input id="parent-password" type="password" autoComplete="off" required value={password} onChange={event => setPassword(event.target.value)} />
         <button disabled={busy}>{busy ? 'Checking…' : 'Unlock parent controls'}</button>
       </form>
+      <p>Signed in with Google, or forgot your password? Set a parent password using a link sent to your account’s email.</p>
+      <button disabled={busy || emailSent} onClick={() => run(async () => {
+        await sendParentPasswordLink(supabase, user.email, window.location.origin)
+        setEmailSent(true)
+      })}>{emailSent ? 'Email requested' : 'Email me a password setup link'}</button>
+      {emailSent && <p role="status">Check your account’s email and open the link to set your password. Then return here and enter it to unlock parent controls. If the link has expired, reopen this page to request another.</p>}
     </> : <>
       <p>Choose who will use this iPad. A child stays selected until you sign in here again.</p>
       <div className="family-profiles">{profiles.map(profile => <button key={profile.id} disabled={busy} onClick={() => run(() => {
