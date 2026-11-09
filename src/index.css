@@ -171,3 +171,12 @@ a { text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+.family-panel { display: grid; gap: 20px; max-width: 520px; }
+.family-panel .login-form { display: grid; gap: 12px; }
+.family-panel input { width: 100%; padding: 12px; border: 1px solid #aaa; border-radius: 8px; }
+.family-panel button { min-height: 48px; padding: 12px; border: 1px solid #999; border-radius: 8px; }
+.family-panel button:disabled { opacity: .5; }
+.family-profiles { display: grid; gap: 12px; }
+.family-profiles button { text-align: left; font-size: 22px; font-weight: 650; }
+.family-profiles span { display: block; font-size: 14px; font-weight: 400; }

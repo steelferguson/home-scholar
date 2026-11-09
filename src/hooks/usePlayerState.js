@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useFamily } from './useFamily'
 import { supabase } from '../supabaseClient'
 
 const DEFAULT_STATE = { coins: 0, streak_days: 0, last_played_at: null }
@@ -17,33 +18,37 @@ function yesterdayString() {
 // only, so a slow/failed initial load or a second open tab can't clobber the
 // real balance. (True atomicity would need a DB-side increment RPC.)
 export function usePlayerState(userId) {
+  const { active } = useFamily()
+  const profileId = active.id
   const [state, setState] = useState(DEFAULT_STATE)
 
   useEffect(() => {
     if (!userId) return
     let stale = false
-    supabase.from('player_state').select('*').eq('user_id', userId).maybeSingle()
+    supabase.from('player_state').select('*').eq('user_id', userId).eq('profile_id', profileId).maybeSingle()
       .then(({ data }) => { if (!stale && data) setState(data) })
     return () => { stale = true }
-  }, [userId])
+  }, [userId, profileId])
 
   const fetchFresh = useCallback(async () => {
-    const { data } = await supabase
-      .from('player_state').select('*').eq('user_id', userId).maybeSingle()
+    const { data, error } = await supabase
+      .from('player_state').select('*').eq('user_id', userId).eq('profile_id', profileId).maybeSingle()
+    if (error) throw new Error('Could not load coins. Please try again.')
     return data || DEFAULT_STATE
-  }, [userId])
+  }, [userId, profileId])
 
   const save = useCallback(async (updates) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('player_state')
-      .upsert({ user_id: userId, ...updates }, { onConflict: 'user_id' })
+      .upsert({ user_id: userId, profile_id: profileId, ...updates }, { onConflict: 'user_id,profile_id' })
       .select()
+    if (error || !data?.[0]) throw new Error('Could not save coins. Please try again.')
     if (data?.[0]) setState(data[0])
-  }, [userId])
+  }, [userId, profileId])
 
   const recordQuizResult = useCallback(async (lessonId, correctCount, totalCount, coinsEarned) => {
     const resultInsert = supabase.from('quiz_results').insert({
-      user_id: userId,
+      user_id: userId, profile_id: profileId,
       lesson_id: lessonId,
       correct_count: correctCount,
       total_count: totalCount,
@@ -60,7 +65,7 @@ export function usePlayerState(userId) {
     else if (last === yesterdayString()) streak += 1
     else streak = 1
 
-    await Promise.all([
+    const [result] = await Promise.all([
       resultInsert,
       save({
         coins: fresh.coins + coinsEarned,
@@ -68,7 +73,8 @@ export function usePlayerState(userId) {
         last_played_at: new Date().toISOString(),
       }),
     ])
-  }, [userId, fetchFresh, save])
+    if (result.error) throw new Error('Could not save your quiz result.')
+  }, [userId, profileId, fetchFresh, save])
 
   const spendCoins = useCallback(async (amount) => {
     const fresh = await fetchFresh()
