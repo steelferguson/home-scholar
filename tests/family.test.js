@@ -28,7 +28,7 @@ test('missing and wrong passwords cannot unlock or switch children', async () =>
   await assert.rejects(store.create('Other'))
   assert.equal(store.getSnapshot().active.id, 'zinc')
 })
-test('parent mode locks back to the saved child and cannot be restored from storage', async () => {
+test('explicit lock returns to the child and invalid legacy selections stay locked', async () => {
   const { create } = fixture(); const store = create(); await store.load(); await store.unlock('test-parent-password'); store.select('parent'); store.lock()
   assert.equal(store.getSnapshot().active.id, 'zinc')
   assert.equal(store.getSnapshot().unlocked, false)
@@ -39,7 +39,7 @@ test('parent mode locks back to the saved child and cannot be restored from stor
 test('backgrounding during a parent sign-in invalidates its late success', async () => {
   const { create, client } = fixture(); let finish
   client.auth.signInWithPassword = () => new Promise(resolve => { finish = resolve })
-  const store = create(); await store.load(); const pending = store.unlock('test-parent-password'); store.lock()
+  const store = create(); await store.load(); const pending = store.unlock('test-parent-password'); store.background()
   finish({ data: { user: { id: 'family' } } }); await assert.rejects(pending)
   assert.equal(store.getSnapshot().unlocked, false)
 })

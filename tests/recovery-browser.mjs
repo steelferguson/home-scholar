@@ -9,6 +9,10 @@ try {
   const page = await context.newPage(), errors = []
   page.on('pageerror', err => errors.push(err.message))
   await page.goto('http://127.0.0.1:5192/?type=recovery')
+  await page.getByRole('heading', { name: 'Your courses' }).waitFor()
+  await page.getByRole('link', { name: 'Parent', exact: true }).click()
+  await page.getByRole('button', { name: /^Zinc/ }).click()
+  await page.getByRole('link', { name: 'Parent', exact: true }).click()
   await page.getByLabel('Parent password', { exact: true }).waitFor()
   assert.equal(await page.getByLabel('New parent password').count(), 0)
   await page.getByRole('button', { name: 'Email me a password setup link' }).click()
