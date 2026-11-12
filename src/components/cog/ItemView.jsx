@@ -100,11 +100,14 @@ function Prompt({ prompt }) {
 
     case 'matrix':
       return (
-        <div className="inline-grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-2">
+        <div className={`inline-grid gap-2 rounded-xl bg-slate-50 p-2 ${prompt.columns === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {prompt.cells.map((cell, i) => (
-            <div key={i} className="flex h-24 w-24 items-center justify-center rounded-lg border border-slate-200 bg-white">
+            <div
+              key={i}
+              className={`flex items-center justify-center rounded-lg border border-slate-200 bg-white ${prompt.columns === 3 ? 'h-20 w-20' : 'h-24 w-24'}`}
+            >
               {cell
-                ? <Figure figure={cell} size={80} />
+                ? <Figure figure={cell} size={prompt.columns === 3 ? 66 : 80} />
                 : <span className="text-3xl text-blue-400">?</span>}
             </div>
           ))}

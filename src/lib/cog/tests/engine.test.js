@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { generateItem, IMPLEMENTED, SUBTESTS } from '../index.js'
 import { visualKey, sameFigure, RULES, chooseRules, ruleCount, SHAPES, SIZES, rotationVisible } from '../figures.js'
 import { makeRng } from '../rng.js'
-import { targetSeconds, clampLevel, MAX_LEVEL, MIN_LEVEL } from '../levels.js'
+import { targetSeconds, clampLevel, MAX_LEVEL, MIN_LEVEL, MASTERY_FROM, PACE_FLOOR } from '../levels.js'
 import { PAIRS, CATEGORIES, MASS, ADJECTIVES } from '../wordbank.js'
 
 const LEVELS = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1)
@@ -159,7 +159,7 @@ test('word bank pairs are distinct and tiered', () => {
   for (const [relation, pairs] of Object.entries(PAIRS)) {
     for (const [a, b, tier] of pairs) {
       assert.notEqual(a, b, `${relation} pair repeats a word`)
-      assert.ok([1, 2, 3].includes(tier), `${relation} pair ${a}:${b} has tier ${tier}`)
+      assert.ok([1, 2, 3, 4].includes(tier), `${relation} pair ${a}:${b} has tier ${tier}`)
     }
     const keys = pairs.map(([a, b]) => `${a}:${b}`)
     assert.equal(new Set(keys).size, keys.length, `${relation} has a duplicate pair`)
@@ -199,22 +199,44 @@ test('every subtest offers enough distinct items at every level', () => {
 })
 
 test('the row difference in a figure matrix is never an attribute a rule touches', () => {
-  // C is A with one attribute changed, and no rule may write that attribute --
-  // otherwise the row difference and the transformation argue over the same
-  // thing. Stated observably: whatever separates A from C must survive
-  // untouched into the answer, and must be identical in A and B.
+  // Rows differ by one attribute, and no rule may write it -- otherwise the row
+  // difference and the transformation argue over the same thing. Stated
+  // observably: whatever separates the rows must be constant ALONG each row and
+  // must survive untouched into the answer. Holds for the 2x2 matrices up to
+  // level 12 and the 3x3 matrices of the mastery band alike.
   const ATTRS = ['shape', 'count', 'shading', 'size', 'rotation', 'flipped']
   for (const level of LEVELS) {
     for (const seed of SEEDS) {
       const item = generateItem('figure_matrices', level, seed)
-      const [a, b, c] = item.prompt.cells
+      const { columns, cells } = item.prompt
       const answer = item.choices[item.answer].figure
-      const differing = ATTRS.filter((attr) => a[attr] !== c[attr])
+      const rows = columns === 3
+        ? [cells.slice(0, 3), cells.slice(3, 6), [...cells.slice(6, 8), answer]]
+        : [[cells[0], cells[1]], [cells[2], answer]]
 
-      assert.equal(differing.length, 1, `L${level} seed ${seed}: A and C differ in ${differing.length} attributes (${differing.join(', ')})`)
+      const where = `figure_matrices ${columns}x${columns} L${level} seed ${seed}`
+      const differing = ATTRS.filter((attr) => rows.some((row) => row[0][attr] !== rows[0][0][attr]))
+      assert.equal(differing.length, 1, `${where}: rows differ in ${differing.length} attributes (${differing.join(', ')})`)
+
       const attr = differing[0]
-      assert.equal(b[attr], a[attr], `L${level} seed ${seed}: a rule wrote ${attr}, which is also the row difference`)
-      assert.equal(answer[attr], c[attr], `L${level} seed ${seed}: the row difference ${attr} did not survive into the answer`)
+      for (const row of rows) {
+        for (const cell of row) {
+          assert.equal(cell[attr], row[0][attr], `${where}: a rule wrote ${attr}, which is also the row difference`)
+        }
+      }
+    }
+  }
+})
+
+test('mastery matrices are 3x3 and apply the rule twice across each row', () => {
+  for (const level of LEVELS) {
+    for (const seed of SEEDS) {
+      const item = generateItem('figure_matrices', level, seed)
+      const expected = level >= MASTERY_FROM ? 3 : 2
+      assert.equal(item.prompt.columns, expected, `L${level} seed ${seed}: expected a ${expected}x${expected} matrix`)
+      assert.equal(item.prompt.cells.length, expected === 3 ? 9 : 4, `L${level} seed ${seed}: wrong number of cells`)
+      assert.ok(item.prompt.cells.slice(0, -1).every(Boolean), 'a shown cell was empty')
+      assert.equal(item.prompt.cells[item.prompt.cells.length - 1], null, 'the missing cell was filled in')
     }
   }
 })
@@ -267,22 +289,34 @@ test('figure classification has exactly one defensible answer', () => {
 })
 
 test('paper folding answers are the punches mirrored across every fold', () => {
+  // Folds are undone in REVERSE order. A diagonal and a straight fold do not
+  // commute, so undoing them in the order they were made gives a pattern that
+  // is wrong while still looking plausible.
+  const MIRRORS = {
+    vertical: (grid) => ([r, c]) => [r, grid - 1 - c],
+    horizontal: (grid) => ([r, c]) => [grid - 1 - r, c],
+    diagonal: () => ([r, c]) => [c, r],
+  }
+  const norm = (holes) => [...new Set(holes.map(([r, c]) => `${r},${c}`))].sort().join(' ')
+
   for (const level of LEVELS) {
     for (const seed of SEEDS) {
       const item = generateItem('paper_folding', level, seed)
       const { folds, punches, grid } = item.prompt
-      const MIRROR = grid - 1
 
       let expected = punches.map(([r, c]) => [r, c])
-      if (folds.includes('vertical')) expected = [...expected, ...expected.map(([r, c]) => [r, MIRROR - c])]
-      if (folds.includes('horizontal')) expected = [...expected, ...expected.map(([r, c]) => [MIRROR - r, c])]
-      const norm = (hs) => [...new Set(hs.map(([r, c]) => `${r},${c}`))].sort().join(' ')
+      for (const fold of [...folds].reverse()) {
+        const mirror = MIRRORS[fold](grid)
+        expected = [...expected, ...expected.map(mirror)]
+      }
 
       assert.equal(norm(item.choices[item.answer].holes), norm(expected), `L${level} seed ${seed}: wrong unfold`)
+
       // Punches must lie in the part of the paper still visible after folding.
       for (const [r, c] of punches) {
         if (folds.includes('vertical')) assert.ok(c < grid / 2, `L${level} seed ${seed}: punch outside the folded paper`)
         if (folds.includes('horizontal')) assert.ok(r < grid / 2, `L${level} seed ${seed}: punch outside the folded paper`)
+        if (folds.includes('diagonal')) assert.ok(r <= c, `L${level} seed ${seed}: punch across the diagonal fold`)
       }
     }
   }
@@ -321,4 +355,21 @@ test('size is never asked about while the count is changing', () => {
       )
     }
   }
+})
+
+test('the mastery band raises difficulty with content, not with the clock', () => {
+  // A faster version of the same item is not a harder item. Past level 12 the
+  // pace floors and the material changes instead.
+  assert.equal(targetSeconds(MAX_LEVEL), Math.round(PACE_FLOOR))
+  assert.ok(targetSeconds(12) >= targetSeconds(MASTERY_FROM))
+
+  for (const level of LEVELS.filter((l) => l >= MASTERY_FROM)) {
+    for (const seed of SEEDS.slice(0, 60)) {
+      assert.equal(generateItem('figure_matrices', level, seed).prompt.columns, 3)
+      assert.ok(generateItem('paper_folding', level, seed).prompt.folds.includes('diagonal'))
+    }
+  }
+  // Simultaneous equations only exist in the mastery band.
+  const mastery = SEEDS.slice(0, 80).map((seed) => generateItem('number_puzzles', MASTERY_FROM, seed))
+  assert.ok(mastery.some((item) => item.prompt.givens.length === 2 && item.prompt.givens.every((g) => /[+-]/.test(g))))
 })
