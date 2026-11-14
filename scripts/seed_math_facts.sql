@@ -1,7 +1,15 @@
 -- Math Facts course: three keypad practice sets (addition, subtraction, mixed, 0-9).
 -- Run in the Supabase SQL Editor. Safe to re-run.
--- 1. New lesson type.
-ALTER TABLE public.lessons DROP CONSTRAINT IF EXISTS lessons_lesson_type_check;
+-- 1. New lesson type. Drops whatever the existing check on lesson_type is
+--    called (the auto-generated name is not guaranteed), then adds ours.
+DO $$
+DECLARE c record;
+BEGIN
+  FOR c IN SELECT conname FROM pg_constraint
+           WHERE conrelid = 'public.lessons'::regclass AND contype = 'c'
+             AND pg_get_constraintdef(oid) ILIKE '%lesson_type%'
+  LOOP EXECUTE format('ALTER TABLE public.lessons DROP CONSTRAINT %I', c.conname); END LOOP;
+END $$;
 ALTER TABLE public.lessons ADD CONSTRAINT lessons_lesson_type_check
   CHECK (lesson_type IN ('audio', 'visual', 'quiz_game', 'math_practice'));
 
