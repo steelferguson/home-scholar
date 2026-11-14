@@ -2,6 +2,9 @@ import { useState, lazy, Suspense } from 'react'
 import confetti from 'canvas-confetti'
 import { usePlayerState } from '../../hooks/usePlayerState'
 import { useLessonContent } from '../../hooks/useLessonContent'
+import { useFamily } from '../../hooks/useFamily'
+import { useWallet } from '../../hooks/useWallet'
+import EarnedBanner from '../wallet/EarnedBanner'
 import RewardBar from './RewardBar'
 import QuestionRound from './QuestionRound'
 import { DEFAULT_COIN_PER_CORRECT, DEFAULT_ARCADE_COST, DEFAULT_ARCADE_SECONDS } from './constants'
@@ -17,6 +20,10 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
   const [saveError, setSaveError] = useState(null)
   const [coinsBanked, setCoinsBanked] = useState(false)
   const { playerState, recordQuizResult, spendCoins } = usePlayerState(user.id)
+  const { active } = useFamily()
+  const wallet = useWallet()
+  const [earned, setEarned] = useState(null)
+  const [earnError, setEarnError] = useState(null)
 
   const arcadeCost = content?.arcade_cost ?? DEFAULT_ARCADE_COST
   const arcadeSeconds = content?.arcade_seconds ?? DEFAULT_ARCADE_SECONDS
@@ -25,8 +32,10 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
     // Replays are practice: results still celebrate, but coins bank only once
     const banked = !coinsBanked
     setRoundResult({ correct, total, coinsEarned, banked })
-    setScreen('results')
+    setScreen('results'); setEarned(null); setEarnError(null)
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
+    // Real money: the database pays 10 cents the first time and 5 for a replay, under the daily cap.
+    wallet.award(active, 'lesson', lesson.id).then(setEarned, err => setEarnError(err.message))
     if (banked) {
       setCoinsBanked(true)
       try {
@@ -122,6 +131,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
           ) : (
             <p className="text-indigo-100 text-xl font-bold mb-10">Great practice! 💪</p>
           )}
+          <EarnedBanner earned={earned} error={earnError} className="text-green-200 -mt-6 mb-8" />
 
           <div className="flex flex-col gap-4 w-full max-w-xs">
             <button

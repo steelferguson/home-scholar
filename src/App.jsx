@@ -12,6 +12,7 @@ import Brand from './components/Brand'
 import FamilyProvider from './components/family/FamilyProvider'
 import PasswordSetup from './components/family/PasswordSetup'
 import ParentPage from './components/family/ParentPage'
+import WalletProvider from './components/wallet/WalletProvider'
 import { useFamily } from './hooks/useFamily'
 import { stop } from './lib/playbackStore'
 
@@ -35,6 +36,7 @@ function FamilyApp({ user, signOut }) {
   return <BrowserRouter>
     {!active ? <ParentPage user={user} onSignOut={handleSignOut} /> :
       <ProgressProvider key={active.id} userId={user.id} profileId={active.id}>
+        <WalletProvider userId={user.id}>
         <NativeAudioSync userId={user.id} />
         <Routes>
           <Route path="/parent" element={<ParentPage user={user} onSignOut={handleSignOut} />} />
@@ -44,6 +46,7 @@ function FamilyApp({ user, signOut }) {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         {isNativeShell && <Suspense fallback={null}><MiniPlayer /></Suspense>}
+        </WalletProvider>
       </ProgressProvider>}
   </BrowserRouter>
 }

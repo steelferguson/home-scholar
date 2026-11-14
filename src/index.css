@@ -189,3 +189,24 @@ a { text-decoration: none; }
 .family-courses input { width: 22px; height: 22px; flex: none; accent-color: #222326; }
 .family-courses span { flex: 1; }
 .family-courses small { font-size: 12px; font-weight: 600; color: #57595f; }
+
+.wallet-card { display: grid; gap: 12px; padding: 18px 20px; margin-bottom: 22px; border: 1px solid #d1d2d4; border-radius: 17px; background: #ffffff; box-shadow: -4px 6px 0 #222326; }
+.wallet-balance { display: flex; align-items: baseline; justify-content: space-between; }
+.wallet-balance h2 { font-size: 20px; font-weight: 650; }
+.wallet-balance strong { font-size: 34px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.wallet-goal { display: grid; gap: 6px; font-size: 15px; color: #3e424a; }
+.wallet-goal-bar { height: 14px; border-radius: 999px; background: #ececee; overflow: hidden; }
+.wallet-goal-bar span { display: block; height: 100%; background: #f5c400; transition: width .3s; }
+.wallet-recent { display: grid; gap: 4px; font-size: 15px; }
+.wallet-recent li { display: flex; justify-content: space-between; gap: 12px; }
+.wallet-recent strong { font-variant-numeric: tabular-nums; color: #1a7f37; }
+.wallet-recent .is-negative { color: #b42318; }
+.family-money { display: grid; gap: 14px; }
+.family-money h2 { font-size: 22px; font-weight: 650; }
+.family-money fieldset { display: grid; gap: 4px; padding: 12px; border: 1px solid #d1d2d4; border-radius: 12px; }
+.family-money legend { padding: 0 6px; font-weight: 650; }
+.money-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px; font-size: 16px; }
+.money-row strong { font-size: 20px; }
+.money-entry { color: #57595f; font-size: 14px; padding: 2px 6px; }
+.money-adjust { display: grid; gap: 8px; padding: 8px 6px 12px; }
+.money-adjust label { font-size: 14px; color: #3e424a; }
