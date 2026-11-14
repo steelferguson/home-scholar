@@ -2,12 +2,15 @@ import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
+import { useFamily } from '../hooks/useFamily'
+import { visibleCourses } from '../lib/courseAccess'
 import { useQuery, queryData } from '../hooks/useQuery'
 import AppHeader from '../components/AppHeader'
 import LoadState from '../components/LoadState'
 
 export default function Dashboard({ user, onSignOut }) {
   const saved = useProgress()
+  const { active, assignments } = useFamily()
   const load = useCallback(async () => {
     const [courses, lessons] = await Promise.all([
       queryData(supabase.from('courses').select('*').order('sort_order')),
@@ -16,24 +19,26 @@ export default function Dashboard({ user, onSignOut }) {
     return { courses: courses || [], lessons: lessons || [] }
   }, [])
   const { data, loading, error, retry } = useQuery('courses', load)
+  const courses = data ? visibleCourses(data.courses, active, assignments) : []
+  const child = active?.role === 'child'
   return (
     <div className="app-page">
       <AppHeader user={user} onSignOut={onSignOut} />
       <main className="dashboard-main">
         <div className="dashboard-heading">
           <h1>Your courses</h1>
-          {data && <span>{data.courses.length} courses</span>}
+          {data && <span>{courses.length} {courses.length === 1 ? 'course' : 'courses'}</span>}
         </div>
         {loading ? <LoadState loading message="Loading your courses…" />
           : error ? <LoadState message="We couldn’t load your courses." onRetry={retry} />
-          : data.courses.length === 0 ? <div className="state-card"><p>No courses are available yet.</p></div>
+          : courses.length === 0 ? <div className="state-card"><p>{child ? 'No courses yet. Ask a parent to pick your courses.' : 'No courses are available yet.'}</p></div>
           : <>
             {saved.error && <div className="inline-notice" role="alert">{saved.error} <button onClick={saved.retry}>Try again</button></div>}
             <div className="course-table-heading" aria-hidden="true">
               <span>Course</span><span>Format</span><span>Progress</span>
             </div>
             <div className="course-rows">
-              {data.courses.map(course => {
+              {courses.map(course => {
                 const lessons = data.lessons.filter(lesson => lesson.course_id === course.id)
                 const completed = lessons.filter(lesson => saved.progress[lesson.id]?.status === 'completed').length
                 const pct = lessons.length ? Math.round(completed / lessons.length * 100) : 0

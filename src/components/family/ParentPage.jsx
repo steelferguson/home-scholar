@@ -1,19 +1,25 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useFamily } from '../../hooks/useFamily'
 import { stop } from '../../lib/playbackStore'
 import Brand from '../Brand'
 import { supabase } from '../../supabaseClient'
 import { sendParentPasswordLink } from '../../lib/authStore'
+import { useQuery, queryData } from '../../hooks/useQuery'
 
 export default function ParentPage({ user, onSignOut }) {
-  const { profiles, active, unlocked, loading, error: loadError, store } = useFamily()
+  const { profiles, assignments, active, unlocked, loading, error: loadError, store } = useFamily()
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState(null)
   const [emailSent, setEmailSent] = useState(false)
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
+  const loadCourses = useCallback(() => queryData(supabase.from('courses').select('id,title,audience').order('sort_order')), [])
+  const courses = useQuery('parent-courses', loadCourses)
+  // Kids courses first: they are what a parent is usually here to pick.
+  const ordered = [...(courses.data || [])].sort((a, b) => (a.audience === 'kids' ? 0 : 1) - (b.audience === 'kids' ? 0 : 1))
+  const children = profiles.filter(p => p.role === 'child')
   const run = async action => {
     setBusy(true); setError(null)
     try { await action() } catch (err) { setError(err.message || 'Please try again.') }
@@ -45,6 +51,19 @@ export default function ParentPage({ user, onSignOut }) {
         <button disabled={busy}>Add child</button>
       </form>
       {!profiles.some(p => p.role === 'parent') && <button disabled={busy} onClick={() => run(() => store.create('Parent', 'parent'))}>Create parent profile</button>}
+      {children.length > 0 && <section className="family-courses" aria-labelledby="family-courses-heading">
+        <h2 id="family-courses-heading">Courses</h2>
+        <p>Tick the courses each child should see. Unticked courses are hidden from them.</p>
+        {courses.loading ? <p role="status">Loading courses…</p> : courses.error ? <><p role="alert">We couldn’t load the course list.</p><button onClick={courses.retry}>Try again</button></>
+          : children.map(child => <fieldset key={child.id}>
+            <legend>{child.name}’s courses</legend>
+            {ordered.map(course => { const id = `assign-${child.id}-${course.id}`; return <label key={course.id} htmlFor={id}>
+              <input id={id} type="checkbox" disabled={busy} checked={(assignments[child.id] || []).includes(course.id)}
+                onChange={event => run(() => store.assign(child.id, course.id, event.target.checked))} />
+              <span>{course.title}</span>{course.audience === 'kids' && <small>Kids</small>}
+            </label> })}
+          </fieldset>)}
+      </section>}
       <button className="quiet-button" onClick={() => { stop(); store.lock() }}>Lock parent controls</button>
       <button className="quiet-button" disabled={busy} onClick={() => run(async () => { if (!store.getSnapshot().unlocked) throw new Error('Parent sign-in required.'); await onSignOut() })}>Sign out of family account</button>
     </>}

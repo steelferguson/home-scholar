@@ -4,9 +4,14 @@ A web app for self-paced audio learning — language courses, music theory, and 
 
 ## Status
 
-_Last updated: 2026-10-16_
+_Last updated: 2026-11-14_
 
 **Live** (database migrated + seeded on the production Supabase project):
+- **Per-child course assignments** — a child profile sees only the courses a
+  parent ticked for it on the parent page (`course_assignments` table, July
+  schema); parents see everything. `src/lib/courseAccess.js` is the rule,
+  `scripts/seed_kids_course_assignments.sql` gives every child Spanish Quest.
+  Offline check: `node tests/profiles-serve.mjs` then `node tests/assignments-browser.mjs`.
 - **Native mobile shell** — `projects/home-scholar-mobile/` wraps this app in an
   Expo iOS/Android shell so audio keeps playing with the screen locked, with
   lock-screen controls. The shell's WebView loads the live Vercel URL, so
@@ -85,7 +90,7 @@ _Last updated: 2026-10-16_
 - Offline lesson downloads and Google sign-in in the shell (`expo-auth-session`)
 - Pre-generated Spanish TTS audio for kids' questions (replacing browser TTS)
 - Atomic coin-increment RPC + per-day earning caps
-- Kid profiles under a parent account
+- Math Facts practice sets and the kids' wallet (10 cents per set, 50 cents a day)
 - More ML lessons/widgets (backprop, eval metrics, transformer end-to-end)
 - Vercel auto-deploy on push to `main` (currently manual `vercel --prod`)
 
