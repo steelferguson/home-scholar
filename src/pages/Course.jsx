@@ -1,7 +1,9 @@
 import { useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, Navigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
+import { useFamily } from '../hooks/useFamily'
+import { isAssigned } from '../lib/courseAccess'
 import { useQuery, queryData } from '../hooks/useQuery'
 import AppHeader from '../components/AppHeader'
 import LoadState from '../components/LoadState'
@@ -9,6 +11,7 @@ import LoadState from '../components/LoadState'
 export default function Course({ user, onSignOut }) {
   const { slug } = useParams()
   const saved = useProgress()
+  const { active, assignments } = useFamily()
   const load = useCallback(async () => {
     const course = await queryData(supabase.from('courses').select('*').eq('slug', slug).maybeSingle())
     if (!course) return null
@@ -16,6 +19,7 @@ export default function Course({ user, onSignOut }) {
     return { course, lessons: lessons || [] }
   }, [slug])
   const { data, loading, error, retry } = useQuery(slug, load)
+  if (data && !isAssigned(active, assignments, data.course.id)) return <Navigate to="/" replace />
   const completed = data?.lessons.filter(lesson => saved.progress[lesson.id]?.status === 'completed').length || 0
   const next = data?.lessons.find(lesson => saved.progress[lesson.id]?.status !== 'completed')
   return <div className="app-page">

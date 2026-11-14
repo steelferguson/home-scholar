@@ -1,0 +1,53 @@
+// Offline browser check: a parent assigns courses; children see only theirs.
+// Usage: node tests/profiles-serve.mjs & node tests/assignments-browser.mjs [/abs/path/to/package.json with playwright]
+import { createRequire } from 'node:module'
+import assert from 'node:assert/strict'
+const require = createRequire(process.argv[2] || import.meta.url)
+const { chromium } = require('playwright')
+const shots = process.env.SCREENSHOT_DIR || '/private/tmp'
+const browser = await chromium.launch({ headless: true, channel: 'chrome' })
+try {
+  const context = await browser.newContext({ viewport: { width: 810, height: 1080 }, hasTouch: true })
+  await context.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort())
+  const page = await context.newPage()
+  const errors = []; page.on('pageerror', error => errors.push(error.message))
+  await page.goto('http://127.0.0.1:5191/')
+  await page.evaluate(() => localStorage.clear()); await page.reload()
+  const rows = async () => { await page.locator('.course-button').first().or(page.getByText(/No courses/)).waitFor(); return page.locator('.course-button').count() }
+  await page.getByRole('heading', { name: 'Your courses' }).waitFor()
+  assert.equal(await rows(), 6, 'parent sees every course')
+  await page.getByRole('link', { name: 'Parent', exact: true }).click()
+  await page.getByRole('heading', { name: 'Courses' }).waitFor()
+  const tick = (child, title) => page.locator('fieldset', { has: page.locator('legend', { hasText: `${child}’s courses` }) }).getByLabel(new RegExp('^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  await page.locator('fieldset').first().waitFor()
+  assert.equal(await page.locator('fieldset').count(), 2, 'one checklist per child')
+  assert.equal(await tick('Zinc', 'Spanish Quest').count(), 1)
+  await tick('Zinc', 'Spanish Quest').check()
+  await tick('Rush', 'Spanish Quest').check(); await tick('Rush', 'Harmony & Music Theory').check(); await tick('Rush', 'Harmony & Music Theory').uncheck()
+  await page.screenshot({ path: `${shots}/home-scholar-parent-courses.png`, fullPage: true })
+  await page.reload(); await page.locator('fieldset').first().waitFor()
+  assert.equal(await tick('Zinc', 'Spanish Quest').isChecked(), true, 'assignment persists across reload')
+  assert.equal(await tick('Rush', 'Harmony & Music Theory').isChecked(), false, 'untick persists')
+  await page.getByRole('button', { name: /^Zinc/ }).click()
+  await page.getByRole('heading', { name: 'Your courses' }).waitFor()
+  assert.equal(await rows(), 1, 'Zinc sees one course')
+  assert.match(await page.locator('.course-button h2').innerText(), /Spanish Quest/)
+  await page.screenshot({ path: `${shots}/home-scholar-child-courses.png`, fullPage: true })
+  await page.goto('http://127.0.0.1:5191/course/harmony')
+  await page.getByRole('heading', { name: 'Your courses' }).waitFor()
+  assert.equal(await rows(), 1, 'direct link to an unassigned course returns home')
+  await page.goto('http://127.0.0.1:5191/course/kids')
+  await page.getByRole('heading', { name: 'Spanish Quest' }).waitFor()
+  // A child with nothing assigned gets a plain message, and the parent gate still protects the checklist.
+  await page.getByRole('link', { name: 'Parent', exact: true }).click()
+  assert.equal(await page.getByRole('heading', { name: 'Courses' }).count(), 0, 'locked parent page hides the checklist')
+  await page.getByLabel('Parent password').fill('test-parent-password')
+  await page.getByRole('button', { name: 'Unlock parent controls' }).click()
+  await page.locator('fieldset').first().waitFor()
+  await tick('Rush', 'Spanish Quest').uncheck()
+  await page.getByRole('button', { name: /^Rush/ }).click()
+  await page.getByText('No courses yet. Ask a parent to pick your courses.').waitFor()
+  await page.screenshot({ path: `${shots}/home-scholar-child-no-courses.png`, fullPage: true })
+  assert.deepEqual(errors, [])
+  console.log('PASS: parent sees all, per-child checklist persists, child sees only assigned, direct links guarded, empty state; no page errors')
+} finally { await browser.close() }

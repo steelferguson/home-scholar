@@ -75,5 +75,5 @@ All three have been run on the production project (July 2026).
 
 - Pre-generated Spanish TTS MP3s wired into question `audio_url`
 - Atomic coin increment RPC; per-day earning caps
-- Kid profiles under a parent account (Netflix-style picker)
+- Math Facts keypad practice sets and the kids' wallet (per-day cap)
 - More ML lessons/widgets (backprop, evaluation metrics, transformers e2e)

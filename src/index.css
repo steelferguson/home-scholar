@@ -180,3 +180,12 @@ a { text-decoration: none; }
 .family-profiles { display: grid; gap: 12px; }
 .family-profiles button { text-align: left; font-size: 22px; font-weight: 650; }
 .family-profiles span { display: block; font-size: 14px; font-weight: 400; }
+.family-courses { display: grid; gap: 14px; }
+.family-courses h2 { font-size: 22px; font-weight: 650; }
+.family-courses fieldset { display: grid; gap: 4px; padding: 12px; border: 1px solid #d1d2d4; border-radius: 12px; }
+.family-courses legend { padding: 0 6px; font-weight: 650; }
+.family-courses label { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 6px; border-radius: 8px; cursor: pointer; }
+.family-courses label:hover { background: #f3f3f4; }
+.family-courses input { width: 22px; height: 22px; flex: none; accent-color: #222326; }
+.family-courses span { flex: 1; }
+.family-courses small { font-size: 12px; font-weight: 600; color: #57595f; }

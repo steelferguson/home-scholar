@@ -3,7 +3,7 @@
 export function createFamilyStore(client, user, storage) {
   const key = `home-scholar:profile:${user.id}`
   const childKey = `home-scholar:child:${user.id}`
-  let state = { profiles: [], active: null, unlocked: false, loading: true, error: null }
+  let state = { profiles: [], assignments: {}, active: null, unlocked: false, loading: true, error: null }
   let generation = 0
   const listeners = new Set()
   const publish = changes => { state = { ...state, ...changes }; listeners.forEach(fn => fn()) }
@@ -29,9 +29,14 @@ export function createFamilyStore(client, user, storage) {
     async load() {
       publish({ loading: true, error: null })
       try {
-        const { data, error } = await client.from('profiles').select('id,user_id,name,role,avatar_color').eq('user_id', user.id).order('created_at')
-        if (error) throw error
+        const [{ data, error }, assigned] = await Promise.all([
+          client.from('profiles').select('id,user_id,name,role,avatar_color').eq('user_id', user.id).order('created_at'),
+          client.from('course_assignments').select('profile_id,course_id'),
+        ])
+        if (error || assigned.error) throw error || assigned.error
         const profiles = data || []
+        const assignments = {}
+        for (const row of assigned.data || []) (assignments[row.profile_id] ||= []).push(row.course_id)
         const saved = storage.getItem(key)
         const legacyChild = storage.getItem(childKey)
         const active = saved != null
@@ -40,7 +45,7 @@ export function createFamilyStore(client, user, storage) {
             ? profiles.find(p => p.id === legacyChild && p.role === 'child') || null
             : profiles.find(p => p.role === 'parent') || null
         const unlocked = active?.role === 'parent' || (saved == null && legacyChild == null)
-        publish({ profiles, active, unlocked, loading: false })
+        publish({ profiles, assignments, active, unlocked, loading: false })
       } catch { publish({ loading: false, error: 'Could not load your family. Please try again.' }) }
     },
     async unlock(password) {
@@ -69,6 +74,16 @@ export function createFamilyStore(client, user, storage) {
       if (error || !data) throw new Error('Could not add this profile. Please try again.')
       if (attempt === generation) publish({ profiles: [...state.profiles, data] })
       else await this.load()
+    },
+    async assign(profileId, courseId, assigned) {
+      if (!state.unlocked) throw new Error('Parent sign-in required.')
+      if (!state.profiles.some(p => p.id === profileId)) throw new Error('Choose a family member.')
+      const { error } = assigned
+        ? await client.from('course_assignments').insert({ profile_id: profileId, course_id: courseId })
+        : await client.from('course_assignments').delete().eq('profile_id', profileId).eq('course_id', courseId)
+      if (error) throw new Error('Could not update this course. Please try again.')
+      const current = (state.assignments[profileId] || []).filter(id => id !== courseId)
+      publish({ assignments: { ...state.assignments, [profileId]: assigned ? [...current, courseId] : current } })
     },
   }
 }

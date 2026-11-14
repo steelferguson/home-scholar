@@ -15,18 +15,21 @@ export const supabase = {
     signOut: async () => { listeners.forEach(fn => fn('SIGNED_OUT', null)); return {} },
   },
   from(table) {
-    if (!['profiles','user_progress','player_state','quiz_results'].includes(table)) return coursesBackend.from(table)
+    if (!['profiles','user_progress','player_state','quiz_results','course_assignments'].includes(table)) return coursesBackend.from(table)
     const key = `fixture:${table}`
     let rows = JSON.parse(localStorage.getItem(key) || 'null') || (table === 'profiles' ? initial : [])
-    let filters = [], payload, single = false
+    let filters = [], payload, single = false, remove = false
     const query = {
       select: () => query, order: () => query,
       eq: (field, value) => { filters.push([field,value]); return query },
       single: () => { single = true; return query }, maybeSingle: () => { single = true; return query },
       insert: value => { payload = { id: crypto.randomUUID(), ...value }; return query },
+      delete: () => { remove = true; return query },
       upsert: value => { payload = value; return query },
       then: resolve => {
-        if (payload) {
+        if (remove) {
+          rows = rows.filter(row => !filters.every(([k,v]) => row[k] === v)); localStorage.setItem(key, JSON.stringify(rows))
+        } else if (payload) {
           rows = rows.filter(row => !(row.profile_id === payload.profile_id && row.lesson_id === payload.lesson_id && table !== 'profiles'))
           rows.push(payload); localStorage.setItem(key, JSON.stringify(rows))
         }
