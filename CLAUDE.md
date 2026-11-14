@@ -41,6 +41,9 @@ math_practice (Math Facts: 20 typed answers on a keypad, misses come back).
   collectibles carry the lesson's Spanish words)
 - Progress: `user_progress.last_position_seconds` stores audio seconds OR
   visual step index depending on lesson_type (known schema pun)
+- Wallet: `wallet_entries` ledger, child profiles only. Awards go through the
+  `award_wallet()` SQL function (10/5/10 cents, 50¢ a day, Chicago midnight);
+  `src/lib/wallet.js` mirrors the rule and must stay in step with it
 
 ## Database setup order (Supabase SQL editor)
 
@@ -76,6 +79,5 @@ All three have been run on the production project (July 2026).
 ## Known follow-ups (not yet built)
 
 - Pre-generated Spanish TTS MP3s wired into question `audio_url`
-- Atomic coin increment RPC; per-day earning caps
-- Kids' wallet (10 cents per set or lesson, 5 per replay, 50 cents a day)
+- Atomic coin increment RPC for arcade coins (wallet awards already go through `award_wallet()`)
 - More ML lessons/widgets (backprop, evaluation metrics, transformers e2e)

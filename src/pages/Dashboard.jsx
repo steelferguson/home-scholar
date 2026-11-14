@@ -7,6 +7,7 @@ import { visibleCourses } from '../lib/courseAccess'
 import { useQuery, queryData } from '../hooks/useQuery'
 import AppHeader from '../components/AppHeader'
 import LoadState from '../components/LoadState'
+import WalletCard from '../components/wallet/WalletCard'
 
 export default function Dashboard({ user, onSignOut }) {
   const saved = useProgress()
@@ -25,6 +26,7 @@ export default function Dashboard({ user, onSignOut }) {
     <div className="app-page">
       <AppHeader user={user} onSignOut={onSignOut} />
       <main className="dashboard-main">
+        <WalletCard profile={active} />
         <div className="dashboard-heading">
           <h1>Your courses</h1>
           {data && <span>{courses.length} {courses.length === 1 ? 'course' : 'courses'}</span>}

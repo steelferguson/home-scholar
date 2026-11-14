@@ -7,6 +7,12 @@ A web app for self-paced audio learning — language courses, music theory, and 
 _Last updated: 2026-11-14_
 
 **Live** (database migrated + seeded on the production Supabase project):
+- **Kids wallet** — real cents: 10¢ for a finished lesson or practice set, 5¢
+  for a lesson again, 50¢ a day (midnight Central). `award_wallet()` in
+  `scripts/setup_wallet.sql` is the one place that decides an award;
+  `src/lib/wallet.js` mirrors it for tests and the offline fixture. Kid card on
+  the dashboard, parent balances + adjust-with-reason on the parent page.
+  Checks: `node tests/wallet-db.mjs` (PGlite) and `node tests/wallet-browser.mjs`.
 - **Math Facts practice sets** — course `math-facts`, lesson type `math_practice`
   (three sets: addition, subtraction, mixed, 0-9). 20 typed answers on a big
   keypad (`components/math/`), wrong answers return at the end of the set,
@@ -95,8 +101,7 @@ _Last updated: 2026-11-14_
   Play Console app record so Android can move from sideloaded APK to internal testing
 - Offline lesson downloads and Google sign-in in the shell (`expo-auth-session`)
 - Pre-generated Spanish TTS audio for kids' questions (replacing browser TTS)
-- Atomic coin-increment RPC + per-day earning caps
-- Kids' wallet: 10 cents per lesson or practice set, 5 per replay, 50 cents a day
+- Atomic coin-increment RPC for arcade coins (the wallet already has one)
 - More ML lessons/widgets (backprop, eval metrics, transformer end-to-end)
 - Vercel auto-deploy on push to `main` (currently manual `vercel --prod`)
 

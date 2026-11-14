@@ -6,6 +6,8 @@ import Brand from '../Brand'
 import { supabase } from '../../supabaseClient'
 import { sendParentPasswordLink } from '../../lib/authStore'
 import { useQuery, queryData } from '../../hooks/useQuery'
+import { useWallet } from '../../hooks/useWallet'
+import { formatCents, entryLabel } from '../../lib/wallet'
 
 export default function ParentPage({ user, onSignOut }) {
   const { profiles, assignments, active, unlocked, loading, error: loadError, store } = useFamily()
@@ -14,6 +16,8 @@ export default function ParentPage({ user, onSignOut }) {
   const [error, setError] = useState(null)
   const [emailSent, setEmailSent] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [adjusting, setAdjusting] = useState({}) // profileId -> { cents, reason }
+  const wallet = useWallet()
   const navigate = useNavigate()
   const loadCourses = useCallback(() => queryData(supabase.from('courses').select('id,title,audience').order('sort_order')), [])
   const courses = useQuery('parent-courses', loadCourses)
@@ -63,6 +67,26 @@ export default function ParentPage({ user, onSignOut }) {
               <span>{course.title}</span>{course.audience === 'kids' && <small>Kids</small>}
             </label> })}
           </fieldset>)}
+      </section>}
+      {children.length > 0 && wallet && <section className="family-money" aria-labelledby="family-money-heading">
+        <h2 id="family-money-heading">Money</h2>
+        <p>Kids earn 10¢ for a finished lesson or practice set, 5¢ for a lesson again, up to 50¢ a day. Change a balance here with a reason.</p>
+        {wallet.error && <p role="alert">{wallet.error} <button onClick={wallet.retry}>Try again</button></p>}
+        {children.map(child => { const sum = wallet.summaryOf(child.id); const draft = adjusting[child.id] || { cents: '', reason: '' }
+          const setDraft = changes => setAdjusting({ ...adjusting, [child.id]: { ...draft, ...changes } })
+          return <fieldset key={child.id}>
+            <legend>{child.name}</legend>
+            <div className="money-row"><span>Balance</span><strong data-testid={`balance-${child.name}`}>{wallet.loading ? '…' : formatCents(sum.balance)}</strong></div>
+            <div className="money-row"><span>Earned today</span><span>{sum.earnedToday}¢ of {sum.cap}¢</span></div>
+            <form className="money-adjust" onSubmit={event => { event.preventDefault(); run(async () => { await wallet.adjust(child.id, Number(draft.cents), draft.reason); setDraft({ cents: '', reason: '' }) }) }}>
+              <label htmlFor={`cents-${child.id}`}>Change (cents, minus to take away)</label>
+              <input id={`cents-${child.id}`} type="number" step="1" required value={draft.cents} onChange={event => setDraft({ cents: event.target.value })} placeholder="25 or -10" />
+              <label htmlFor={`reason-${child.id}`}>Reason</label>
+              <input id={`reason-${child.id}`} maxLength={120} required value={draft.reason} onChange={event => setDraft({ reason: event.target.value })} placeholder="Why" />
+              <button disabled={busy}>Adjust {child.name}’s balance</button>
+            </form>
+            {(wallet.entries[child.id] || []).slice(0, 5).map(entry => <div className="money-row money-entry" key={entry.id}><span>{entryLabel(entry)}</span><span>{entry.cents > 0 ? '+' : ''}{entry.cents}¢</span></div>)}
+          </fieldset> })}
       </section>}
       <button className="quiet-button" onClick={() => { stop(); store.lock() }}>Lock parent controls</button>
       <button className="quiet-button" disabled={busy} onClick={() => run(async () => { if (!store.getSnapshot().unlocked) throw new Error('Parent sign-in required.'); await onSignOut() })}>Sign out of family account</button>
