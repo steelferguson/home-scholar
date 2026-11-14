@@ -6,14 +6,16 @@ const courses = [
   { id: 'czech', slug: 'czech', title: 'Czech — Unit 2', description: 'Keep the conversation going with immersive audio lessons for everyday Czech.' },
   { id: 'python', slug: 'python', title: 'Practical Python', description: 'Learn by doing. Short visual walkthroughs to sharpen your coding fluency.' },
   { id: 'kids', slug: 'kids', title: 'Spanish Quest', description: 'A little adventure in every lesson. Listen, discover new words, and play.', audience: 'kids' },
+  { id: 'math', slug: 'math-facts', title: 'Math Facts', description: 'Addition and subtraction facts, 20 quick questions at a time.', audience: 'kids' },
 ]
-const lessons = courses.flatMap(course => Array.from({ length: 4 }, (_, i) => ({
+const mathLessons = ['Addition', 'Subtraction', 'Mixed'].map((title, i) => ({ id: `math-${i + 1}`, course_id: 'math', lesson_number: i + 1, title, lesson_type: 'math_practice', content_url: `/content/math-facts/lesson_0${i + 1}.json` }))
+const lessons = mathLessons.concat(courses.filter(course => course.id !== 'math').flatMap(course => Array.from({ length: 4 }, (_, i) => ({
   id: `${course.id}-${i + 1}`, course_id: course.id, lesson_number: i + 1,
   title: ['A new beginning', 'The building blocks', 'Putting it into practice', 'Your next step'][i],
   lesson_type: ['ai', 'python'].includes(course.id) ? 'visual' : course.id === 'kids' ? 'quiz_game' : 'audio',
   audio_url: '/tests/tone.wav', duration_minutes: 2,
   content_url: '/tests/visual.json',
-})))
+}))))
 const progress = [{ lesson_id: 'spanish-1', status: 'completed', completed_at: '2026-10-01' }, { lesson_id: 'spanish-2', status: 'in_progress', last_position_seconds: 20 }]
 let scenario = 'normal'
 let hold = false

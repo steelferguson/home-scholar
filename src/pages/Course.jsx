@@ -39,7 +39,7 @@ export default function Course({ user, onSignOut }) {
               const status = saved.progress[lesson.id]?.status
               return <Link key={lesson.id} to={`/course/${slug}/lesson/${lesson.lesson_number}`} className="lesson-row">
                 <span className={`lesson-number ${status === 'completed' ? 'is-complete' : ''}`}>{status === 'completed' ? '✓' : String(lesson.lesson_number).padStart(2, '0')}</span>
-                <div className="lesson-row-text"><h2>{lesson.title}</h2><span>{lesson.lesson_type === 'visual' ? 'Interactive lesson' : lesson.lesson_type === 'quiz_game' ? 'Quiz & play' : 'Audio lesson'}{status === 'in_progress' ? ' · In progress' : status === 'completed' ? ' · Completed' : ''}</span></div>
+                <div className="lesson-row-text"><h2>{lesson.title}</h2><span>{lesson.lesson_type === 'visual' ? 'Interactive lesson' : lesson.lesson_type === 'quiz_game' ? 'Quiz & play' : lesson.lesson_type === 'math_practice' ? 'Practice set' : 'Audio lesson'}{status === 'in_progress' ? ' · In progress' : status === 'completed' ? ' · Completed' : ''}</span></div>
                 <span className="lesson-duration">{lesson.duration_minutes ? `${Math.round(lesson.duration_minutes)} min` : ''}</span><span aria-hidden="true">→</span>
               </Link>
             })}</div>}

@@ -7,6 +7,12 @@ A web app for self-paced audio learning — language courses, music theory, and 
 _Last updated: 2026-11-14_
 
 **Live** (database migrated + seeded on the production Supabase project):
+- **Math Facts practice sets** — course `math-facts`, lesson type `math_practice`
+  (three sets: addition, subtraction, mixed, 0-9). 20 typed answers on a big
+  keypad (`components/math/`), wrong answers return at the end of the set,
+  misses weight the next set (`flashcard_progress`, deck `math-facts`).
+  Rules in `src/lib/mathFacts.js`; SQL in `scripts/seed_math_facts.sql`.
+  Offline check: `node tests/profiles-serve.mjs` then `node tests/math-browser.mjs`.
 - **Per-child course assignments** — a child profile sees only the courses a
   parent ticked for it on the parent page (`course_assignments` table, July
   schema); parents see everything. `src/lib/courseAccess.js` is the rule,
@@ -90,7 +96,7 @@ _Last updated: 2026-11-14_
 - Offline lesson downloads and Google sign-in in the shell (`expo-auth-session`)
 - Pre-generated Spanish TTS audio for kids' questions (replacing browser TTS)
 - Atomic coin-increment RPC + per-day earning caps
-- Math Facts practice sets and the kids' wallet (10 cents per set, 50 cents a day)
+- Kids' wallet: 10 cents per lesson or practice set, 5 per replay, 50 cents a day
 - More ML lessons/widgets (backprop, eval metrics, transformer end-to-end)
 - Vercel auto-deploy on push to `main` (currently manual `vercel --prod`)
 

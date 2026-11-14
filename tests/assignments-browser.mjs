@@ -15,7 +15,7 @@ try {
   await page.evaluate(() => localStorage.clear()); await page.reload()
   const rows = async () => { await page.locator('.course-button').first().or(page.getByText(/No courses/)).waitFor(); return page.locator('.course-button').count() }
   await page.getByRole('heading', { name: 'Your courses' }).waitFor()
-  assert.equal(await rows(), 6, 'parent sees every course')
+  assert.equal(await rows(), 7, 'parent sees every course')
   await page.getByRole('link', { name: 'Parent', exact: true }).click()
   await page.getByRole('heading', { name: 'Courses' }).waitFor()
   const tick = (child, title) => page.locator('fieldset', { has: page.locator('legend', { hasText: `${child}’s courses` }) }).getByLabel(new RegExp('^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
