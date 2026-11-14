@@ -6,8 +6,8 @@ ALTER TABLE public.lessons ADD CONSTRAINT lessons_lesson_type_check
   CHECK (lesson_type IN ('audio', 'visual', 'quiz_game', 'math_practice'));
 
 -- 2. Course row (kids audience so it is hidden from children until a parent ticks it).
-INSERT INTO public.courses (slug, title, description, audience, sort_order)
-VALUES ('math-facts', 'Math Facts', 'Addition and subtraction facts, 20 quick questions at a time. Type the answer on the keypad.', 'kids', 5)
+INSERT INTO public.courses (slug, title, description, language_from, language_to, lesson_count, audience, sort_order)
+VALUES ('math-facts', 'Math Facts', 'Addition and subtraction facts, 20 quick questions at a time. Type the answer on the keypad.', 'English', 'English', 3, 'kids', 5)
 ON CONFLICT (slug) DO NOTHING;
 
 -- 3. Three practice sets. Content JSON ships with the app at /content/math-facts/.
