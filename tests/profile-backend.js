@@ -28,7 +28,7 @@ export const supabase = {
       const paid = rows.some(r => r.profile_id === args.p_profile_id && r.lesson_id === args.p_lesson_id && r.kind === 'lesson')
       const result = awardCents({ kind: args.p_kind, alreadyPaidLesson: args.p_kind === 'lesson' && paid, earnedToday: today(args.p_profile_id) })
       if (result.cents > 0) { rows.push({ id: crypto.randomUUID(), user_id: user.id, profile_id: args.p_profile_id, cents: result.cents, kind: result.kind, lesson_id: args.p_lesson_id, created_at: new Date().toISOString() }); localStorage.setItem(key, JSON.stringify(rows)) }
-      return { data: [{ cents: result.cents, earned_today: result.earnedToday, cap: result.cap }] }
+      return { data: [{ cents: result.cents, earned_today: result.earnedToday, cap: result.cap, kind: result.kind }] }
     }
     return { error: { message: `fixture: unknown rpc ${name}` } }
   },

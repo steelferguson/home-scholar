@@ -30,7 +30,7 @@ export function createWalletStore(client, userId) {
       if (error || !row) throw new Error('Your money could not be saved. Please ask a parent to check the connection.')
       const result = { cents: row.cents, earnedToday: row.earned_today, cap: row.cap }
       const previous = summaryOf(profile.id)
-      const entry = row.cents > 0 ? [{ id: `local-${Date.now()}`, profile_id: profile.id, cents: row.cents, kind: kind === 'lesson' && row.cents === 5 ? 'replay' : kind, created_at: new Date().toISOString() }] : []
+      const entry = row.cents > 0 ? [{ id: `local-${Date.now()}`, profile_id: profile.id, cents: row.cents, kind: row.kind || kind, created_at: new Date().toISOString() }] : []
       publish({
         summaries: { ...state.summaries, [profile.id]: { ...result, balance: previous.balance + row.cents } },
         entries: { ...state.entries, [profile.id]: [...entry, ...(state.entries[profile.id] || [])] },

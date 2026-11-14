@@ -10,7 +10,7 @@ function fixture() {
     rpc: async (name, args) => {
       calls.push([name, args])
       if (name === 'wallet_summary') return { data: [{ profile_id: 'zinc', balance: 10, earned_today: 10, cap: 50 }] }
-      return { data: [{ cents: args.p_kind === 'practice' ? 10 : 5, earned_today: 20, cap: 50 }] }
+      return { data: [{ cents: args.p_kind === 'practice' ? 10 : 5, earned_today: 20, cap: 50, kind: args.p_kind === 'practice' ? 'practice' : 'replay' }] }
     },
     from: () => {
       let inserted

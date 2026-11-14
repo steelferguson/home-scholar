@@ -37,8 +37,9 @@ $$;
 
 -- The one place that decides an award. Returns the cents granted (0 when the
 -- daily cap is reached) and the day's total afterwards.
-CREATE OR REPLACE FUNCTION public.award_wallet(p_profile_id uuid, p_kind text, p_lesson_id uuid DEFAULT NULL)
-RETURNS TABLE (cents int, earned_today int, cap int)
+DROP FUNCTION IF EXISTS public.award_wallet(uuid, text, uuid);
+CREATE FUNCTION public.award_wallet(p_profile_id uuid, p_kind text, p_lesson_id uuid DEFAULT NULL)
+RETURNS TABLE (cents int, earned_today int, cap int, kind text)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_cap int := 50;
@@ -65,7 +66,7 @@ BEGIN
     VALUES (v_user, p_profile_id, v_cents, v_kind, p_lesson_id);
     v_today := v_today + v_cents;
   END IF;
-  RETURN QUERY SELECT v_cents, v_today, v_cap;
+  RETURN QUERY SELECT v_cents, v_today, v_cap, v_kind;
 END $$;
 REVOKE ALL ON FUNCTION public.award_wallet(uuid, text, uuid) FROM public;
 GRANT EXECUTE ON FUNCTION public.award_wallet(uuid, text, uuid) TO authenticated;

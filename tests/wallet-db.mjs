@@ -28,13 +28,13 @@ try {
   const [parent] = (await db.query(`SELECT id FROM profiles WHERE user_id=$1 AND role='parent'`, [family])).rows
   const award = async (kind, lessonId, profile = rush.id) => (await db.query(`SELECT * FROM award_wallet($1,$2,$3)`, [profile, kind, lessonId])).rows[0]
 
-  assert.deepEqual(await award('lesson', lesson), { cents: 10, earned_today: 10, cap: 50 }, 'first lesson pays 10')
-  assert.deepEqual(await award('lesson', lesson), { cents: 5, earned_today: 15, cap: 50 }, 'replay pays 5')
+  assert.deepEqual(await award('lesson', lesson), { cents: 10, earned_today: 10, cap: 50, kind: 'lesson' }, 'first lesson pays 10')
+  assert.deepEqual(await award('lesson', lesson), { cents: 5, earned_today: 15, cap: 50, kind: 'replay' }, 'replay pays 5')
   assert.equal((await award('practice', null)).cents, 10, 'practice pays 10')
   assert.equal((await award('practice', null)).cents, 10, 'practice pays 10 again')
   assert.equal((await award('lesson', lesson2)).cents, 10, 'another lesson, first time')
-  assert.deepEqual(await award('practice', null), { cents: 5, earned_today: 50, cap: 50 }, 'cap trims the last award')
-  assert.deepEqual(await award('practice', null), { cents: 0, earned_today: 50, cap: 50 }, 'nothing over the cap')
+  assert.deepEqual(await award('practice', null), { cents: 5, earned_today: 50, cap: 50, kind: 'practice' }, 'cap trims the last award')
+  assert.deepEqual(await award('practice', null), { cents: 0, earned_today: 50, cap: 50, kind: 'practice' }, 'nothing over the cap')
   assert.equal((await db.query(`SELECT count(*)::int AS n FROM wallet_entries WHERE cents = 0`)).rows[0].n, 0, 'no zero rows')
 
   // Yesterday's earnings do not count toward today; adjustments never do.
