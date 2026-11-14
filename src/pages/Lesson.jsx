@@ -12,6 +12,7 @@ import { useQuery, queryData } from '../hooks/useQuery'
 // Both players pull heavy deps (KaTeX, confetti) — keep them out of the main chunk
 const VisualLessonPlayer = lazy(() => import('../components/visual/VisualLessonPlayer'))
 const QuizGame = lazy(() => import('../components/game/QuizGame'))
+const MathPractice = lazy(() => import('../components/math/MathPractice'))
 const NativeAudioPlayer = lazy(() => import('../components/audio/NativeAudioPlayer'))
 
 const loadingCard = (
@@ -86,6 +87,14 @@ export default function Lesson({ user, onSignOut }) {
           onExit={() => navigate(`/course/${slug}`)}
           onComplete={handleMarkComplete}
         />
+      </Suspense>
+    )
+  }
+
+  if (lesson.lesson_type === 'math_practice') {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-gradient-to-b from-emerald-400 to-teal-700 flex items-center justify-center"><div className="text-white text-3xl animate-bounce">🔢 Loading...</div></div>}>
+        <MathPractice key={lesson.id} lesson={lesson} onExit={() => navigate(`/course/${slug}`)} onComplete={handleMarkComplete} />
       </Suspense>
     )
   }

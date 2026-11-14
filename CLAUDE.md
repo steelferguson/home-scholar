@@ -1,9 +1,10 @@
 # Home Scholar
 
-Self-paced learning web app for the Ferguson family. Three lesson types:
+Self-paced learning web app for the Ferguson family. Four lesson types:
 audio (Pimsleur-style language/music courses), visual (interactive ML/AI
-explainers for adult interview prep), and quiz_game (Spanish for kids 6–8:
-question rounds earn coins, coins buy rounds of a 2D arcade platformer).
+explainers for adult interview prep), quiz_game (Spanish for kids 6–8:
+question rounds earn coins, coins buy rounds of a 2D arcade platformer), and
+math_practice (Math Facts: 20 typed answers on a keypad, misses come back).
 
 ## Stack
 
@@ -25,7 +26,8 @@ question rounds earn coins, coins buy rounds of a 2D arcade platformer).
 
 - `src/pages/Lesson.jsx` switches on `lessons.lesson_type`:
   audio (inline) | `visual` → `components/visual/VisualLessonPlayer` |
-  `quiz_game` → `components/game/QuizGame` (full-screen kid theme)
+  `quiz_game` → `components/game/QuizGame` (full-screen kid theme) |
+  `math_practice` → `components/math/MathPractice` (keypad sets; rules in `lib/mathFacts.js`)
 - Visual lessons = JSON step arrays (text | image | math | quiz | widget |
   video). Widgets are React components registered by id in
   `components/visual/widgets/index.js`; content JSON never contains code
@@ -75,5 +77,5 @@ All three have been run on the production project (July 2026).
 
 - Pre-generated Spanish TTS MP3s wired into question `audio_url`
 - Atomic coin increment RPC; per-day earning caps
-- Math Facts keypad practice sets and the kids' wallet (per-day cap)
+- Kids' wallet (10 cents per set or lesson, 5 per replay, 50 cents a day)
 - More ML lessons/widgets (backprop, evaluation metrics, transformers e2e)
