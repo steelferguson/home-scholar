@@ -7,6 +7,11 @@ const GAME_H = 450
 const WORLD_W = 4200
 const GROUND_Y = 400
 
+// iPads and phones have no arrow keys: show the on-screen controls whenever the
+// device can touch, whatever its width. Desktops keep the keyboard hint.
+const isTouchDevice = () => typeof window !== 'undefined'
+  && (navigator.maxTouchPoints > 0 || window.matchMedia?.('(pointer: coarse)').matches)
+
 // Timed 2D platformer reward round. Collectible coins carry the lesson's
 // Spanish words — grabbing one says the word out loud.
 export default function ArcadeGame({ words, seconds, onEnd }) {
@@ -18,6 +23,7 @@ export default function ArcadeGame({ words, seconds, onEnd }) {
   const [timeLeft, setTimeLeft] = useState(seconds)
   const [lastWord, setLastWord] = useState(null)
   const [over, setOver] = useState(false)
+  const [touch] = useState(isTouchDevice)
 
   // Countdown timer
   useEffect(() => {
@@ -42,6 +48,9 @@ export default function ArcadeGame({ words, seconds, onEnd }) {
       width: GAME_W,
       height: GAME_H,
       background: [125, 211, 252],
+      // Fill the 16:9 box below and keep the aspect; without a sized box the
+      // engine's 100% x 100% canvas grew past the screen and hid the controls.
+      stretch: true,
       letterbox: true,
       global: false,
       pixelDensity: 1,
@@ -196,6 +205,9 @@ export default function ArcadeGame({ words, seconds, onEnd }) {
       player.pos = spawn()
     })
 
+    // Dev-only hook so the browser check can read where the player is.
+    if (import.meta.env.DEV) window.__hsArcade = () => ({ x: player.pos.x, y: player.pos.y, grounded: player.isGrounded() })
+
     return () => {
       if (gameRef.current === k) {
         k.quit()
@@ -216,10 +228,19 @@ export default function ArcadeGame({ words, seconds, onEnd }) {
   const mm = Math.floor(timeLeft / 60)
   const ss = String(timeLeft % 60).padStart(2, '0')
 
+  // Hold-to-run buttons: capture the pointer so a finger sliding off the key
+  // still releases it, and opt out of scrolling, zooming and the long-press menu.
+  const release = (key) => () => { controlsRef.current[key] = false }
   const holdButton = (key) => ({
-    onPointerDown: (e) => { e.preventDefault(); controlsRef.current[key] = true },
-    onPointerUp: () => { controlsRef.current[key] = false },
-    onPointerLeave: () => { controlsRef.current[key] = false },
+    onPointerDown: (e) => {
+      e.preventDefault(); controlsRef.current[key] = true
+      try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* synthetic pointer: no capture */ }
+    },
+    onPointerUp: release(key),
+    onPointerCancel: release(key),
+    onPointerLeave: release(key),
+    onContextMenu: (e) => e.preventDefault(),
+    style: { touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' },
   })
 
   return (
@@ -245,26 +266,33 @@ export default function ArcadeGame({ words, seconds, onEnd }) {
         </div>
       ) : (
         <>
-          <canvas ref={canvasRef} className="rounded-xl shadow-2xl max-w-full" />
+          <div className="w-full max-w-[800px] aspect-video rounded-xl shadow-2xl overflow-hidden" data-testid="arcade-stage">
+            <canvas ref={canvasRef} />
+          </div>
           {lastWord && (
             <div className="text-yellow-300 font-black text-2xl mt-2 animate-pop" key={lastWord + score}>
               {lastWord}
             </div>
           )}
-          {/* Touch controls */}
-          <div className="flex items-center justify-between w-full max-w-4xl mt-3 sm:hidden">
-            <div className="flex gap-3">
-              <button {...holdButton('left')} className="bg-white/15 active:bg-white/30 text-white text-3xl rounded-2xl w-16 h-16">◀</button>
-              <button {...holdButton('right')} className="bg-white/15 active:bg-white/30 text-white text-3xl rounded-2xl w-16 h-16">▶</button>
+          {/* Touch controls: shown on any touch device, big enough for small thumbs */}
+          {touch ? (
+            <div className="flex items-center justify-between w-full max-w-4xl mt-4 px-2" data-testid="arcade-touch-controls">
+              <div className="flex gap-4">
+                <button type="button" aria-label="Run left" {...holdButton('left')} className="bg-white/15 active:bg-white/40 text-white text-4xl rounded-3xl w-24 h-24 shadow-lg">◀</button>
+                <button type="button" aria-label="Run right" {...holdButton('right')} className="bg-white/15 active:bg-white/40 text-white text-4xl rounded-3xl w-24 h-24 shadow-lg">▶</button>
+              </div>
+              <button type="button" aria-label="Jump"
+                onPointerDown={(e) => { e.preventDefault(); controlsRef.current.jump?.() }}
+                onContextMenu={(e) => e.preventDefault()}
+                style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' }}
+                className="bg-yellow-400/90 active:bg-yellow-300 text-yellow-900 text-2xl font-black rounded-3xl w-32 h-24 shadow-lg"
+              >
+                JUMP
+              </button>
             </div>
-            <button
-              onPointerDown={(e) => { e.preventDefault(); controlsRef.current.jump?.() }}
-              className="bg-yellow-400/80 active:bg-yellow-300 text-yellow-900 text-2xl font-black rounded-2xl w-20 h-16"
-            >
-              JUMP
-            </button>
-          </div>
-          <p className="text-indigo-300 text-sm mt-2 hidden sm:block">← → to run, space to jump. Collect the word stars!</p>
+          ) : (
+            <p className="text-indigo-300 text-sm mt-2">← → to run, space to jump. Collect the word stars!</p>
+          )}
         </>
       )}
     </div>

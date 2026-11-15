@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "type": "quiz_game",
+  "title": "Fixture animals",
+  "icon": "🐱",
+  "coin_per_correct": 5,
+  "arcade_cost": 10,
+  "arcade_seconds": 60,
+  "words": [
+    { "es": "el gato", "en": "cat", "emoji": "🐱" },
+    { "es": "el perro", "en": "dog", "emoji": "🐶" }
+  ],
+  "questions": [
+    { "type": "tap-picture", "prompt_es": "el gato", "prompt_en": "the cat",
+      "choices": [ { "emoji": "🐱", "label": "el gato" }, { "emoji": "🐶", "label": "el perro" } ], "answer": 0 },
+    { "type": "tap-picture", "prompt_es": "el perro", "prompt_en": "the dog",
+      "choices": [ { "emoji": "🐱", "label": "el gato" }, { "emoji": "🐶", "label": "el perro" } ], "answer": 1 }
+  ]
+}

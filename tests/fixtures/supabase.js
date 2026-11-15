@@ -14,7 +14,7 @@ const lessons = mathLessons.concat(courses.filter(course => course.id !== 'math'
   title: ['A new beginning', 'The building blocks', 'Putting it into practice', 'Your next step'][i],
   lesson_type: ['ai', 'python'].includes(course.id) ? 'visual' : course.id === 'kids' ? 'quiz_game' : 'audio',
   audio_url: '/tests/tone.wav', duration_minutes: 2,
-  content_url: '/tests/visual.json',
+  content_url: course.id === 'kids' ? '/tests/fixtures/quiz.json' : '/tests/visual.json',
 }))))
 const progress = [{ lesson_id: 'spanish-1', status: 'completed', completed_at: '2026-10-01' }, { lesson_id: 'spanish-2', status: 'in_progress', last_position_seconds: 20 }]
 let scenario = 'normal'
