@@ -37,7 +37,7 @@ try {
       const value = op === '+' ? Number(a) + Number(b) : Number(a) - Number(b)
       for (const ch of String(value)) await page.getByRole('button', { name: ch, exact: true }).click()
       await page.getByRole('button', { name: 'Check answer' }).click()
-      await page.getByText('Yes!').waitFor(); await page.waitForTimeout(550)
+      await page.getByText('Yes!').or(page.getByRole('heading', { name: 'Set complete!' })).first().waitFor(); await page.waitForTimeout(550)
     }
     await page.getByRole('heading', { name: 'Set complete!' }).waitFor()
   }
