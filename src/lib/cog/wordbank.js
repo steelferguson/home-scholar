@@ -25,6 +25,7 @@ export const RELATIONS = {
 // [a, b, tier]
 export const PAIRS = {
   category: [
+    ['larch', 'tree', 4], ['quartz', 'mineral', 4], ['haiku', 'poem', 4], ['aria', 'song', 4],
     ['dog', 'animal', 1], ['rose', 'flower', 1], ['oak', 'tree', 1], ['hammer', 'tool', 1],
     ['blue', 'color', 1], ['apple', 'fruit', 1], ['shirt', 'clothing', 1], ['robin', 'bird', 1],
     ['trumpet', 'instrument', 2], ['triangle', 'shape', 1], ['copper', 'metal', 2], ['spider', 'insect', 2],
@@ -32,51 +33,60 @@ export const PAIRS = {
     ['maple', 'tree', 2], ['salmon', 'fish', 2],
   ],
   part_whole: [
+    ['stanza', 'poem', 4], ['hilt', 'sword', 4], ['nucleus', 'cell', 4], ['keel', 'ship', 4],
     ['page', 'book', 1], ['petal', 'flower', 1], ['wheel', 'car', 1], ['branch', 'tree', 1],
     ['finger', 'hand', 1], ['room', 'house', 1], ['key', 'keyboard', 2], ['string', 'guitar', 2],
     ['island', 'archipelago', 3], ['verse', 'song', 2], ['scene', 'play', 2], ['chapter', 'novel', 2],
     ['engine', 'airplane', 2], ['root', 'plant', 1], ['crust', 'earth', 3], ['clause', 'sentence', 3],
   ],
   opposite: [
+    ['scarce', 'abundant', 4], ['transparent', 'opaque', 4], ['ascend', 'descend', 4], ['candid', 'evasive', 4],
     ['hot', 'cold', 1], ['up', 'down', 1], ['open', 'closed', 1], ['day', 'night', 1],
     ['fast', 'slow', 1], ['heavy', 'light', 1], ['begin', 'end', 1], ['ancient', 'modern', 2],
     ['expand', 'shrink', 2], ['generous', 'stingy', 3], ['permanent', 'temporary', 3], ['praise', 'criticize', 3],
     ['arrive', 'depart', 2], ['gather', 'scatter', 2], ['reveal', 'conceal', 3], ['solid', 'liquid', 2],
   ],
   function: [
+    ['sieve', 'separate', 4], ['pulley', 'lift', 4], ['barometer', 'forecast', 4],
     ['broom', 'sweep', 1], ['pencil', 'write', 1], ['scissors', 'cut', 1], ['ladder', 'climb', 1],
     ['telescope', 'see', 2], ['oven', 'bake', 1], ['needle', 'sew', 2], ['anchor', 'hold', 2],
     ['compass', 'navigate', 3], ['microscope', 'magnify', 3], ['shovel', 'dig', 1], ['whistle', 'signal', 2],
     ['filter', 'strain', 3], ['thermometer', 'measure', 2],
   ],
   worker_tool: [
+    ['mason', 'trowel', 4], ['weaver', 'loom', 4], ['potter', 'kiln', 4],
     ['chef', 'knife', 1], ['painter', 'brush', 1], ['farmer', 'plow', 2], ['carpenter', 'saw', 2],
     ['dentist', 'drill', 2], ['sailor', 'compass', 2], ['surgeon', 'scalpel', 3], ['astronomer', 'telescope', 2],
     ['tailor', 'needle', 2], ['gardener', 'shovel', 1], ['drummer', 'sticks', 1], ['archer', 'bow', 2],
     ['cartographer', 'map', 3], ['blacksmith', 'anvil', 3],
   ],
   member_group: [
+    ['lion', 'pride', 4], ['whale', 'pod', 4], ['quail', 'covey', 4],
     ['bee', 'swarm', 2], ['wolf', 'pack', 2], ['fish', 'school', 2], ['bird', 'flock', 1],
     ['sailor', 'crew', 2], ['soldier', 'army', 1], ['singer', 'choir', 2], ['player', 'team', 1],
     ['star', 'constellation', 3], ['cow', 'herd', 1], ['judge', 'panel', 3], ['island', 'chain', 3],
   ],
   made_of: [
+    ['mosaic', 'tile', 4], ['parchment', 'hide', 4], ['tapestry', 'thread', 4],
     ['window', 'glass', 1], ['ring', 'gold', 1], ['tire', 'rubber', 2], ['sweater', 'wool', 1],
     ['statue', 'marble', 2], ['fence', 'wood', 1], ['coin', 'copper', 2], ['bottle', 'glass', 1],
     ['pipe', 'iron', 2], ['rope', 'fiber', 3], ['brick', 'clay', 2], ['candle', 'wax', 1],
   ],
   degree: [
+    ['fond', 'devoted', 4], ['irritated', 'incensed', 4], ['warm', 'scorching', 4],
     ['warm', 'hot', 1], ['damp', 'soaked', 2], ['big', 'enormous', 1], ['sad', 'devastated', 2],
     ['tired', 'exhausted', 1], ['cool', 'frozen', 1], ['like', 'adore', 2], ['annoyed', 'furious', 2],
     ['bright', 'blinding', 2], ['quiet', 'silent', 1], ['hungry', 'starving', 1], ['clever', 'brilliant', 3],
     ['unusual', 'unprecedented', 3], ['dislike', 'despise', 3],
   ],
   cause_effect: [
+    ['famine', 'migration', 4], ['sediment', 'delta', 4], ['rebellion', 'reform', 4],
     ['rain', 'flood', 2], ['spark', 'fire', 2], ['practice', 'skill', 2], ['drought', 'famine', 3],
     ['exercise', 'strength', 2], ['virus', 'illness', 2], ['friction', 'heat', 3], ['erosion', 'canyon', 3],
     ['study', 'knowledge', 1], ['frost', 'crack', 3], ['sunlight', 'growth', 2], ['neglect', 'decay', 3],
   ],
   lacks: [
+    ['sterile', 'life', 4], ['arid', 'moisture', 4], ['vacant', 'occupants', 4],
     ['desert', 'water', 2], ['silence', 'sound', 2], ['vacuum', 'air', 3], ['darkness', 'light', 1],
     ['orphan', 'parents', 3], ['bald', 'hair', 1], ['empty', 'contents', 2], ['blind', 'sight', 2],
     ['barren', 'crops', 3], ['mute', 'speech', 3],
@@ -109,7 +119,11 @@ export function tiersFor(level) {
   if (level <= 3) return [1]
   if (level <= 6) return [1, 2]
   if (level <= 9) return [2, 3]
-  return [3, 2]
+  if (level <= 12) return [3, 2]
+  // The mastery band adds a harder vocabulary tier. Tier 2 stays in the mix
+  // because tiers 3 and 4 alone leave too few members per category to build a
+  // classification item from.
+  return [4, 3, 2]
 }
 
 // Categories for classification and sentence items. `singular` is how the
@@ -122,45 +136,45 @@ export function tiersFor(level) {
 // analogies set, in a different shape.
 export const CATEGORIES = {
   birds: { singular: 'bird',
-    words: [['robin', 1], ['sparrow', 1], ['eagle', 1], ['owl', 1], ['hawk', 2], ['crow', 1], ['falcon', 2], ['heron', 3]], near: ['nest', 'feather', 'beak', 'perch'] },
+    words: [['kestrel', 4], ['grebe', 4], ['robin', 1], ['sparrow', 1], ['eagle', 1], ['owl', 1], ['hawk', 2], ['crow', 1], ['falcon', 2], ['heron', 3]], near: ['nest', 'feather', 'beak', 'perch'] },
   mammals: { singular: 'mammal',
-    words: [['dog', 1], ['cat', 1], ['horse', 1], ['cow', 1], ['bear', 1], ['wolf', 2], ['fox', 2], ['otter', 3]], near: ['fur', 'paw', 'kennel', 'burrow'] },
+    words: [['lynx', 4], ['marten', 4], ['dog', 1], ['cat', 1], ['horse', 1], ['cow', 1], ['bear', 1], ['wolf', 2], ['fox', 2], ['otter', 3]], near: ['fur', 'paw', 'kennel', 'burrow'] },
   fruit: { singular: 'fruit',
-    words: [['apple', 1], ['pear', 1], ['plum', 1], ['peach', 1], ['cherry', 1], ['mango', 2], ['apricot', 3]], near: ['seed', 'orchard', 'juice', 'peel'] },
+    words: [['quince', 4], ['damson', 4], ['apple', 1], ['pear', 1], ['plum', 1], ['peach', 1], ['cherry', 1], ['mango', 2], ['apricot', 3]], near: ['seed', 'orchard', 'juice', 'peel'] },
   vegetables: { singular: 'vegetable',
-    words: [['carrot', 1], ['pea', 1], ['bean', 1], ['potato', 1], ['onion', 2], ['spinach', 2], ['turnip', 3]], near: ['garden', 'soil', 'salad', 'harvest'] },
+    words: [['chicory', 4], ['salsify', 4], ['carrot', 1], ['pea', 1], ['bean', 1], ['potato', 1], ['onion', 2], ['spinach', 2], ['turnip', 3]], near: ['garden', 'soil', 'salad', 'harvest'] },
   tools: { singular: 'tool',
-    words: [['hammer', 1], ['saw', 1], ['drill', 2], ['wrench', 2], ['pliers', 2], ['chisel', 3], ['screwdriver', 2]], near: ['nail', 'workbench', 'toolbox', 'plank'] },
+    words: [['awl', 4], ['rasp', 4], ['hammer', 1], ['saw', 1], ['drill', 2], ['wrench', 2], ['pliers', 2], ['chisel', 3], ['screwdriver', 2]], near: ['nail', 'workbench', 'toolbox', 'plank'] },
   instruments: { singular: 'musical instrument',
-    words: [['piano', 1], ['guitar', 1], ['drum', 1], ['flute', 2], ['violin', 2], ['trumpet', 2], ['cello', 3], ['oboe', 3]], near: ['song', 'stage', 'melody', 'orchestra'] },
+    words: [['bassoon', 4], ['viola', 4], ['piano', 1], ['guitar', 1], ['drum', 1], ['flute', 2], ['violin', 2], ['trumpet', 2], ['cello', 3], ['oboe', 3]], near: ['song', 'stage', 'melody', 'orchestra'] },
   metals: { singular: 'metal', countable: false,
-    words: [['gold', 1], ['silver', 1], ['iron', 2], ['copper', 2], ['tin', 2], ['lead', 3], ['zinc', 3]], near: ['rust', 'mine', 'ore', 'forge'] },
+    words: [['nickel', 4], ['platinum', 4], ['gold', 1], ['silver', 1], ['iron', 2], ['copper', 2], ['tin', 2], ['lead', 3], ['zinc', 3]], near: ['rust', 'mine', 'ore', 'forge'] },
   shapes: { singular: 'shape',
-    words: [['circle', 1], ['square', 1], ['triangle', 1], ['oval', 1], ['diamond', 2], ['hexagon', 2], ['pentagon', 3]], near: ['line', 'corner', 'angle', 'edge'] },
+    words: [['rhombus', 4], ['trapezium', 4], ['circle', 1], ['square', 1], ['triangle', 1], ['oval', 1], ['diamond', 2], ['hexagon', 2], ['pentagon', 3]], near: ['line', 'corner', 'angle', 'edge'] },
   colors: { singular: 'color', countable: false,
-    words: [['red', 1], ['blue', 1], ['green', 1], ['yellow', 1], ['purple', 1], ['orange', 1], ['crimson', 3], ['amber', 3]], near: ['paint', 'brush', 'rainbow', 'shade'] },
+    words: [['ochre', 4], ['indigo', 4], ['red', 1], ['blue', 1], ['green', 1], ['yellow', 1], ['purple', 1], ['orange', 1], ['crimson', 3], ['amber', 3]], near: ['paint', 'brush', 'rainbow', 'shade'] },
   clothing: { singular: 'clothing',
-    words: [['shirt', 1], ['coat', 1], ['hat', 1], ['sock', 1], ['glove', 1], ['scarf', 2], ['trousers', 2]], near: ['closet', 'button', 'zipper', 'hanger'] },
+    words: [['tunic', 4], ['cravat', 4], ['shirt', 1], ['coat', 1], ['hat', 1], ['sock', 1], ['glove', 1], ['scarf', 2], ['trousers', 2]], near: ['closet', 'button', 'zipper', 'hanger'] },
   furniture: { singular: 'furniture',
-    words: [['chair', 1], ['table', 1], ['bed', 1], ['desk', 1], ['shelf', 2], ['couch', 2], ['wardrobe', 3]], near: ['room', 'cushion', 'carpet', 'lamp'] },
+    words: [['bureau', 4], ['ottoman', 4], ['chair', 1], ['table', 1], ['bed', 1], ['desk', 1], ['shelf', 2], ['couch', 2], ['wardrobe', 3]], near: ['room', 'cushion', 'carpet', 'lamp'] },
   weather: { singular: 'weather', countable: false,
-    words: [['rain', 1], ['snow', 1], ['fog', 2], ['wind', 1], ['hail', 2], ['thunder', 2], ['sleet', 3]], near: ['umbrella', 'cloud', 'forecast', 'season'] },
+    words: [['drizzle', 4], ['squall', 4], ['rain', 1], ['snow', 1], ['fog', 2], ['wind', 1], ['hail', 2], ['thunder', 2], ['sleet', 3]], near: ['umbrella', 'cloud', 'forecast', 'season'] },
   vehicles: { singular: 'vehicle',
-    words: [['car', 1], ['truck', 1], ['bus', 1], ['train', 1], ['boat', 1], ['bicycle', 2], ['tractor', 2]], near: ['road', 'driver', 'garage', 'ticket'] },
+    words: [['barge', 4], ['tram', 4], ['car', 1], ['truck', 1], ['bus', 1], ['train', 1], ['boat', 1], ['bicycle', 2], ['tractor', 2]], near: ['road', 'driver', 'garage', 'ticket'] },
   buildings: { singular: 'building',
-    words: [['house', 1], ['school', 1], ['barn', 2], ['castle', 2], ['tower', 2], ['cottage', 3], ['cathedral', 3]], near: ['brick', 'roof', 'doorway', 'street'] },
+    words: [['granary', 4], ['rotunda', 4], ['house', 1], ['school', 1], ['barn', 2], ['castle', 2], ['tower', 2], ['cottage', 3], ['cathedral', 3]], near: ['brick', 'roof', 'doorway', 'street'] },
   body_parts: { singular: 'body part',
-    words: [['arm', 1], ['leg', 1], ['hand', 1], ['foot', 1], ['elbow', 2], ['knee', 2], ['shoulder', 2]], near: ['sleeve', 'bone', 'muscle', 'mitten'] },
+    words: [['wrist', 4], ['temple', 4], ['arm', 1], ['leg', 1], ['hand', 1], ['foot', 1], ['elbow', 2], ['knee', 2], ['shoulder', 2]], near: ['sleeve', 'bone', 'muscle', 'mitten'] },
   emotions: { singular: 'feeling', countable: false,
-    words: [['joy', 2], ['anger', 2], ['fear', 2], ['sorrow', 3], ['envy', 3], ['pride', 3], ['relief', 3]], near: ['smile', 'tear', 'shout', 'sigh'] },
+    words: [['dread', 4], ['elation', 4], ['joy', 2], ['anger', 2], ['fear', 2], ['sorrow', 3], ['envy', 3], ['pride', 3], ['relief', 3]], near: ['smile', 'tear', 'shout', 'sigh'] },
   time_units: { singular: 'length of time',
-    words: [['hour', 1], ['minute', 1], ['week', 1], ['month', 1], ['year', 1], ['decade', 2], ['century', 3]], near: ['clock', 'calendar', 'watch', 'schedule'] },
+    words: [['fortnight', 4], ['millennium', 4], ['hour', 1], ['minute', 1], ['week', 1], ['month', 1], ['year', 1], ['decade', 2], ['century', 3]], near: ['clock', 'calendar', 'watch', 'schedule'] },
   planets: { singular: 'planet',
-    words: [['mars', 2], ['venus', 2], ['jupiter', 2], ['saturn', 2], ['mercury', 3], ['neptune', 3]], near: ['star', 'moon', 'comet', 'telescope'] },
+    words: [['uranus', 4], ['pluto', 4], ['mars', 2], ['venus', 2], ['jupiter', 2], ['saturn', 2], ['mercury', 3], ['neptune', 3]], near: ['star', 'moon', 'comet', 'telescope'] },
   liquids: { singular: 'liquid', countable: false,
-    words: [['water', 1], ['milk', 1], ['oil', 2], ['juice', 1], ['honey', 2], ['syrup', 3]], near: ['cup', 'bottle', 'straw', 'kettle'] },
+    words: [['brine', 4], ['nectar', 4], ['water', 1], ['milk', 1], ['oil', 2], ['juice', 1], ['honey', 2], ['syrup', 3]], near: ['cup', 'bottle', 'straw', 'kettle'] },
   insects: { singular: 'insect',
-    words: [['ant', 1], ['bee', 1], ['beetle', 2], ['moth', 2], ['wasp', 2], ['cricket', 3]], near: ['web', 'hive', 'sting', 'antenna'] },
+    words: [['locust', 4], ['mayfly', 4], ['ant', 1], ['bee', 1], ['beetle', 2], ['moth', 2], ['wasp', 2], ['cricket', 3]], near: ['web', 'hive', 'sting', 'antenna'] },
 }
 
 // Members of a category that a given level is allowed to use.
@@ -189,6 +203,9 @@ export const MASS = new Set([
   'syrup', 'joy', 'anger', 'fear', 'sorrow', 'envy', 'pride', 'relief', 'clothing',
   'blue', 'red', 'green', 'yellow', 'purple', 'orange', 'crimson', 'amber',
   'furniture', 'weather', 'crops', 'parents', 'contents', 'light',
+  'life', 'moisture', 'migration', 'hide', 'thread', 'occupants', 'reform',
+  'ochre', 'indigo', 'brine', 'nectar', 'dread', 'elation', 'nickel', 'platinum',
+  'drizzle', 'abundant',
 ])
 
 // Words that are adjectives, not nouns. "A blind has almost no sight" is the
@@ -200,6 +217,9 @@ export const ADJECTIVES = new Set([
   'silent', 'hungry', 'starving', 'clever', 'brilliant', 'unusual', 'unprecedented',
   'generous', 'stingy', 'permanent', 'temporary', 'solid', 'liquid', 'bald', 'blind',
   'mute', 'barren', 'empty', 'expand', 'shrink',
+  'scarce', 'transparent', 'opaque', 'candid', 'evasive', 'ascend', 'descend',
+  'fond', 'devoted', 'irritated', 'incensed', 'scorching', 'sterile', 'arid',
+  'vacant',
 ])
 
 // Nouns whose plural is not formed by adding s.

@@ -111,7 +111,8 @@ export const RULES = [
 export function ruleCount(level) {
   if (level <= 4) return 1
   if (level <= 8) return 2
-  return 3
+  if (level <= 12) return 3
+  return 4
 }
 
 export const applyRules = (f, rules) => rules.reduce((acc, r) => r.apply(acc), f)
