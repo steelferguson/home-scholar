@@ -22,7 +22,8 @@ export default function MathPractice({ lesson, onExit, onComplete }) {
   const [round, setRound] = useState(0)
   const [screen, setScreen] = useState('intro') // intro | practice | results
   const [typed, setTyped] = useState('')
-  const [feedback, setFeedback] = useState(null) // { correct, fact }
+  const [feedback, setFeedback] = useState(null) // wrong answer: { fact, typed }
+  const [flash, setFlash] = useState(false) // brief "Yes!" after a correct answer; typing continues
   const [, setTick] = useState(0) // the session object mutates; bump to re-render
   const [summary, setSummary] = useState(null)
   const session = useMemo(() => {
@@ -41,12 +42,14 @@ export default function MathPractice({ lesson, onExit, onComplete }) {
   }
   const submit = () => {
     if (typed === '' || feedback) return
-    const outcome = session.answer(typed)
+    const outcome = { ...session.answer(typed), typed }
     setTyped('')
     if (outcome.correct) {
-      setFeedback(outcome)
-      setTimeout(() => { setFeedback(null); setTick(t => t + 1); if (session.done) finish() }, 500)
-    } else setFeedback(outcome)
+      // Move on at once so the next taps are never dropped; the flash is only a cheer.
+      setTick(t => t + 1); setFlash(true)
+      setTimeout(() => setFlash(false), 500)
+      if (session.done) finish()
+    } else { setFlash(false); setFeedback(outcome) }
   }
   const next = () => { setFeedback(null); setTick(t => t + 1) }
   const playAgain = () => { setSummary(null); setTyped(''); setFeedback(null); setRound(r => r + 1); setScreen('practice') }
@@ -87,19 +90,21 @@ export default function MathPractice({ lesson, onExit, onComplete }) {
     </div>
   </div>
 
-  const fact = session.current
-  // While a correct flash shows, `current` has already moved on; show the answered fact.
-  const display = feedback ? feedback.fact : fact
+  const wrong = Boolean(feedback && !feedback.correct)
+  const display = wrong ? feedback.fact : session.current
+  if (!display) return null // the last answer just landed; results are on their way
   return <div className={shell}>{header}
     <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
-      <div className={`text-6xl sm:text-7xl font-extrabold tabular-nums flex items-center gap-4 ${feedback ? feedback.correct ? 'text-yellow-300' : 'text-orange-200' : ''}`} aria-live="polite">
+      {/* Wrong: the child's answer in red with a line through it, the right one bright yellow. */}
+      <div className={`text-6xl sm:text-7xl font-extrabold tabular-nums flex items-center gap-4 ${flash ? 'text-yellow-300' : ''}`} aria-live="polite">
         <span>{display.a}</span><span>{display.op}</span><span>{display.b}</span><span>=</span>
-        <span className="min-w-[2ch] text-center bg-white/20 rounded-2xl px-4" data-testid="answer">{feedback ? feedback.fact.answer : (typed || ' ')}</span>
+        {wrong && <span className="text-red-400 line-through decoration-8 bg-red-950/40 rounded-2xl px-4" data-testid="wrong">{feedback.typed}</span>}
+        <span className={`min-w-[2ch] text-center rounded-2xl px-4 ${wrong ? 'bg-yellow-300 text-teal-900 ring-8 ring-yellow-200/60' : 'bg-white/20'}`} data-testid="answer">{wrong ? feedback.fact.answer : (typed || '\u00a0')}</span>
       </div>
-      <p className="text-2xl font-bold h-8">{feedback ? feedback.correct ? 'Yes!' : `It’s ${feedback.fact.answer}. You’ll see this one again.` : ' '}</p>
-      {feedback && !feedback.correct
+      <p className={`text-2xl font-bold h-8 ${wrong ? 'text-red-300' : ''}`}>{wrong ? `Not quite. It’s ${feedback.fact.answer}. You’ll see this one again.` : flash ? 'Yes!' : '\u00a0'}</p>
+      {wrong
         ? <button onClick={next} className="bg-yellow-300 text-teal-900 text-2xl font-extrabold rounded-full px-12 py-4 shadow-lg">Got it</button>
-        : <Keypad value={typed} disabled={Boolean(feedback)} onChange={setTyped} onSubmit={submit} />}
+        : <Keypad value={typed} onChange={setTyped} onSubmit={submit} />}
     </div>
   </div>
 }

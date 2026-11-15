@@ -42,14 +42,16 @@ try {
     const correct = await readFact(); seen.push(correct)
     if (!wrongDone) {
       await type(correct + 1); wrongDone = true
-      await page.getByText(`It’s ${correct}. You’ll see this one again.`).waitFor()
+      await page.getByText(`Not quite. It’s ${correct}. You’ll see this one again.`).waitFor()
+      assert.equal(await page.getByTestId('wrong').innerText(), String(correct + 1), 'the typed wrong answer is shown')
+      assert.equal(await page.getByTestId('answer').innerText(), String(correct), 'the right answer is shown')
       await page.screenshot({ path: `${shots}/home-scholar-math-wrong.png` })
       await page.getByRole('button', { name: 'Got it' }).click()
       continue
     }
     if (seen.length === 3) { await page.getByRole('button', { name: '1', exact: true }).click(); await page.screenshot({ path: `${shots}/home-scholar-math-keypad.png` }); await page.getByRole('button', { name: 'Delete' }).click() }
     await type(correct)
-    await page.getByText('Yes!').waitFor()
+    await page.getByText('Yes!').or(page.getByRole('heading', { name: 'Set complete!' })).first().waitFor()
     await page.waitForTimeout(550)
   }
   await page.getByRole('heading', { name: 'Set complete!' }).waitFor()
