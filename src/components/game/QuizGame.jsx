@@ -1,4 +1,5 @@
-import { useState, lazy, Suspense } from 'react'
+import { useFreeChoiceFinish } from '../../hooks/useFreeChoiceFinish'
+import { useRef, useState, lazy, Suspense } from 'react'
 import confetti from 'canvas-confetti'
 import { usePlayerState } from '../../hooks/usePlayerState'
 import { useLessonContent } from '../../hooks/useLessonContent'
@@ -22,6 +23,14 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
   const { playerState, recordQuizResult, spendCoins } = usePlayerState(user.id)
   const { active } = useFamily()
   const wallet = useWallet()
+  const freeFinish = useFreeChoiceFinish()
+  const attempt = useRef(null)
+  const finishRound = () => {
+    attempt.current ??= crypto.randomUUID()
+    if (freeFinish) return freeFinish(lesson.id, attempt.current)
+    if (finishPlan) return finishPlan(lesson.id)
+    return wallet.award(active, 'lesson', lesson.id)
+  }
   const [earned, setEarned] = useState(null)
   const [earnError, setEarnError] = useState(null)
 
@@ -35,18 +44,18 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
     setScreen('results'); setEarned(null); setEarnError(null)
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
     // Real money: the database pays 10 cents the first time and 5 for a replay, under the daily cap.
-    try { setEarned(await (finishPlan ? finishPlan(lesson.id) : wallet.award(active, 'lesson', lesson.id))) }
+    try { setEarned(await finishRound()) }
     catch { setEarnError('Couldn’t save this step.'); return }
     if (banked) {
       setCoinsBanked(true)
       try {
         await recordQuizResult(lesson.id, correct, total, coinsEarned)
-        onComplete()
+        if (!freeFinish) onComplete()
       } catch { setSaveError('Your result could not be fully saved. Please ask a parent to check your connection.') }
     }
   }
 
-  const pending = finishPlan && screen === 'results' && !earned && !earnError
+  const pending = (finishPlan || freeFinish) && screen === 'results' && !earned && !earnError
   const startArcade = async () => {
     try {
       if (await spendCoins(arcadeCost)) setScreen('arcade')
@@ -136,7 +145,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
           <EarnedBanner earned={earned} error={earnError} className="text-green-200 -mt-6 mb-8" />
 
           {pending && <p role="status">Saving your lesson…</p>}
-          {earnError && finishPlan && <button onClick={() => handleRoundEnd(roundResult.correct, roundResult.total, roundResult.coinsEarned)}>Retry save</button>}
+          {earnError && (finishPlan || freeFinish) && <button onClick={() => handleRoundEnd(roundResult.correct, roundResult.total, roundResult.coinsEarned)}>Retry save</button>}
           <div className="flex flex-col gap-4 w-full max-w-xs">
             <button
               onClick={startArcade}
@@ -149,7 +158,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
               <p className="text-indigo-100 text-sm">Earn {arcadeCost - playerState.coins} more 🪙 to unlock the arcade</p>
             )}
             {(!finishPlan || extraPractice) && <button
-              onClick={() => { setScreen('round'); setRoundResult(null) }}
+              disabled={pending} onClick={() => { attempt.current = null; setScreen('round'); setRoundResult(null) }}
               className="bg-white/20 hover:bg-white/30 text-white text-lg font-bold rounded-full px-8 py-3 transition"
             >
               Practice again

@@ -25,10 +25,10 @@ try {
   }
   await unlock()
   await page.getByRole('button', { name: /^Zinc/ }).click()
-  await page.getByRole('heading', { name: 'Today’s learning plan' }).waitFor()
+  await page.getByRole('heading', { name: 'Your courses' }).waitFor()
   assert.equal(await page.locator('.account-email').innerText(), 'Zinc')
   await page.reload()
-  await page.getByRole('heading', { name: 'Today’s learning plan' }).waitFor()
+  await page.getByRole('heading', { name: 'Your courses' }).waitFor()
   assert.equal(await page.locator('.account-email').innerText(), 'Zinc')
   await page.screenshot({ path: '/private/tmp/home-scholar-child-profile.png', fullPage: true })
   await page.goto('http://127.0.0.1:5191/parent')

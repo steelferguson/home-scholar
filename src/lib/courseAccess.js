@@ -1,6 +1,8 @@
-// Parents see every course. A child sees only the courses a parent assigned.
+export function hasFreeChoice(active) {
+  return active?.role === 'child' && Boolean(active.free_choice_profiles?.profile_id)
+}
 export function isAssigned(active, assignments, courseId) {
-  if (!active || active.role !== 'child') return true
+  if (!active || active.role !== 'child' || hasFreeChoice(active)) return true
   return (assignments[active.id] || []).includes(courseId)
 }
 

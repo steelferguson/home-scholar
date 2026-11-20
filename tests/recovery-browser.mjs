@@ -34,7 +34,7 @@ try {
   await page.getByLabel('Parent password', { exact: true }).fill('new-test-parent-password')
   await page.getByRole('button', { name: 'Unlock parent controls' }).click()
   await page.getByRole('button', { name: /^Zinc/ }).click()
-  await page.getByRole('heading', { name: 'Today’s learning plan' }).waitFor()
+  await page.getByRole('heading', { name: 'Your courses' }).waitFor()
   assert.equal(await page.locator('.account-email').innerText(), 'Zinc')
   await page.getByRole('link', { name: 'Parent', exact: true }).click()
   await page.getByLabel('Parent password', { exact: true }).waitFor()

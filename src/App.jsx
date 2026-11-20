@@ -15,18 +15,20 @@ import PasswordSetup from './components/family/PasswordSetup'
 import ParentPage from './components/family/ParentPage'
 import WalletProvider from './components/wallet/WalletProvider'
 import { useFamily } from './hooks/useFamily'
+import { hasFreeChoice } from './lib/courseAccess'
 import { stop } from './lib/playbackStore'
 
 // Shell only: audio keeps playing after you leave the lesson page
 const MiniPlayer = lazy(() => import('./components/audio/MiniPlayer'))
 
 function NativeAudioSync({ userId }) {
-  useNativeAudioSync(userId)
-  return null
+  const retry = useNativeAudioSync(userId)
+  return retry ? <div role="alert" className="inline-notice">Your audio lesson is waiting to save. <button onClick={retry}>Retry save</button></div> : null
 }
 
 function FamilyApp({ user, signOut }) {
   const { active, loading, store } = useFamily()
+  const planned = active?.role === 'child' && !hasFreeChoice(active)
   const handleSignOut = async () => {
     stop()
     const { error } = await signOut()
@@ -41,9 +43,9 @@ function FamilyApp({ user, signOut }) {
         <NativeAudioSync userId={user.id} />
         <Routes>
           <Route path="/parent" element={<ParentPage user={user} onSignOut={handleSignOut} />} />
-          <Route path="/" element={active.role === 'child' ? <ChildPlan user={user} /> : <Dashboard user={user} />} />
-          <Route path="/course/:slug" element={active.role === 'child' ? <ChildPlan user={user} /> : <Course user={user} />} />
-          <Route path="/course/:slug/lesson/:number" element={active.role === 'child' ? <ChildPlan user={user} /> : <Lesson user={user} />} />
+          <Route path="/" element={planned ? <ChildPlan user={user} /> : <Dashboard user={user} />} />
+          <Route path="/course/:slug" element={planned ? <ChildPlan user={user} /> : <Course user={user} />} />
+          <Route path="/course/:slug/lesson/:number" element={planned ? <ChildPlan user={user} /> : <Lesson user={user} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         {isNativeShell && <Suspense fallback={null}><MiniPlayer /></Suspense>}

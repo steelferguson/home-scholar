@@ -52,7 +52,7 @@ export default function ParentPage({ user, onSignOut }) {
       {!profiles.some(p => p.role === 'parent') && <button disabled={busy} onClick={() => run(() => store.create('Parent', 'parent'))}>Create parent profile</button>}
       {children.length > 0 && wallet && <section className="family-money" aria-labelledby="family-money-heading">
         <h2 id="family-money-heading">Money</h2>
-        <p>The daily plan pays 10¢ per math set, then 10¢ for new Spanish or 5¢ for a repeat. Extra practice earns no money. Change a balance here with a reason.</p>
+        <p>Rush earns 10¢ per planned math set, then 10¢ for new Spanish or 5¢ for a repeat. Extra practice is unpaid. Zinc can choose any course and earn 10¢ per math set or new lesson and 5¢ per repeated lesson, up to 50¢ a day. Change a balance here with a reason.</p>
         {wallet.error && <p role="alert">{wallet.error} <button onClick={wallet.retry}>Try again</button></p>}
         {children.map(child => { const sum = wallet.summaryOf(child.id); const draft = adjusting[child.id] || { cents: '', reason: '' }
           const setDraft = changes => setAdjusting({ ...adjusting, [child.id]: { ...draft, ...changes } })

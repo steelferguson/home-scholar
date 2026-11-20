@@ -30,7 +30,7 @@ export function createFamilyStore(client, user, storage) {
       publish({ loading: true, error: null })
       try {
         const [{ data, error }, assigned] = await Promise.all([
-          client.from('profiles').select('id,user_id,name,role,avatar_color').eq('user_id', user.id).order('created_at'),
+          client.from('profiles').select('id,user_id,name,role,avatar_color,free_choice_profiles(profile_id)').eq('user_id', user.id).order('created_at'),
           client.from('course_assignments').select('profile_id,course_id'),
         ])
         if (error || assigned.error) throw error || assigned.error

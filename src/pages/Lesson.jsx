@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
+import { useRef, useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { useProgress } from '../hooks/useProgress'
 import { isNativeShell } from '../lib/nativeBridge'
+import { useFreeChoiceFinish } from '../hooks/useFreeChoiceFinish'
+import { getSnapshot as playback } from '../lib/playbackStore'
+import EarnedBanner from '../components/wallet/EarnedBanner'
 import ReactMarkdown from 'react-markdown'
 import AppHeader from '../components/AppHeader'
 import LoadState from '../components/LoadState'
@@ -27,6 +30,10 @@ export default function Lesson({ user, onSignOut, finishPlan, extraPractice }) {
   const lessonNum = Number(number)
   const [vocab, setVocab] = useState(null)
   const [saving, setSaving] = useState(false)
+  const freeFinish = useFreeChoiceFinish()
+  const attempt = useRef(null)
+  const [receipt, setReceipt] = useState(null)
+  const [finishError, setFinishError] = useState(false)
   const saved = useProgress()
   const { progress, savePosition, markComplete } = saved
   const load = useCallback(async () => {
@@ -50,10 +57,24 @@ export default function Lesson({ user, onSignOut, finishPlan, extraPractice }) {
     return () => { stale = true }
   }, [lesson?.vocab_url])
 
+  const beginAttempt = () => {
+    attempt.current = { lessonId: lesson.id, id: crypto.randomUUID() }
+    setReceipt(null)
+    setFinishError(false)
+  }
   const handleMarkComplete = async () => {
     if (!lesson || saving) return
     setSaving(true)
-    try { await markComplete(lesson.id) } catch { /* Shared progress notice displays the failure. */ }
+    try {
+      if (freeFinish) {
+        if (attempt.current?.lessonId !== lesson.id) beginAttempt()
+        const native = playback()
+        const id = isNativeShell && native.active && native.lessonId === lesson.id ? native.attemptId : attempt.current.id
+        const earned = await freeFinish(lesson.id, id)
+        setReceipt({ ...earned, lessonId: lesson.id })
+        setFinishError(false)
+      } else await markComplete(lesson.id)
+    } catch { setFinishError(true) }
     finally { setSaving(false) }
   }
 
@@ -113,6 +134,8 @@ export default function Lesson({ user, onSignOut, finishPlan, extraPractice }) {
           {isCompleted && <span className="ml-2 text-green-600 font-medium">Completed</span>}
         </p>
 
+        {receipt?.lessonId === lesson.id && <EarnedBanner earned={receipt} />}
+        {finishError && <button onClick={handleMarkComplete} disabled={saving}>Couldn’t save. Retry completion</button>}
         {/* Visual lesson: step-through player, keyed so step state resets per lesson */}
         {lesson.lesson_type === 'visual' && (
           <div className="mb-6">
@@ -120,8 +143,8 @@ export default function Lesson({ user, onSignOut, finishPlan, extraPractice }) {
               <VisualLessonPlayer
                 key={lesson.id}
                 lesson={lesson}
-                savedStep={progress[lesson.id]?.last_position_seconds || 0}
-                isCompleted={isCompleted}
+                savedStep={isCompleted ? 0 : progress[lesson.id]?.last_position_seconds || 0}
+                isCompleted={freeFinish ? receipt?.lessonId === lesson.id : isCompleted}
                 onSaveStep={(i) => { if (!isCompleted) savePosition(lesson.id, i).catch(() => {}) }}
                 onMarkComplete={handleMarkComplete}
               />
@@ -147,9 +170,9 @@ export default function Lesson({ user, onSignOut, finishPlan, extraPractice }) {
             <WebAudioPlayer key={lesson.id} lesson={lesson}
               savedPosition={progress[lesson.id]?.last_position_seconds || 0}
               progressReady={!saved.loading && !saved.error} completed={isCompleted}
-              onSave={savePosition} onComplete={handleMarkComplete} />
+              onRestart={beginAttempt} onSave={savePosition} onComplete={handleMarkComplete} />
           )}
-          {!isCompleted && (
+          {(!isCompleted || (freeFinish && receipt?.lessonId !== lesson.id)) && (
             <div className="flex justify-end mt-4">
               <button
                 onClick={handleMarkComplete}

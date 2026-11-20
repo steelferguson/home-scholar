@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useFreeChoiceFinish } from '../../hooks/useFreeChoiceFinish'
+import { useRef, useState, useMemo } from 'react'
 import confetti from 'canvas-confetti'
 import { useLessonContent } from '../../hooks/useLessonContent'
 import { useFactStats } from '../../hooks/useFactStats'
@@ -17,6 +18,14 @@ export default function MathPractice({ lesson, onExit, onComplete, finishPlan, e
   const stats = useFactStats()
   const { active } = useFamily()
   const wallet = useWallet()
+  const freeFinish = useFreeChoiceFinish()
+  const attempt = useRef(null)
+  const finishRound = () => {
+    attempt.current ??= crypto.randomUUID()
+    if (freeFinish) return freeFinish(lesson.id, attempt.current)
+    if (finishPlan) return finishPlan(lesson.id)
+    return wallet.award(active, 'practice', lesson.id)
+  }
   const [earned, setEarned] = useState(null)
   const [earnError, setEarnError] = useState(null)
   const [round, setRound] = useState(0)
@@ -40,9 +49,9 @@ export default function MathPractice({ lesson, onExit, onComplete, finishPlan, e
   }
   const saveResult = async result => {
     setEarnError(null)
-    try { setEarned(await (finishPlan ? finishPlan(lesson.id) : wallet.award(active, 'practice', lesson.id))) } catch { setEarnError('Couldn’t save this step.'); return }
+    try { setEarned(await finishRound()) } catch { setEarnError('Couldn’t save this step.'); return }
     try { await stats.record(result) } catch { /* stats only steer the next set */ }
-    try { await onComplete() } catch { /* progress notice shows the failure */ }
+    try { if (!freeFinish) await onComplete() } catch { /* progress notice shows the failure */ }
   }
   const submit = () => {
     if (typed === '' || feedback) return
@@ -56,9 +65,9 @@ export default function MathPractice({ lesson, onExit, onComplete, finishPlan, e
     } else { setFlash(false); setFeedback(outcome) }
   }
   const next = () => { setFeedback(null); setTick(t => t + 1) }
-  const playAgain = () => { setSummary(null); setTyped(''); setFeedback(null); setRound(r => r + 1); setScreen('practice') }
+  const playAgain = () => { attempt.current = null; setSummary(null); setTyped(''); setFeedback(null); setRound(r => r + 1); setScreen('practice') }
 
-  const pending = finishPlan && screen === 'results' && !earned && !earnError
+  const pending = (finishPlan || freeFinish) && screen === 'results' && !earned && !earnError
   if (error) return <div className={`${shell} items-center justify-center gap-4`}>
     <p className="text-2xl font-bold">Oops! This practice wouldn&apos;t load.</p>
     <button disabled={pending} onClick={onExit} className="bg-white text-teal-800 font-bold rounded-full px-6 py-2">Go back</button>
@@ -89,9 +98,9 @@ export default function MathPractice({ lesson, onExit, onComplete, finishPlan, e
       <p className="text-2xl">{summary.firstTry} of {summary.total} right the first time</p>
       <EarnedBanner earned={earned} error={earnError} className="text-yellow-300" />
       {pending && <p role="status">Saving your set…</p>}
-      {earnError && finishPlan && <button onClick={() => saveResult(summary)}>Retry save</button>}
+      {earnError && (finishPlan || freeFinish) && <button onClick={() => saveResult(summary)}>Retry save</button>}
       <div className="flex gap-4">
-        {(!finishPlan || extraPractice) && <button onClick={playAgain} className="bg-yellow-300 text-teal-900 text-xl font-extrabold rounded-full px-8 py-3 shadow-lg">Play again</button>}
+        {(!finishPlan || extraPractice) && <button disabled={pending} onClick={playAgain} className="bg-yellow-300 text-teal-900 text-xl font-extrabold rounded-full px-8 py-3 shadow-lg">Play again</button>}
         <button disabled={pending} onClick={onExit} className="bg-white/20 text-xl font-bold rounded-full px-8 py-3">Done</button>
       </div>
     </div>

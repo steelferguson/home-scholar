@@ -19,9 +19,9 @@ try {
   await page.evaluate(() => localStorage.clear()); await page.reload()
   await page.evaluate(async () => {
     const { chicagoDate } = await import('/src/lib/wallet.js')
-    localStorage.setItem('fixture:plan:zinc:' + chicagoDate(), JSON.stringify([10,10,10,10]))
+    localStorage.setItem('fixture:plan:rush:' + chicagoDate(), JSON.stringify([10,10,10,10]))
   })
-  await page.getByRole('button', { name: /^Zinc/ }).click()
+  await page.getByRole('button', { name: /^Rush/ }).click()
   await page.getByRole('heading', { name: 'My money' }).waitFor()
 
   await page.goto('http://127.0.0.1:5191/course/spanish-kids-1/lesson/1')
