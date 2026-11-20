@@ -21,7 +21,7 @@ const loadingCard = (
   </div>
 )
 
-export default function Lesson({ user, onSignOut }) {
+export default function Lesson({ user, onSignOut, finishPlan, extraPractice }) {
   const { slug, number } = useParams()
   const navigate = useNavigate()
   const lessonNum = Number(number)
@@ -84,7 +84,7 @@ export default function Lesson({ user, onSignOut }) {
           key={lesson.id}
           user={user}
           lesson={lesson}
-          onExit={() => navigate(`/course/${slug}`)}
+          finishPlan={finishPlan} extraPractice={extraPractice} onExit={() => navigate(finishPlan ? '/' : `/course/${slug}`)}
           onComplete={handleMarkComplete}
         />
       </Suspense>
@@ -94,7 +94,7 @@ export default function Lesson({ user, onSignOut }) {
   if (lesson.lesson_type === 'math_practice') {
     return (
       <Suspense fallback={<div className="min-h-screen bg-gradient-to-b from-emerald-400 to-teal-700 flex items-center justify-center"><div className="text-white text-3xl animate-bounce">🔢 Loading...</div></div>}>
-        <MathPractice key={lesson.id} lesson={lesson} onExit={() => navigate(`/course/${slug}`)} onComplete={handleMarkComplete} />
+        <MathPractice key={lesson.id} lesson={lesson} finishPlan={finishPlan} extraPractice={extraPractice} onExit={() => navigate(finishPlan ? '/' : `/course/${slug}`)} onComplete={handleMarkComplete} />
       </Suspense>
     )
   }

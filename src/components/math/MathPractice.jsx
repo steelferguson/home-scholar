@@ -12,7 +12,7 @@ const shell = 'min-h-screen bg-gradient-to-b from-emerald-400 to-teal-700 text-w
 
 // Full-screen kids practice: intro -> 20 typed answers -> results.
 // Wrong answers show the right one and come back at the end of the set.
-export default function MathPractice({ lesson, onExit, onComplete }) {
+export default function MathPractice({ lesson, onExit, onComplete, finishPlan, extraPractice }) {
   const { content, error } = useLessonContent(lesson.content_url)
   const stats = useFactStats()
   const { active } = useFamily()
@@ -36,7 +36,7 @@ export default function MathPractice({ lesson, onExit, onComplete }) {
     const result = session.summary()
     setSummary(result); setScreen('results'); setEarned(null); setEarnError(null)
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
-    try { setEarned(await wallet.award(active, 'practice', lesson.id)) } catch (err) { setEarnError(err.message) }
+    try { setEarned(await (finishPlan ? finishPlan(lesson.id) : wallet.award(active, 'practice', lesson.id))) } catch (err) { setEarnError(err.message) }
     try { await stats.record(result) } catch { /* stats only steer the next set */ }
     try { await onComplete() } catch { /* progress notice shows the failure */ }
   }
@@ -84,7 +84,7 @@ export default function MathPractice({ lesson, onExit, onComplete }) {
       <p className="text-2xl">{summary.firstTry} of {summary.total} right the first time</p>
       <EarnedBanner earned={earned} error={earnError} className="text-yellow-300" />
       <div className="flex gap-4">
-        <button onClick={playAgain} className="bg-yellow-300 text-teal-900 text-xl font-extrabold rounded-full px-8 py-3 shadow-lg">Play again</button>
+        {(!finishPlan || extraPractice) && <button onClick={playAgain} className="bg-yellow-300 text-teal-900 text-xl font-extrabold rounded-full px-8 py-3 shadow-lg">Play again</button>}
         <button onClick={onExit} className="bg-white/20 text-xl font-bold rounded-full px-8 py-3">Done</button>
       </div>
     </div>

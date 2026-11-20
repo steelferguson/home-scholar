@@ -13,7 +13,7 @@ import { DEFAULT_COIN_PER_CORRECT, DEFAULT_ARCADE_COST, DEFAULT_ARCADE_SECONDS }
 const ArcadeGame = lazy(() => import('./ArcadeGame'))
 
 // Full-screen kids experience: intro → question round → results → arcade reward
-export default function QuizGame({ user, lesson, onExit, onComplete }) {
+export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan, extraPractice }) {
   const { content, error } = useLessonContent(lesson.content_url)
   const [screen, setScreen] = useState('intro') // intro | round | results | arcade
   const [roundResult, setRoundResult] = useState(null)
@@ -35,7 +35,8 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
     setScreen('results'); setEarned(null); setEarnError(null)
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
     // Real money: the database pays 10 cents the first time and 5 for a replay, under the daily cap.
-    wallet.award(active, 'lesson', lesson.id).then(setEarned, err => setEarnError(err.message))
+    try { setEarned(await (finishPlan ? finishPlan(lesson.id) : wallet.award(active, 'lesson', lesson.id))) }
+    catch { setEarnError('Could not save this step. Return to your plan and try again.'); return }
     if (banked) {
       setCoinsBanked(true)
       try {
@@ -144,12 +145,12 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
             {playerState.coins < arcadeCost && (
               <p className="text-indigo-100 text-sm">Earn {arcadeCost - playerState.coins} more 🪙 to unlock the arcade</p>
             )}
-            <button
+            {(!finishPlan || extraPractice) && <button
               onClick={() => { setScreen('round'); setRoundResult(null) }}
               className="bg-white/20 hover:bg-white/30 text-white text-lg font-bold rounded-full px-8 py-3 transition"
             >
               Practice again
-            </button>
+            </button>}
             <button
               onClick={onExit}
               className="text-indigo-100 hover:text-white font-bold py-2"

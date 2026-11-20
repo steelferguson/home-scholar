@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth'
 import { useNativeAudioSync } from './hooks/useNativeAudioSync'
 import { isNativeShell } from './lib/nativeBridge'
 import Login from './pages/Login'
+import ChildPlan from './pages/ChildPlan'
 import Dashboard from './pages/Dashboard'
 import Course from './pages/Course'
 import Lesson from './pages/Lesson'
@@ -40,9 +41,9 @@ function FamilyApp({ user, signOut }) {
         <NativeAudioSync userId={user.id} />
         <Routes>
           <Route path="/parent" element={<ParentPage user={user} onSignOut={handleSignOut} />} />
-          <Route path="/" element={<Dashboard user={user} />} />
-          <Route path="/course/:slug" element={<Course user={user} />} />
-          <Route path="/course/:slug/lesson/:number" element={<Lesson user={user} />} />
+          <Route path="/" element={active.role === 'child' ? <ChildPlan user={user} /> : <Dashboard user={user} />} />
+          <Route path="/course/:slug" element={active.role === 'child' ? <ChildPlan user={user} /> : <Course user={user} />} />
+          <Route path="/course/:slug/lesson/:number" element={active.role === 'child' ? <ChildPlan user={user} /> : <Lesson user={user} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         {isNativeShell && <Suspense fallback={null}><MiniPlayer /></Suspense>}

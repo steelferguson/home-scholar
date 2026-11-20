@@ -38,12 +38,14 @@ test('reopening remembers the child but never parent authorization', async () =>
   assert.equal(reopened.getSnapshot().active.id, 'rush')
   assert.equal(reopened.getSnapshot().unlocked, false)
 })
-test('missing and wrong passwords cannot unlock or switch children', async () => {
+test('siblings can switch while parent controls stay locked', async () => {
   const { create } = fixture(); const store = create(); await store.load()
   for (const password of ['', 'wrong']) await assert.rejects(store.unlock(password))
-  assert.throws(() => store.select('rush'))
+  store.select('rush')
+  assert.throws(() => store.select('parent'))
+  assert.throws(() => store.select('unknown'))
   await assert.rejects(store.create('Other'))
-  assert.equal(store.getSnapshot().active.id, 'zinc')
+  assert.equal(store.getSnapshot().active.id, 'rush')
 })
 test('explicit lock returns to the child and invalid legacy selections stay locked', async () => {
   const { create } = fixture(); const store = create(); await store.load(); await store.unlock('test-parent-password'); store.select('parent'); store.lock()

@@ -55,8 +55,9 @@ export function createFamilyStore(client, user, storage) {
       publish({ unlocked: true })
     },
     select(profileId) {
-      if (!state.unlocked) throw new Error('Parent sign-in required.')
       const active = state.profiles.find(p => p.id === profileId)
+      const switchingKids = state.active?.role === 'child' && active?.role === 'child'
+      if (!state.unlocked && !switchingKids) throw new Error('Parent sign-in required.')
       if (!active) throw new Error('Choose a family member.')
       // Persist before switching; a storage failure must not claim success.
       if (active.role === 'child') {
