@@ -1,16 +1,15 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useFamily } from '../../hooks/useFamily'
 import { stop } from '../../lib/playbackStore'
 import Brand from '../Brand'
 import { supabase } from '../../supabaseClient'
 import { sendParentPasswordLink } from '../../lib/authStore'
-import { useQuery, queryData } from '../../hooks/useQuery'
 import { useWallet } from '../../hooks/useWallet'
 import { formatCents, entryLabel } from '../../lib/wallet'
 
 export default function ParentPage({ user, onSignOut }) {
-  const { profiles, assignments, active, unlocked, loading, error: loadError, store } = useFamily()
+  const { profiles, active, unlocked, loading, error: loadError, store } = useFamily()
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState(null)
@@ -19,10 +18,6 @@ export default function ParentPage({ user, onSignOut }) {
   const [adjusting, setAdjusting] = useState({}) // profileId -> { cents, reason }
   const wallet = useWallet()
   const navigate = useNavigate()
-  const loadCourses = useCallback(() => queryData(supabase.from('courses').select('id,title,audience').order('sort_order')), [])
-  const courses = useQuery('parent-courses', loadCourses)
-  // Kids courses first: they are what a parent is usually here to pick.
-  const ordered = [...(courses.data || [])].sort((a, b) => (a.audience === 'kids' ? 0 : 1) - (b.audience === 'kids' ? 0 : 1))
   const children = profiles.filter(p => p.role === 'child')
   const run = async action => {
     setBusy(true); setError(null)
@@ -33,7 +28,7 @@ export default function ParentPage({ user, onSignOut }) {
     <Brand large />
     <h1>{unlocked ? 'Family profiles' : 'Parent access'}</h1>
     {loading ? <p role="status">Loading your family…</p> : loadError ? <><p role="alert">{loadError}</p><button onClick={() => store.load()}>Try again</button></> : !unlocked ? <>
-      <p>Enter your family account password to switch profiles or open parent controls.</p>
+      <p>Enter your family account password to open parent controls.</p>
       <form className="login-form" onSubmit={event => { event.preventDefault(); const entered = password; setPassword(''); run(() => store.unlock(entered)) }}>
         <label htmlFor="parent-password">Parent password</label>
         <input id="parent-password" type="password" autoComplete="off" required value={password} onChange={event => setPassword(event.target.value)} />
@@ -46,7 +41,7 @@ export default function ParentPage({ user, onSignOut }) {
       })}>{emailSent ? 'Email requested' : 'Email me a password setup link'}</button>
       {emailSent && <p role="status">Check your account’s email and open the link to set your password. Then return here and enter it to unlock parent controls. If the link has expired, reopen this page to request another.</p>}
     </> : <>
-      <p>Choose who will use this iPad. A child stays selected until you sign in here again.</p>
+      <p>Choose who will use this iPad. Kids can switch between child profiles themselves.</p>
       <div className="family-profiles">{profiles.map(profile => <button key={profile.id} disabled={busy} onClick={() => run(() => {
         stop(); store.select(profile.id); navigate('/', { replace: true })
       })}>{profile.name}<span>{profile.role === 'parent' ? 'Parent' : 'Child'}</span></button>)}</div>
@@ -55,22 +50,9 @@ export default function ParentPage({ user, onSignOut }) {
         <button disabled={busy}>Add child</button>
       </form>
       {!profiles.some(p => p.role === 'parent') && <button disabled={busy} onClick={() => run(() => store.create('Parent', 'parent'))}>Create parent profile</button>}
-      {children.length > 0 && <section className="family-courses" aria-labelledby="family-courses-heading">
-        <h2 id="family-courses-heading">Courses</h2>
-        <p>Tick the courses each child should see. Unticked courses are hidden from them.</p>
-        {courses.loading ? <p role="status">Loading courses…</p> : courses.error ? <><p role="alert">We couldn’t load the course list.</p><button onClick={courses.retry}>Try again</button></>
-          : children.map(child => <fieldset key={child.id}>
-            <legend>{child.name}’s courses</legend>
-            {ordered.map(course => { const id = `assign-${child.id}-${course.id}`; return <label key={course.id} htmlFor={id}>
-              <input id={id} type="checkbox" disabled={busy} checked={(assignments[child.id] || []).includes(course.id)}
-                onChange={event => run(() => store.assign(child.id, course.id, event.target.checked))} />
-              <span>{course.title}</span>{course.audience === 'kids' && <small>Kids</small>}
-            </label> })}
-          </fieldset>)}
-      </section>}
       {children.length > 0 && wallet && <section className="family-money" aria-labelledby="family-money-heading">
         <h2 id="family-money-heading">Money</h2>
-        <p>Kids earn 10¢ for a finished lesson or practice set, 5¢ for a lesson again, up to 50¢ a day. Change a balance here with a reason.</p>
+        <p>The daily plan pays 10¢ per math set, then 10¢ for new Spanish or 5¢ for a repeat. Extra practice earns no money. Change a balance here with a reason.</p>
         {wallet.error && <p role="alert">{wallet.error} <button onClick={wallet.retry}>Try again</button></p>}
         {children.map(child => { const sum = wallet.summaryOf(child.id); const draft = adjusting[child.id] || { cents: '', reason: '' }
           const setDraft = changes => setAdjusting({ ...adjusting, [child.id]: { ...draft, ...changes } })

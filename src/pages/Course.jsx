@@ -8,7 +8,7 @@ import { useQuery, queryData } from '../hooks/useQuery'
 import AppHeader from '../components/AppHeader'
 import LoadState from '../components/LoadState'
 
-export default function Course({ user, onSignOut }) {
+export default function Course({ user, onSignOut, extraPractice = false }) {
   const { slug } = useParams()
   const saved = useProgress()
   const { active, assignments } = useFamily()
@@ -19,7 +19,7 @@ export default function Course({ user, onSignOut }) {
     return { course, lessons: lessons || [] }
   }, [slug])
   const { data, loading, error, retry } = useQuery(slug, load)
-  if (data && !isAssigned(active, assignments, data.course.id)) return <Navigate to="/" replace />
+  if (!extraPractice && data && !isAssigned(active, assignments, data.course.id)) return <Navigate to="/" replace />
   const completed = data?.lessons.filter(lesson => saved.progress[lesson.id]?.status === 'completed').length || 0
   const next = data?.lessons.find(lesson => saved.progress[lesson.id]?.status !== 'completed')
   return <div className="app-page">

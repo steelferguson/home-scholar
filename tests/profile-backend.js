@@ -24,6 +24,20 @@ export const supabase = {
       const profiles = JSON.parse(localStorage.getItem('fixture:profiles') || 'null') || initial
       return { data: profiles.filter(p => p.role === 'child').map(p => ({ profile_id: p.id, balance: rows.filter(r => r.profile_id === p.id).reduce((sum, r) => sum + r.cents, 0), earned_today: today(p.id), cap: 50 })) }
     }
+    const planKey = `fixture:plan:${args.p_profile_id}:${chicagoDate()}`
+    const receipts = JSON.parse(localStorage.getItem(planKey) || '[]')
+    if (name === 'daily_plan') {
+      return { data: ['Addition', 'Subtraction', 'Mixed', 'Mixed', 'A new beginning'].map((title,i) => ({
+        school_day: chicagoDate(), slot: i+1, title, completed: i < receipts.length,
+        slug: i<4 ? 'math-facts' : 'spanish-kids-1', lesson_number: i<4 ? Math.min(i+1,3) : 1,
+      })) }
+    }
+    if (name === 'finish_daily_step') {
+      if (args.p_slot !== receipts.length + 1) return { error: true }
+      const award = await supabase.rpc('award_wallet', { ...args, p_kind: args.p_slot<5 ? 'practice' : 'lesson' })
+      localStorage.setItem(planKey, JSON.stringify([...receipts, award.data[0]]))
+      return award
+    }
     if (name === 'award_wallet') {
       const paid = rows.some(r => r.profile_id === args.p_profile_id && r.lesson_id === args.p_lesson_id && r.kind === 'lesson')
       const result = awardCents({ kind: args.p_kind, alreadyPaidLesson: args.p_kind === 'lesson' && paid, earnedToday: today(args.p_profile_id) })

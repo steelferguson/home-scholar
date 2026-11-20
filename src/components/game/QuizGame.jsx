@@ -13,7 +13,7 @@ import { DEFAULT_COIN_PER_CORRECT, DEFAULT_ARCADE_COST, DEFAULT_ARCADE_SECONDS }
 const ArcadeGame = lazy(() => import('./ArcadeGame'))
 
 // Full-screen kids experience: intro → question round → results → arcade reward
-export default function QuizGame({ user, lesson, onExit, onComplete }) {
+export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan, extraPractice }) {
   const { content, error } = useLessonContent(lesson.content_url)
   const [screen, setScreen] = useState('intro') // intro | round | results | arcade
   const [roundResult, setRoundResult] = useState(null)
@@ -35,7 +35,8 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
     setScreen('results'); setEarned(null); setEarnError(null)
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
     // Real money: the database pays 10 cents the first time and 5 for a replay, under the daily cap.
-    wallet.award(active, 'lesson', lesson.id).then(setEarned, err => setEarnError(err.message))
+    try { setEarned(await (finishPlan ? finishPlan(lesson.id) : wallet.award(active, 'lesson', lesson.id))) }
+    catch { setEarnError('Couldn’t save this step.'); return }
     if (banked) {
       setCoinsBanked(true)
       try {
@@ -45,6 +46,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
     }
   }
 
+  const pending = finishPlan && screen === 'results' && !earned && !earnError
   const startArcade = async () => {
     try {
       if (await spendCoins(arcadeCost)) setScreen('arcade')
@@ -86,7 +88,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 to-indigo-600">
-      <RewardBar coins={playerState.coins} streak={playerState.streak_days} onExit={onExit} />
+      <RewardBar coins={playerState.coins} streak={playerState.streak_days} onExit={pending ? undefined : onExit} />
 
       {saveError && <p role="alert" className="p-4 text-center text-white">{saveError}</p>}
 
@@ -133,10 +135,12 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
           )}
           <EarnedBanner earned={earned} error={earnError} className="text-green-200 -mt-6 mb-8" />
 
+          {pending && <p role="status">Saving your lesson…</p>}
+          {earnError && finishPlan && <button onClick={() => handleRoundEnd(roundResult.correct, roundResult.total, roundResult.coinsEarned)}>Retry save</button>}
           <div className="flex flex-col gap-4 w-full max-w-xs">
             <button
               onClick={startArcade}
-              disabled={playerState.coins < arcadeCost}
+              disabled={pending || playerState.coins < arcadeCost}
               className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:hover:bg-yellow-400 text-yellow-900 text-xl font-black rounded-full px-8 py-4 shadow-xl transition hover:scale-105"
             >
               🕹 Play Arcade! ({arcadeCost} 🪙)
@@ -144,13 +148,14 @@ export default function QuizGame({ user, lesson, onExit, onComplete }) {
             {playerState.coins < arcadeCost && (
               <p className="text-indigo-100 text-sm">Earn {arcadeCost - playerState.coins} more 🪙 to unlock the arcade</p>
             )}
-            <button
+            {(!finishPlan || extraPractice) && <button
               onClick={() => { setScreen('round'); setRoundResult(null) }}
               className="bg-white/20 hover:bg-white/30 text-white text-lg font-bold rounded-full px-8 py-3 transition"
             >
               Practice again
-            </button>
+            </button>}
             <button
+              disabled={pending}
               onClick={onExit}
               className="text-indigo-100 hover:text-white font-bold py-2"
             >

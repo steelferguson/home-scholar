@@ -69,7 +69,14 @@ BEGIN
   RETURN QUERY SELECT v_cents, v_today, v_cap, v_kind;
 END $$;
 REVOKE ALL ON FUNCTION public.award_wallet(uuid, text, uuid) FROM public;
-GRANT EXECUTE ON FUNCTION public.award_wallet(uuid, text, uuid) TO authenticated;
+DO $$
+BEGIN
+  IF to_regprocedure('public.finish_daily_step(uuid,date,integer,uuid)') IS NULL THEN
+    GRANT EXECUTE ON FUNCTION public.award_wallet(uuid, text, uuid) TO authenticated;
+  ELSE
+    REVOKE ALL ON FUNCTION public.award_wallet(uuid, text, uuid) FROM anon, authenticated;
+  END IF;
+END $$;
 
 -- Balance and today's total for every child profile the caller owns.
 CREATE OR REPLACE FUNCTION public.wallet_summary()

@@ -47,7 +47,7 @@ try {
   assert.equal(await page.locator('.account-email').innerText(), 'Parent')
   await page.getByRole('link', { name: 'Parent', exact: true }).click()
   await page.getByRole('button', { name: /^Zinc/ }).click()
-  await page.getByRole('heading', { name: 'Your courses' }).waitFor()
+  await page.getByRole('heading', { name: 'Today’s learning plan' }).waitFor()
   assert.equal(await page.locator('.account-email').innerText(), 'Zinc')
   assert.equal(await page.evaluate(() => window.nativeCommands.at(-1).type), 'stop')
   await page.getByRole('link', { name: 'Parent', exact: true }).click()

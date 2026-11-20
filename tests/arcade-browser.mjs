@@ -17,12 +17,14 @@ try {
   page.on('pageerror', error => errors.push(error.message))
   await page.goto('http://127.0.0.1:5191/parent')
   await page.evaluate(() => localStorage.clear()); await page.reload()
-  await page.locator('.family-courses fieldset').first().waitFor()
-  await page.locator('.family-courses fieldset', { has: page.locator('legend', { hasText: 'Zinc’s courses' }) }).getByLabel(/^Spanish Quest/).check()
+  await page.evaluate(async () => {
+    const { chicagoDate } = await import('/src/lib/wallet.js')
+    localStorage.setItem('fixture:plan:zinc:' + chicagoDate(), JSON.stringify([10,10,10,10]))
+  })
   await page.getByRole('button', { name: /^Zinc/ }).click()
   await page.getByRole('heading', { name: 'My money' }).waitFor()
 
-  await page.goto('http://127.0.0.1:5191/course/kids/lesson/1')
+  await page.goto('http://127.0.0.1:5191/course/spanish-kids-1/lesson/1')
   await page.getByRole('button', { name: /Let.s go/ }).click()
   for (const emoji of ['🐱', '🐶']) {
     await page.getByRole('button', { name: emoji }).first().waitFor()
@@ -56,6 +58,17 @@ try {
   const air = await at()
   assert.ok(air.y < rest.y - 10, `player jumped: ${rest.y} -> ${air.y}`)
   assert.equal(await page.getByText('space to jump').count(), 0, 'keyboard hint hidden on touch devices')
+  await page.goto('http://127.0.0.1:5191/')
+  await page.getByRole('heading',{name:'Daily plan complete!'}).waitFor()
+  await page.getByRole('link',{name:'Practice Spanish'}).click()
+  await page.locator('a.lesson-row').first().click()
+  await page.getByRole('button',{name:/Let.s go/}).click()
+  for (const emoji of ['🐱','🐶']) {
+    await page.getByRole('button',{name:emoji}).first().click()
+    await page.waitForTimeout(1300)
+  }
+  await page.getByTestId('earned').waitFor()
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('fixture:wallet_entries')).length),1,'extra rounds leave the wallet unchanged')
   assert.deepEqual(errors, [])
   console.log('PASS: Spanish round pays 10 cents, arcade opens, touch Run and Jump controls show at iPad width and move the player; no page errors')
 } catch (error) {

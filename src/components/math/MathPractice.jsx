@@ -12,7 +12,7 @@ const shell = 'min-h-screen bg-gradient-to-b from-emerald-400 to-teal-700 text-w
 
 // Full-screen kids practice: intro -> 20 typed answers -> results.
 // Wrong answers show the right one and come back at the end of the set.
-export default function MathPractice({ lesson, onExit, onComplete }) {
+export default function MathPractice({ lesson, onExit, onComplete, finishPlan, extraPractice }) {
   const { content, error } = useLessonContent(lesson.content_url)
   const stats = useFactStats()
   const { active } = useFamily()
@@ -36,7 +36,11 @@ export default function MathPractice({ lesson, onExit, onComplete }) {
     const result = session.summary()
     setSummary(result); setScreen('results'); setEarned(null); setEarnError(null)
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
-    try { setEarned(await wallet.award(active, 'practice', lesson.id)) } catch (err) { setEarnError(err.message) }
+    await saveResult(result)
+  }
+  const saveResult = async result => {
+    setEarnError(null)
+    try { setEarned(await (finishPlan ? finishPlan(lesson.id) : wallet.award(active, 'practice', lesson.id))) } catch { setEarnError('Couldn’t save this step.'); return }
     try { await stats.record(result) } catch { /* stats only steer the next set */ }
     try { await onComplete() } catch { /* progress notice shows the failure */ }
   }
@@ -54,14 +58,15 @@ export default function MathPractice({ lesson, onExit, onComplete }) {
   const next = () => { setFeedback(null); setTick(t => t + 1) }
   const playAgain = () => { setSummary(null); setTyped(''); setFeedback(null); setRound(r => r + 1); setScreen('practice') }
 
+  const pending = finishPlan && screen === 'results' && !earned && !earnError
   if (error) return <div className={`${shell} items-center justify-center gap-4`}>
     <p className="text-2xl font-bold">Oops! This practice wouldn&apos;t load.</p>
-    <button onClick={onExit} className="bg-white text-teal-800 font-bold rounded-full px-6 py-2">Go back</button>
+    <button disabled={pending} onClick={onExit} className="bg-white text-teal-800 font-bold rounded-full px-6 py-2">Go back</button>
   </div>
   if (!session) return <div className={`${shell} items-center justify-center`}><div className="text-3xl animate-bounce">🔢 Loading...</div></div>
 
   const header = <div className="flex items-center justify-between px-4 py-3">
-    <button onClick={onExit} aria-label="Exit" className="bg-white/20 hover:bg-white/30 rounded-full w-12 h-12 text-xl font-bold">✕</button>
+    <button disabled={pending} onClick={onExit} aria-label="Exit" className="bg-white/20 hover:bg-white/30 rounded-full w-12 h-12 text-xl font-bold">✕</button>
     {screen === 'practice' && <div className="flex-1 mx-4 h-4 bg-white/20 rounded-full overflow-hidden" role="progressbar" aria-label="Questions answered" aria-valuenow={session.answered} aria-valuemin={0} aria-valuemax={session.total}>
       <div className="h-full bg-yellow-300 transition-all" style={{ width: `${session.answered / session.total * 100}%` }} />
     </div>}
@@ -83,9 +88,11 @@ export default function MathPractice({ lesson, onExit, onComplete }) {
       <h1 className="text-4xl font-extrabold">Set complete!</h1>
       <p className="text-2xl">{summary.firstTry} of {summary.total} right the first time</p>
       <EarnedBanner earned={earned} error={earnError} className="text-yellow-300" />
+      {pending && <p role="status">Saving your set…</p>}
+      {earnError && finishPlan && <button onClick={() => saveResult(summary)}>Retry save</button>}
       <div className="flex gap-4">
-        <button onClick={playAgain} className="bg-yellow-300 text-teal-900 text-xl font-extrabold rounded-full px-8 py-3 shadow-lg">Play again</button>
-        <button onClick={onExit} className="bg-white/20 text-xl font-bold rounded-full px-8 py-3">Done</button>
+        {(!finishPlan || extraPractice) && <button onClick={playAgain} className="bg-yellow-300 text-teal-900 text-xl font-extrabold rounded-full px-8 py-3 shadow-lg">Play again</button>}
+        <button disabled={pending} onClick={onExit} className="bg-white/20 text-xl font-bold rounded-full px-8 py-3">Done</button>
       </div>
     </div>
   </div>

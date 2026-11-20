@@ -5,7 +5,7 @@ const courses = [
   { id: 'ai', slug: 'ai', title: 'AI Systems Design', description: 'Big ideas, made practical. Step through how modern AI systems fit together.' },
   { id: 'czech', slug: 'czech', title: 'Czech — Unit 2', description: 'Keep the conversation going with immersive audio lessons for everyday Czech.' },
   { id: 'python', slug: 'python', title: 'Practical Python', description: 'Learn by doing. Short visual walkthroughs to sharpen your coding fluency.' },
-  { id: 'kids', slug: 'kids', title: 'Spanish Quest', description: 'A little adventure in every lesson. Listen, discover new words, and play.', audience: 'kids' },
+  { id: 'kids', slug: 'spanish-kids-1', title: 'Spanish Quest', description: 'A little adventure in every lesson. Listen, discover new words, and play.', audience: 'kids' },
   { id: 'math', slug: 'math-facts', title: 'Math Facts', description: 'Addition and subtraction facts, 20 quick questions at a time.', audience: 'kids' },
 ]
 const mathLessons = ['Addition', 'Subtraction', 'Mixed'].map((title, i) => ({ id: `math-${i + 1}`, course_id: 'math', lesson_number: i + 1, title, lesson_type: 'math_practice', content_url: `/content/math-facts/lesson_0${i + 1}.json` }))
