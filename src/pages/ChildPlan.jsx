@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { chicagoDate } from '../lib/wallet'
 import { supabase } from '../supabaseClient'
 import { useQuery, queryData } from '../hooks/useQuery'
 import { useFamily } from '../hooks/useFamily'
@@ -10,16 +11,16 @@ import AppHeader from '../components/AppHeader'
 import Lesson from './Lesson'
 import Course from './Course'
 
-const chicagoDay = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', dateStyle: 'short' }).format(new Date())
+
 const subjects = ['math-facts', 'spanish-kids-1']
 
 export default function ChildPlan({ user }) {
   const { active } = useFamily()
   const wallet = useWallet()
   const { slug, number } = useParams()
-  const [day, setDay] = useState(chicagoDay)
+  const [day, setDay] = useState(chicagoDate)
   useEffect(() => {
-    const check = () => setDay(chicagoDay())
+    const check = () => setDay(chicagoDate())
     const timer = setInterval(check, 15000)
     window.addEventListener('focus', check)
     return () => { clearInterval(timer); window.removeEventListener('focus', check) }
@@ -34,11 +35,11 @@ export default function ChildPlan({ user }) {
     if (!number) return complete ? <Course user={user} extraPractice /> : <Navigate to="/" replace />
     if (!complete && (next?.slug !== slug || next.lesson_number !== Number(number))) return <Navigate to="/" replace />
     const finish = async lessonId => {
-      if (!next) return { cents: 0 }
+      if (!next) return { cents: 0, extra: true }
       const [receipt] = await queryData(supabase.rpc('finish_daily_step', {
         p_profile_id: active.id, p_day: next.school_day, p_slot: next.slot, p_lesson_id: lessonId,
       }))
-      await wallet.retry()
+      void wallet.retry().catch(() => {})
       return receipt
     }
     return <Lesson key={steps[0].school_day + '/' + slug + '/' + number} user={user} finishPlan={finish} extraPractice={complete} />

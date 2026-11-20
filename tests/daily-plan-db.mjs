@@ -1,6 +1,4 @@
-// Exercises scripts/setup_wallet.sql on a real Postgres engine (PGlite), with
-// auth.uid() stubbed from a session setting. No credentials, no network.
-// Usage: node tests/wallet-db.mjs [/abs/path/package.json with @electric-sql/pglite]
+// Offline Postgres integration test for scripts/daily_plan.sql.
 import { createRequire } from 'node:module'
 import { readFile } from 'node:fs/promises'
 import assert from 'node:assert/strict'
@@ -51,6 +49,7 @@ try {
   await assert.rejects(plan(), /unavailable/)
   await as(family)
   await assert.rejects(db.query('SELECT * FROM daily_plan($1)',[parent.id]), /unavailable/)
+  await db.exec(wallet) // Rerunning wallet setup must preserve the new permissions.
   assert.equal((await db.query("SELECT has_function_privilege('authenticated','award_wallet(uuid,text,uuid)','execute') AS allowed")).rows[0].allowed,false)
   console.log('PASS: ordered steps, persistence, ownership, replay, daily reset, and idempotent wallet awards')
 } finally { await db.close() }

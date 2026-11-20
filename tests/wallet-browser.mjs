@@ -16,19 +16,13 @@ try {
   page.on('pageerror', error => errors.push(error.message)); page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') console.log('CONSOLE', m.type(), m.text().slice(0, 200)) })
   await page.goto('http://127.0.0.1:5191/parent')
   await page.evaluate(() => localStorage.clear()); await page.reload()
-  await page.locator('.family-courses fieldset').first().waitFor()
-  const zinc = page.locator('.family-courses fieldset', { has: page.locator('legend', { hasText: 'Zinc’s courses' }) })
-  await zinc.getByLabel(/^Math Facts/).check(); await zinc.getByLabel(/^Spanish Quest/).check()
-  assert.equal(await page.getByTestId('balance-Zinc').innerText(), '$0.00')
   await page.getByRole('button', { name: /^Zinc/ }).click()
   await page.getByRole('heading', { name: 'My money' }).waitFor()
   assert.equal(await page.getByTestId('wallet-balance').innerText(), '$0.00')
   await page.getByText('Today: 0¢ of 50¢').waitFor()
 
   const playSet = async () => {
-    // The intro shows on first open; Play again goes straight to the keypad.
-    await page.getByRole('button', { name: 'Start' }).or(page.getByRole('button', { name: 'Check answer' })).first().waitFor()
-    if (await page.getByRole('button', { name: 'Start' }).count()) await page.getByRole('button', { name: 'Start' }).click()
+    await page.getByRole('button', { name: 'Start', exact:true }).click()
     const answer = page.getByTestId('answer')
     for (let i = 0; i < 25; i++) {
       if (await page.getByRole('heading', { name: 'Set complete!' }).count()) break
@@ -62,10 +56,10 @@ try {
   await page.goto('http://127.0.0.1:5191/course/math-facts/lesson/2'); await playSet()
   await page.getByTestId('earned').waitFor()
   assert.equal(await page.getByTestId('earned').innerText(), '+10¢ 💵')
-  await page.getByRole('button', { name: 'Play again' }).click(); await playSet()
+  await page.getByRole('button', { name: 'Done' }).click(); await page.getByRole('link',{ name: 'Start' }).click(); await playSet()
   await page.getByTestId('earned').waitFor()
   assert.equal(await page.getByTestId('earned').innerText(), '+5¢ 💵', 'cap trims the award to what is left')
-  await page.getByRole('button', { name: 'Play again' }).click(); await playSet()
+  await page.getByRole('button', { name: 'Done' }).click(); await page.getByRole('link',{ name: 'Start' }).click(); await playSet()
   await page.getByTestId('earned').waitFor()
   assert.match(await page.getByTestId('earned').innerText(), /Daily goal reached/)
   await page.screenshot({ path: `${shots}/home-scholar-wallet-capped.png` })

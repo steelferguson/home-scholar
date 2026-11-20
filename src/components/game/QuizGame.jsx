@@ -36,7 +36,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } })
     // Real money: the database pays 10 cents the first time and 5 for a replay, under the daily cap.
     try { setEarned(await (finishPlan ? finishPlan(lesson.id) : wallet.award(active, 'lesson', lesson.id))) }
-    catch { setEarnError('Could not save this step. Return to your plan and try again.'); return }
+    catch { setEarnError('Couldn’t save this step.'); return }
     if (banked) {
       setCoinsBanked(true)
       try {
@@ -46,6 +46,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
     }
   }
 
+  const pending = finishPlan && screen === 'results' && !earned && !earnError
   const startArcade = async () => {
     try {
       if (await spendCoins(arcadeCost)) setScreen('arcade')
@@ -87,7 +88,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-400 to-indigo-600">
-      <RewardBar coins={playerState.coins} streak={playerState.streak_days} onExit={onExit} />
+      <RewardBar coins={playerState.coins} streak={playerState.streak_days} onExit={pending ? undefined : onExit} />
 
       {saveError && <p role="alert" className="p-4 text-center text-white">{saveError}</p>}
 
@@ -134,10 +135,12 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
           )}
           <EarnedBanner earned={earned} error={earnError} className="text-green-200 -mt-6 mb-8" />
 
+          {pending && <p role="status">Saving your lesson…</p>}
+          {earnError && finishPlan && <button onClick={() => handleRoundEnd(roundResult.correct, roundResult.total, roundResult.coinsEarned)}>Retry save</button>}
           <div className="flex flex-col gap-4 w-full max-w-xs">
             <button
               onClick={startArcade}
-              disabled={playerState.coins < arcadeCost}
+              disabled={pending || playerState.coins < arcadeCost}
               className="bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:hover:bg-yellow-400 text-yellow-900 text-xl font-black rounded-full px-8 py-4 shadow-xl transition hover:scale-105"
             >
               🕹 Play Arcade! ({arcadeCost} 🪙)
@@ -152,6 +155,7 @@ export default function QuizGame({ user, lesson, onExit, onComplete, finishPlan,
               Practice again
             </button>}
             <button
+              disabled={pending}
               onClick={onExit}
               className="text-indigo-100 hover:text-white font-bold py-2"
             >
