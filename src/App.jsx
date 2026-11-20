@@ -22,8 +22,8 @@ import { stop } from './lib/playbackStore'
 const MiniPlayer = lazy(() => import('./components/audio/MiniPlayer'))
 
 function NativeAudioSync({ userId }) {
-  useNativeAudioSync(userId)
-  return null
+  const retry = useNativeAudioSync(userId)
+  return retry ? <div role="alert" className="inline-notice">Your audio lesson is waiting to save. <button onClick={retry}>Retry save</button></div> : null
 }
 
 function FamilyApp({ user, signOut }) {

@@ -21,6 +21,7 @@ export const supabase = {
     const rows = JSON.parse(localStorage.getItem(key) || '[]')
     const today = profileId => rows.filter(r => r.profile_id === profileId && r.kind !== 'adjustment' && chicagoDate(new Date(r.created_at)) === chicagoDate()).reduce((sum, r) => sum + r.cents, 0)
     if (name === 'finish_free_choice') {
+      if (localStorage.getItem('fixture:fail-free-finish')) return {error:true}
       if (args.p_profile_id !== 'zinc') return {error:true}
       const receipts = JSON.parse(localStorage.getItem('fixture:free-receipts') || '{}')
       if (args.p_attempt_id in receipts) return {data:receipts[args.p_attempt_id]}

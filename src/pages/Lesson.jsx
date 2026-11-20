@@ -143,7 +143,7 @@ export default function Lesson({ user, onSignOut, finishPlan, extraPractice }) {
               <VisualLessonPlayer
                 key={lesson.id}
                 lesson={lesson}
-                savedStep={progress[lesson.id]?.last_position_seconds || 0}
+                savedStep={isCompleted ? 0 : progress[lesson.id]?.last_position_seconds || 0}
                 isCompleted={freeFinish ? receipt?.lessonId === lesson.id : isCompleted}
                 onSaveStep={(i) => { if (!isCompleted) savePosition(lesson.id, i).catch(() => {}) }}
                 onMarkComplete={handleMarkComplete}
