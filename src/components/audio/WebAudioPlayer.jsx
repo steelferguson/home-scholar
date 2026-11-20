@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import AudioControls from './AudioControls'
 
-export default function WebAudioPlayer({ lesson, savedPosition, progressReady, completed, onSave, onComplete }) {
+export default function WebAudioPlayer({ lesson, savedPosition, progressReady, completed, onSave, onComplete, onRestart }) {
   const audioRef = useRef(null)
   const restoredRef = useRef(false)
   const interactedRef = useRef(false)
@@ -53,6 +53,7 @@ export default function WebAudioPlayer({ lesson, savedPosition, progressReady, c
     interactedRef.current = true
     restoredRef.current = true
     if (!audio.paused) { audio.pause(); return }
+    if (audio.ended) onRestart?.()
     try { await audio.play(); setError(false) }
     catch { setError(true); setMessage('Audio could not play. Please try again.') }
   }

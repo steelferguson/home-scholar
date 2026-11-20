@@ -51,5 +51,22 @@ try {
   await assert.rejects(db.query('SELECT * FROM daily_plan($1)',[parent.id]), /unavailable/)
   await db.exec(wallet) // Rerunning wallet setup must preserve the new permissions.
   assert.equal((await db.query("SELECT has_function_privilege('authenticated','award_wallet(uuid,text,uuid)','execute') AS allowed")).rows[0].allowed,false)
+  const [zinc] = (await db.query("INSERT INTO profiles(user_id,name) VALUES ($1,'Zinc') RETURNING id",[family])).rows
+  const freeSQL = await read('free_choice.sql')
+  await db.exec(freeSQL); await db.exec(freeSQL)
+  const free = async (lessonId, attempt=crypto.randomUUID(), profile=zinc.id) =>
+    (await db.query('SELECT finish_free_choice($1,$2,$3) AS cents',[profile,lessonId,attempt])).rows[0].cents
+  const request = crypto.randomUUID()
+  assert.equal(await free(lesson,request),10)
+  assert.equal(await free(lesson,request),10)
+  assert.equal(await free(lesson),5)
+  const mathId = steps[0].lesson_id
+  for (const expected of [10,10,10,5,0]) assert.equal(await free(mathId),expected)
+  assert.equal(await free(lesson2),0)
+  await db.query("UPDATE wallet_entries SET created_at=created_at-interval '1 day' WHERE profile_id=$1",[zinc.id])
+  assert.equal(await free(lesson2),5,'a first completion beyond the cap still counts')
+  await assert.rejects(free(lesson,crypto.randomUUID(),rush.id), /unavailable/)
+  await as(other)
+  await assert.rejects(free(lesson),/unavailable/)
   console.log('PASS: ordered steps, persistence, ownership, replay, daily reset, and idempotent wallet awards')
 } finally { await db.close() }

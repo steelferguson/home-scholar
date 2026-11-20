@@ -2,7 +2,7 @@
 import { supabase as coursesBackend } from './fixtures/supabase'
 import { awardCents, chicagoDate } from '../src/lib/wallet'
 const user = { id: 'family', email: 'parent@example.test' }
-const initial = [{ id: 'zinc', user_id: 'family', name: 'Zinc', role: 'child' }, { id: 'rush', user_id: 'family', name: 'Rush', role: 'child' }, { id: 'parent', user_id: 'family', name: 'Parent', role: 'parent' }]
+const initial = [{ id: 'zinc', free_choice_profiles: { profile_id: 'zinc' }, user_id: 'family', name: 'Zinc', role: 'child' }, { id: 'rush', user_id: 'family', name: 'Rush', role: 'child' }, { id: 'parent', user_id: 'family', name: 'Parent', role: 'parent' }]
 const listeners = new Set()
 export const supabase = {
   auth: {
@@ -20,6 +20,16 @@ export const supabase = {
     const key = 'fixture:wallet_entries'
     const rows = JSON.parse(localStorage.getItem(key) || '[]')
     const today = profileId => rows.filter(r => r.profile_id === profileId && r.kind !== 'adjustment' && chicagoDate(new Date(r.created_at)) === chicagoDate()).reduce((sum, r) => sum + r.cents, 0)
+    if (name === 'finish_free_choice') {
+      if (args.p_profile_id !== 'zinc') return {error:true}
+      const receipts = JSON.parse(localStorage.getItem('fixture:free-receipts') || '{}')
+      if (args.p_attempt_id in receipts) return {data:receipts[args.p_attempt_id]}
+      const { data } = await supabase.rpc('award_wallet', { ...args, p_kind: args.p_lesson_id.startsWith('math-') ? 'practice' : 'lesson' })
+      receipts[args.p_attempt_id] = data[0].cents
+      localStorage.setItem('fixture:free-receipts', JSON.stringify(receipts))
+      await supabase.from('user_progress').upsert({profile_id:'zinc',user_id:'family',lesson_id:args.p_lesson_id,status:'completed'})
+      return {data:data[0].cents}
+    }
     if (name === 'wallet_summary') {
       const profiles = JSON.parse(localStorage.getItem('fixture:profiles') || 'null') || initial
       return { data: profiles.filter(p => p.role === 'child').map(p => ({ profile_id: p.id, balance: rows.filter(r => r.profile_id === p.id).reduce((sum, r) => sum + r.cents, 0), earned_today: today(p.id), cap: 50 })) }

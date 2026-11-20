@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { isNativeShell, onNativeEvent } from '../lib/nativeBridge'
 import { useProgress } from './useProgress'
+import { useFreeChoiceFinish } from './useFreeChoiceFinish'
 import { getSnapshot } from '../lib/playbackStore'
 
 // In the native shell, audio keeps playing while you navigate away from the
@@ -11,6 +12,10 @@ const SAVE_INTERVAL_MS = 15000
 export function useNativeAudioSync(userId) {
   const { savePosition, markComplete } = useProgress(userId)
 
+  const finish = useFreeChoiceFinish()
+  const finishRef = useRef(finish)
+  useEffect(() => { finishRef.current = finish }, [finish])
+
   useEffect(() => {
     if (!isNativeShell || !userId) return
     let lastSave = 0
@@ -19,7 +24,10 @@ export function useNativeAudioSync(userId) {
       const current = getSnapshot()
       if (!current.active || current.lessonId !== message.lessonId || current.seeking || current.error) return
       if (message.type === 'ended') {
-        markComplete(message.lessonId).catch(() => {})
+        const saved = finishRef.current
+          ? finishRef.current(message.lessonId, current.attemptId)
+          : markComplete(message.lessonId)
+        saved.catch(() => {})
         return
       }
       // Pausing is the moment a position is most worth keeping

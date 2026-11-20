@@ -48,6 +48,7 @@ export function play({ lesson, courseTitle, courseSlug, position = 0 }) {
     seeking: false,
     error: null,
     playing: true,
+    attemptId: resuming && state.attemptId ? state.attemptId : crypto.randomUUID(),
     lessonId: lesson.id,
     title: lesson.title,
     courseTitle,
@@ -73,7 +74,7 @@ export function pause() {
 }
 
 export function resume() {
-  set({ playing: true, ...(state.duration && state.position >= state.duration ? { position: 0 } : {}) })
+  set({ playing: true, ...(state.duration && state.position >= state.duration ? { position: 0, attemptId: crypto.randomUUID() } : {}) })
   postToNative({ type: 'resume' })
 }
 
